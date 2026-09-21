@@ -2,16 +2,56 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/authService';
-import Header from '../components/layout/Header';
-import ActivityPulse from '../components/metrics/ActivityPulse';
 import { attendanceService } from '../services/attendanceService';
+import { eventService } from '../services/eventService';
+import { cardService } from '../services/cardService';
+import Header from '../components/layout/Header';
+import PageContainer from '../components/ui/PageContainer';
+import PageHeader from '../components/ui/PageHeader';
+import Section from '../components/ui/Section';
+import Card from '../components/ui/Card';
+import StatusBadge from '../components/ui/StatusBadge';
+import EmptyState from '../components/ui/EmptyState';
+import Alert from '../components/ui/Alert';
+import NFCCard from '../components/cards/NFCCard';
+import ActivityPulse from '../components/metrics/ActivityPulse';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function Dashboard() {
+  useDocumentTitle('Dashboard');
   const { user } = useAuth();
+
   const [resending, setResending] = useState(false);
   const [resendStatus, setResendStatus] = useState(null);
+
+  // Data states
   const [activityPulse, setActivityPulse] = useState(null);
-  useEffect(() => { attendanceService.getActivityPulse().then((r) => setActivityPulse(r.activityPulse)).catch(() => setActivityPulse({ totalCheckIns: 0, eventsAttended: 0, attendanceRateLabel: 'N/A', attendanceRateReason: 'Activity is temporarily unavailable.', currentStreak: 0, streakUnit: 'consecutive calendar weeks with at least one check-in' })); }, []);
+  const [events, setEvents] = useState([]);
+  const [recentAttendance, setRecentAttendance] = useState([]);
+  const [card, setCard] = useState(undefined); // undefined: loading, null: none, object: card
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    Promise.all([
+      attendanceService.getActivityPulse().catch(() => ({ activityPulse: null })),
+      eventService.getAll().catch(() => ({ events: [] })),
+      attendanceService.getHistory().catch(() => ({ records: [] })),
+      cardService.getMyCard().catch(() => ({ card: null })),
+    ]).then(([pulseRes, eventsRes, attendanceRes, cardRes]) => {
+      if (!mounted) return;
+      setActivityPulse(pulseRes.activityPulse);
+      setEvents(eventsRes.events || []);
+      setRecentAttendance((attendanceRes.records || []).slice(0, 5));
+      setCard(cardRes.card || null);
+      setLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleResendVerification = async () => {
     setResending(true);
@@ -27,166 +67,197 @@ export default function Dashboard() {
   };
 
   const isVerified = !!user?.emailVerifiedAt;
+  const firstName = user?.firstName || 'User';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Header />
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      <PageContainer maxWidth="max-w-7xl">
         {/* Verification Alert Banner */}
         {!isVerified && (
-          <div className="mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start space-x-3">
-              <svg className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <div>
-                <h3 className="text-sm font-semibold text-amber-300">Email Verification Required</h3>
-                <p className="text-xs text-amber-200/80 mt-0.5">
-                  Your email address is unverified. Please check your inbox or request a new verification link.
-                </p>
-                {resendStatus && (
-                  <p className={`text-xs mt-1.5 font-medium ${resendStatus.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
-                    {resendStatus.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={handleResendVerification}
-              disabled={resending}
-              className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors disabled:opacity-50"
+          <div className="mb-6">
+            <Alert
+              type="warning"
+              title="Email Verification Required"
+              message="Your email address is unverified. Please check your inbox or click below to request a new verification link."
             >
-              {resending ? 'Sending...' : 'Resend Verification'}
-            </button>
+              {resendStatus && (
+                <p className={`mt-1 font-semibold ${resendStatus.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {resendStatus.message}
+                </p>
+              )}
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resending}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer min-h-[38px]"
+                >
+                  {resending ? 'Sending link...' : 'Resend Verification Email'}
+                </button>
+              </div>
+            </Alert>
           </div>
         )}
 
         {/* Welcome Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                Welcome back, {user?.firstName || 'User'}!
-              </h1>
-              <p className="text-sm text-slate-400 mt-1">
-                TapTrack NFC Identity & Attendance Console
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                user?.role === 'ADMIN'
-                  ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
-                  : user?.role === 'OPERATOR'
-                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                  : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-              }`}>
-                {user?.role}
-              </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                {user?.status}
-              </span>
-            </div>
-          </div>
+        <PageHeader
+          title={`Welcome back, ${firstName}`}
+          description="TapTrack NFC Identity & Attendance Console"
+          badge={<StatusBadge status={user?.role} />}
+        />
+
+        {/* 1. Activity Pulse */}
+        <div className="mb-10">
+          <ActivityPulse metrics={activityPulse} loading={loading} />
         </div>
 
-        {/* Quick Account Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account Role</span>
-            <div className="mt-2 text-xl font-bold text-white flex items-center gap-2">
-              {user?.role}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {user?.role === 'ADMIN' ? 'Full administrative privileges' : user?.role === 'OPERATOR' ? 'Session check-in & event operations' : 'Standard member account'}
-            </p>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Email Status</span>
-            <div className="mt-2 text-xl font-bold text-white flex items-center gap-2">
-              {isVerified ? (
-                <span className="text-emerald-400 flex items-center gap-1.5 text-base font-semibold">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Verified
-                </span>
-              ) : (
-                <span className="text-amber-400 flex items-center gap-1.5 text-base font-semibold">
-                  Pending Verification
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">{user?.email}</p>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Member Since</span>
-            <div className="mt-2 text-base font-bold text-white">
-              {user?.createdAt ? new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recently'}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">ID: #{user?.id}</p>
-          </div>
-        </div>
-
-        <div className="mb-8"><ActivityPulse metrics={activityPulse} /></div>
-
-        {/* Quick Navigation Cards */}
-        <div className="mb-8">
-          <h2 className="text-base font-semibold text-white mb-4">Quick Navigation</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link
-              to="/profile"
-              className="p-5 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl transition-all flex flex-col justify-between"
+        {/* 2. Grid: Events, Recent Attendance & My NFC Card */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Column 1 & 2: Open / Upcoming Events & Recent Attendance */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Open / Upcoming Events */}
+            <Section
+              title="Open & Upcoming Events"
+              subtitle="Events currently active or scheduled for attendance"
+              actions={
+                <Link
+                  to="/events"
+                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 inline-flex items-center gap-1 min-h-[36px]"
+                >
+                  View all events &rarr;
+                </Link>
+              }
             >
-              <div>
-                <h3 className="font-semibold text-white">Account Profile</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  View and manage your personal account settings and name.
-                </p>
-              </div>
-              <span className="text-xs text-blue-400 font-medium mt-4 inline-flex items-center gap-1">
-                View Profile &rarr;
-              </span>
-            </Link>
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="h-32 bg-slate-900 rounded-xl animate-pulse border border-slate-800" />
+                  <div className="h-32 bg-slate-900 rounded-xl animate-pulse border border-slate-800" />
+                </div>
+              ) : events.length === 0 ? (
+                <EmptyState
+                  title="No Events Scheduled"
+                  description="There are currently no active or upcoming events available."
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {events.slice(0, 4).map((evt) => (
+                    <Card key={evt.id} className="flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-bold text-white text-base truncate">
+                            {evt.name}
+                          </h3>
+                          <StatusBadge status={evt.status} />
+                        </div>
+                        <p className="mt-2 text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                          {evt.description || 'No description provided.'}
+                        </p>
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                        <span>
+                          {new Date(evt.startAt).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                        <span className="text-slate-400">
+                          {new Date(evt.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </Section>
 
-            {(user?.role === 'OPERATOR' || user?.role === 'ADMIN') && (
-              <Link
-                to="/operator"
-                className="p-5 bg-slate-900 hover:bg-slate-850 border border-amber-500/20 hover:border-amber-500/40 rounded-xl transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <h3 className="font-semibold text-amber-300">Operator Console</h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Console for session monitoring and NFC check-ins.
+            {/* Recent Attendance */}
+            <Section
+              title="Recent Attendance"
+              subtitle="Your latest verified check-in history"
+              actions={
+                <Link
+                  to="/attendance"
+                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 inline-flex items-center gap-1 min-h-[36px]"
+                >
+                  Full history &rarr;
+                </Link>
+              }
+            >
+              {loading ? (
+                <div className="space-y-3">
+                  <div className="h-16 bg-slate-900 rounded-xl animate-pulse border border-slate-800" />
+                  <div className="h-16 bg-slate-900 rounded-xl animate-pulse border border-slate-800" />
+                </div>
+              ) : recentAttendance.length === 0 ? (
+                <EmptyState
+                  title="No Attendance Records"
+                  description="You have not checked into any attendance sessions yet. Tap your physical card at an event to get started."
+                />
+              ) : (
+                <div className="space-y-3">
+                  {recentAttendance.map((record) => (
+                    <Card key={record.id} padding="p-4" className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-white text-sm">
+                          {record.event?.name || `Event #${record.eventId}`}
+                        </h4>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                          <span className="capitalize">{record.method?.replace('_', ' ')}</span>
+                          <span>•</span>
+                          <span>{new Date(record.recordedAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          Verified
+                        </span>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {new Date(record.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </Section>
+          </div>
+
+          {/* Column 3: My NFC Card Digital Credential Preview */}
+          <div>
+            <Section
+              title="My NFC Card"
+              subtitle="Physical credential metadata"
+              actions={
+                <Link
+                  to="/my-card"
+                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 inline-flex items-center gap-1 min-h-[36px]"
+                >
+                  View Details &rarr;
+                </Link>
+              }
+            >
+              {loading ? (
+                <div className="aspect-[1.586/1] w-full rounded-2xl bg-slate-900 border border-slate-800 animate-pulse" />
+              ) : card ? (
+                <div className="space-y-3">
+                  <NFCCard card={card} />
+                  <p className="text-xs text-slate-400 text-center">
+                    Hold card to compatible smartphone or reader during open session.
                   </p>
                 </div>
-                <span className="text-xs text-amber-400 font-medium mt-4 inline-flex items-center gap-1">
-                  Open Operator &rarr;
-                </span>
-              </Link>
-            )}
-
-            {user?.role === 'ADMIN' && (
-              <Link
-                to="/admin/users"
-                className="p-5 bg-slate-900 hover:bg-slate-850 border border-purple-500/20 hover:border-purple-500/40 rounded-xl transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <h3 className="font-semibold text-purple-300">Admin User Management</h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Manage users, promote to OPERATOR, and toggle account statuses.
-                  </p>
-                </div>
-                <span className="text-xs text-purple-400 font-medium mt-4 inline-flex items-center gap-1">
-                  Manage Users &rarr;
-                </span>
-              </Link>
-            )}
+              ) : (
+                <EmptyState
+                  title="No NFC Card Assigned"
+                  description="Your account currently does not have an active NFC card credential. Please contact an administrator to provision an NFC card."
+                />
+              )}
+            </Section>
           </div>
         </div>
-
-      </main>
+      </PageContainer>
     </div>
   );
 }

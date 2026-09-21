@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import CardStatusBadge from '../components/cards/CardStatusBadge';
 import { cardService } from '../services/cardService';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 import { extractTokenFromHash, sanitizeUrlFragment } from '../utils/nfcParser';
 
 /**
@@ -21,6 +22,7 @@ import { extractTokenFromHash, sanitizeUrlFragment } from '../utils/nfcParser';
  * 9. Displays card validity and assignment with clear disclosure that NO attendance has been recorded.
  */
 export default function TapLanding() {
+  useDocumentTitle('Tap');
   const [resolutionState, setResolutionState] = useState('INITIALIZING'); // INITIALIZING | VERIFYING | SUCCESS | CARD_STATUS_ERROR | NOT_FOUND | MISSING_TOKEN | MALFORMED_TOKEN | NETWORK_ERROR
   const [resultData, setResultData] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');

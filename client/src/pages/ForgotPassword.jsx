@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import Header from '../components/layout/Header';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function ForgotPassword() {
+  useDocumentTitle('Forgot Password');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);

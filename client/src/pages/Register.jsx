@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Header from '../components/layout/Header';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function Register() {
+  useDocumentTitle('Register');
   const { register } = useAuth();
 
   const [firstName, setFirstName] = useState('');

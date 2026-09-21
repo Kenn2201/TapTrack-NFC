@@ -2,9 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/authService';
 import Header from '../components/layout/Header';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
+import PageContainer from '../components/ui/PageContainer';
+import PageHeader from '../components/ui/PageHeader';
+import Section from '../components/ui/Section';
+import Card from '../components/ui/Card';
+import StatusBadge from '../components/ui/StatusBadge';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Alert from '../components/ui/Alert';
+import EmptyState from '../components/ui/EmptyState';
+import LoadingState from '../components/ui/LoadingState';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function AdminUsers() {
+  useDocumentTitle('Manage Users');
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,246 +71,196 @@ export default function AdminUsers() {
       setActionSuccess(`Account for ${targetUser.email} is now ${newStatus}.`);
       await fetchUsers();
     } catch (err) {
-      setError(err.message || 'Failed to update account status.');
+      setError(err.message || 'Failed to update status.');
     } finally {
       setActionLoadingId(null);
     }
   };
 
   const filteredUsers = users.filter((u) => {
-    const term = search.toLowerCase();
+    const query = search.toLowerCase();
     const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
-    return fullName.includes(term) || u.email.toLowerCase().includes(term) || u.role.toLowerCase().includes(term);
+    const email = (u.email || '').toLowerCase();
+    return fullName.includes(query) || email.includes(query);
   });
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Header />
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <div className="flex items-center space-x-3 mb-1">
-              <span className="px-2.5 py-0.5 bg-purple-500/10 text-purple-400 border border-purple-500/30 text-xs font-semibold rounded-full">
-                ADMINISTRATION
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              User Management
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              View accounts, manage OPERATOR promotions, and adjust account access.
-            </p>
-          </div>
 
-          <div className="w-full sm:w-72">
-            <input
-              type="text"
-              placeholder="Search by name, email, or role..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-        </div>
-
-        {actionSuccess && (
-          <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm p-3.5 rounded-lg flex items-center justify-between">
-            <span>{actionSuccess}</span>
-            <button onClick={() => setActionSuccess(null)} className="text-emerald-400 hover:text-emerald-200 text-xs font-bold">
-              Dismiss
-            </button>
-          </div>
-        )}
+      <PageContainer maxWidth="max-w-7xl">
+        <PageHeader
+          title="User Account Management"
+          description="View registered accounts, toggle operator privileges, and manage account active/disabled states."
+        />
 
         {error && (
-          <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-3.5 rounded-lg flex items-center justify-between">
-            <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-200 text-xs font-bold">
-              Dismiss
-            </button>
+          <div className="mb-6">
+            <Alert type="error" message={error} onClose={() => setError(null)} />
           </div>
         )}
 
-        {loading ? (
-          <div className="py-16 text-center">
-            <LoadingSpinner />
-            <p className="text-sm text-slate-400 mt-3">Loading users...</p>
+        {actionSuccess && (
+          <div className="mb-6">
+            <Alert type="success" message={actionSuccess} onClose={() => setActionSuccess(null)} />
           </div>
-        ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden md:block bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-              <table className="w-full text-left text-sm text-slate-300">
-                <thead className="bg-slate-850/80 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                  <tr>
-                    <th className="px-6 py-3.5">User</th>
-                    <th className="px-6 py-3.5">Role</th>
-                    <th className="px-6 py-3.5">Status</th>
-                    <th className="px-6 py-3.5">Email Verification</th>
-                    <th className="px-6 py-3.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {filteredUsers.length === 0 ? (
+        )}
+
+        <Section
+          title="User Directory"
+          subtitle={`${filteredUsers.length} user${filteredUsers.length === 1 ? '' : 's'} matching search`}
+          actions={
+            <div className="w-full sm:w-72">
+              <Input
+                placeholder="Search by name or email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          }
+        >
+          {loading ? (
+            <LoadingState text="Loading registered users..." />
+          ) : filteredUsers.length === 0 ? (
+            <EmptyState
+              title="No Users Found"
+              description={search ? `No user accounts match "${search}".` : 'No users have registered yet.'}
+            />
+          ) : (
+            <>
+              {/* Desktop Searchable Table View */}
+              <div className="hidden md:block overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-sm">
+                <table className="w-full text-left text-sm text-slate-300">
+                  <thead className="bg-slate-950/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                        No users match your criteria.
-                      </td>
+                      <th className="px-5 py-3.5">Name</th>
+                      <th className="px-5 py-3.5">Email</th>
+                      <th className="px-5 py-3.5">Role</th>
+                      <th className="px-5 py-3.5">Status</th>
+                      <th className="px-5 py-3.5">Verified</th>
+                      <th className="px-5 py-3.5 text-right">Actions</th>
                     </tr>
-                  ) : (
-                    filteredUsers.map((u) => {
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {filteredUsers.map((u) => {
                       const isSelf = u.id === currentUser?.id;
                       const isActing = actionLoadingId === u.id;
 
                       return (
-                        <tr key={u.id} className="hover:bg-slate-850/40 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="font-semibold text-white">
-                              {u.firstName} {u.lastName} {isSelf && <span className="text-xs text-purple-400">(You)</span>}
-                            </div>
-                            <div className="text-xs text-slate-400">{u.email}</div>
+                        <tr key={u.id} className="hover:bg-slate-850/50 transition-colors">
+                          <td className="px-5 py-3.5 font-semibold text-white">
+                            {u.firstName} {u.lastName}
+                            {isSelf && (
+                              <span className="ml-2 text-xs font-normal text-purple-400 font-mono">
+                                (You)
+                              </span>
+                            )}
                           </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                              u.role === 'ADMIN'
-                                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
-                                : u.role === 'OPERATOR'
-                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                                : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-                            }`}>
-                              {u.role}
-                            </span>
+                          <td className="px-5 py-3.5 text-slate-300">{u.email}</td>
+                          <td className="px-5 py-3.5">
+                            <StatusBadge status={u.role} />
                           </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                              u.status === 'ACTIVE'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-red-500/10 text-red-400 border border-red-500/30'
-                            }`}>
-                              {u.status}
-                            </span>
+                          <td className="px-5 py-3.5">
+                            <StatusBadge status={u.status} />
                           </td>
-                          <td className="px-6 py-4 text-xs">
+                          <td className="px-5 py-3.5 text-xs">
                             {u.emailVerifiedAt ? (
                               <span className="text-emerald-400 font-medium">Verified</span>
                             ) : (
                               <span className="text-amber-400 font-medium">Unverified</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-right space-x-2">
+                          <td className="px-5 py-3.5 text-right space-x-2">
                             {isSelf ? (
                               <span className="text-xs text-slate-500 italic">Self-account locked</span>
                             ) : (
                               <>
                                 {u.role !== 'ADMIN' && (
-                                  <button
-                                    onClick={() => handleRoleToggle(u)}
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
                                     disabled={isActing}
-                                    className="px-2.5 py-1 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors disabled:opacity-50"
+                                    onClick={() => handleRoleToggle(u)}
                                   >
                                     {u.role === 'OPERATOR' ? 'Demote to USER' : 'Promote to OPERATOR'}
-                                  </button>
+                                  </Button>
                                 )}
-                                <button
-                                  onClick={() => handleStatusToggle(u)}
+                                <Button
+                                  size="sm"
+                                  variant={u.status === 'ACTIVE' ? 'danger' : 'success'}
                                   disabled={isActing}
-                                  className={`px-2.5 py-1 text-xs font-semibold rounded border transition-colors disabled:opacity-50 ${
-                                    u.status === 'ACTIVE'
-                                      ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30'
-                                      : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                                  }`}
+                                  onClick={() => handleStatusToggle(u)}
                                 >
                                   {u.status === 'ACTIVE' ? 'Disable' : 'Activate'}
-                                </button>
+                                </Button>
                               </>
                             )}
                           </td>
                         </tr>
                       );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-            {/* Mobile Card View */}
-            <div className="md:hidden space-y-4">
-              {filteredUsers.length === 0 ? (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-center text-slate-500 text-sm">
-                  No users found.
-                </div>
-              ) : (
-                filteredUsers.map((u) => {
+              {/* Mobile Stacked Card View */}
+              <div className="md:hidden space-y-3">
+                {filteredUsers.map((u) => {
                   const isSelf = u.id === currentUser?.id;
                   const isActing = actionLoadingId === u.id;
 
                   return (
-                    <div key={u.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
-                      <div className="flex items-start justify-between">
+                    <Card key={u.id} padding="p-4" className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="font-semibold text-white text-base">
-                            {u.firstName} {u.lastName} {isSelf && <span className="text-xs text-purple-400">(You)</span>}
+                            {u.firstName} {u.lastName}
+                            {isSelf && <span className="ml-1 text-xs text-purple-400">(You)</span>}
                           </div>
                           <div className="text-xs text-slate-400">{u.email}</div>
                         </div>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                          u.role === 'ADMIN'
-                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
-                            : u.role === 'OPERATOR'
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                            : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-                        }`}>
-                          {u.role}
-                        </span>
+                        <StatusBadge status={u.role} />
                       </div>
 
                       <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-800">
-                        <span className="text-slate-400">
-                          Status: <strong className={u.status === 'ACTIVE' ? 'text-emerald-400' : 'text-red-400'}>{u.status}</strong>
-                        </span>
-                        <span className="text-slate-400">
-                          Email: <strong className={u.emailVerifiedAt ? 'text-emerald-400' : 'text-amber-400'}>
-                            {u.emailVerifiedAt ? 'Verified' : 'Unverified'}
-                          </strong>
+                        <StatusBadge status={u.status} />
+                        <span className={u.emailVerifiedAt ? 'text-emerald-400 font-medium' : 'text-amber-400 font-medium'}>
+                          {u.emailVerifiedAt ? 'Verified' : 'Unverified'}
                         </span>
                       </div>
 
-                      <div className="pt-3 border-t border-slate-800 flex gap-2 justify-end">
-                        {isSelf ? (
-                          <span className="text-xs text-slate-500 italic">Self-account locked</span>
-                        ) : (
-                          <>
-                            {u.role !== 'ADMIN' && (
-                              <button
-                                onClick={() => handleRoleToggle(u)}
-                                disabled={isActing}
-                                className="flex-1 py-1.5 px-2 text-xs font-semibold bg-slate-800 text-slate-200 rounded border border-slate-700"
-                              >
-                                {u.role === 'OPERATOR' ? 'Demote USER' : 'Promote OP'}
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleStatusToggle(u)}
+                      {!isSelf && (
+                        <div className="pt-2 flex flex-col gap-2">
+                          {u.role !== 'ADMIN' && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="w-full"
                               disabled={isActing}
-                              className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded border ${
-                                u.status === 'ACTIVE'
-                                  ? 'bg-red-500/10 text-red-400 border-red-500/30'
-                                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                              }`}
+                              onClick={() => handleRoleToggle(u)}
                             >
-                              {u.status === 'ACTIVE' ? 'Disable' : 'Activate'}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                              {u.role === 'OPERATOR' ? 'Demote to USER' : 'Promote to OPERATOR'}
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant={u.status === 'ACTIVE' ? 'danger' : 'success'}
+                            className="w-full"
+                            disabled={isActing}
+                            onClick={() => handleStatusToggle(u)}
+                          >
+                            {u.status === 'ACTIVE' ? 'Disable Account' : 'Activate Account'}
+                          </Button>
+                        </div>
+                      )}
+                    </Card>
                   );
-                })
-              )}
-            </div>
-          </>
-        )}
-      </main>
+                })}
+              </div>
+            </>
+          )}
+        </Section>
+      </PageContainer>
     </div>
   );
 }

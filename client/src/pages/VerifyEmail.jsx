@@ -3,8 +3,10 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import Header from '../components/layout/Header';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function VerifyEmail() {
+  useDocumentTitle('Verify Email');
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 

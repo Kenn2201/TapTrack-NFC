@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import Header from '../components/layout/Header';
 import { buildBenchmarkResult } from '../utils/testingTools';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 export default function Benchmark() {
+  useDocumentTitle('Benchmark');
   const [method, setMethod] = useState('NFC'); const [marks, setMarks] = useState({}); const [results, setResults] = useState([]); const [error, setError] = useState('');
   const start = () => { setMarks({ startedAt: performance.now() }); setError(''); };
   const resolve = () => setMarks((m) => ({ ...m, resolvedAt: performance.now() }));

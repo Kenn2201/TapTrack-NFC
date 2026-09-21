@@ -4,8 +4,10 @@ import { authService } from '../services/authService';
 import Header from '../components/layout/Header';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import CardStatusBadge from '../components/cards/CardStatusBadge';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function AdminCards() {
+  useDocumentTitle('NFC Cards');
   const [cards, setCards] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);

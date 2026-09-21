@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import Header from '../components/layout/Header';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function ResetPassword() {
+  useDocumentTitle('Reset Password');
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
