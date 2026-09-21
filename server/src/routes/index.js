@@ -52,6 +52,7 @@ router.post('/auth/reset-password', resetLimiter, validate(resetPasswordSchema),
 router.patch('/users/me', authenticate, validate(updateProfileSchema), authController.updateProfile);
 router.get('/users/me/attendance', authenticate, attendanceController.getUserHistory);
 router.get('/users/me/activity-pulse', authenticate, activityPulseController.get);
+router.get('/users/me/card', authenticate, cardController.getMine);
 
 // ─── ADMIN — USERS & ROLES (v0.2.0) ───────────────────────────────────────────
 router.get('/admin/users', authenticate, requireRole('ADMIN'), adminUserController.getAllUsers);
@@ -61,11 +62,11 @@ router.get('/admin/users/:id', authenticate, requireRole('ADMIN'), adminUserCont
 router.patch('/admin/users/:id/role', authenticate, requireRole('ADMIN'), validate(updateRoleSchema), adminUserController.updateUserRole);
 router.patch('/admin/users/:id/status', authenticate, requireRole('ADMIN'), validate(updateStatusSchema), adminUserController.updateUserStatus);
 
-// ─── EVENTS (Planned v0.6.0) ──────────────────────────────────────────────────
+// ─── EVENTS ───────────────────────────────────────────────────────────────────
 router.get('/events', authenticate, eventController.getAll);
 router.get('/events/:id', authenticate, eventController.getById);
 
-// ─── OPERATOR ATTENDANCE (Planned v0.6.0) ─────────────────────────────────────
+// ─── OPERATOR ATTENDANCE ──────────────────────────────────────────────────────
 router.get('/sessions/open', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.getOpenSessions);
 router.get('/sessions/:id/attendance', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.getSessionRecords);
 router.post('/events/:id/sessions', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.openSession);

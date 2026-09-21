@@ -111,7 +111,7 @@ Never commit:
 
 The project uses Semantic Versioning.
 
-Current pre-1.0 development:
+Release stages:
 
     PATCH: bug fix, documentation fix, small config correction
     MINOR: new feature, new route, new API, new NFC capability, new dashboard feature
@@ -122,7 +122,9 @@ Release labels:
     v0.x.x ALPHA
     v0.x.x BETA
     v0.x.x RC
-    v1.x.x LIVE
+    v1.x.x PRODUCTION CANDIDATE (until manual acceptance)
+
+Never mark a v1 candidate LIVE before human acceptance testing passes.
 
 ---
 

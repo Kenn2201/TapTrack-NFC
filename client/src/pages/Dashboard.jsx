@@ -186,11 +186,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Roadmap Notice */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 text-xs text-slate-400">
-          <span className="font-semibold text-slate-300">Development Scope Note: </span>
-          TapTrack NFC v0.2.0 implements core authentication, user management, and transactional email. Physical NFC card provisioning (v0.3.0), Android Web NFC reader (v0.4.0), and universal NFC URL fallback (v0.5.0) are actively scheduled in upcoming milestones.
-        </div>
       </main>
     </div>
   );

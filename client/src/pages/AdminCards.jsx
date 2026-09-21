@@ -204,7 +204,7 @@ export default function AdminCards() {
           <div>
             <div className="flex items-center space-x-3 mb-1">
               <span className="px-2.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 text-xs font-semibold rounded-full">
-                ADMINISTRATION • v0.3.0
+                CARD ADMINISTRATION
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">

@@ -1,10 +1,5 @@
-﻿// Public landing page for TapTrack NFC
+import { Link } from 'react-router-dom';
+import { CURRENT_VERSION_LABEL } from '../constants/version';
 export default function Landing() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Landing</h1>
-      <p className="text-gray-500 mt-2">Public landing page for TapTrack NFC</p>
-    </div>
-  );
+  return <main className="min-h-screen bg-slate-950 text-white"><section className="mx-auto flex max-w-6xl flex-col items-center px-4 py-20 text-center sm:py-28"><span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-300">{CURRENT_VERSION_LABEL}</span><h1 className="mt-6 text-4xl font-black tracking-tight sm:text-6xl">TapTrack <span className="text-blue-400">NFC</span></h1><p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">A generic NFC attendance platform with secure opaque card credentials, operator-managed event sessions, lifecycle controls, Activity Pulse, and immutable audit history.</p><div className="mt-8 flex flex-wrap justify-center gap-3"><Link to="/login" className="min-h-11 rounded-lg bg-blue-600 px-5 py-3 font-semibold">Sign in</Link><Link to="/register" className="min-h-11 rounded-lg border border-slate-700 px-5 py-3 font-semibold">Create account</Link><Link to="/compatibility" className="min-h-11 rounded-lg border border-slate-700 px-5 py-3 font-semibold">Compatibility</Link></div><div className="mt-16 grid w-full gap-4 text-left sm:grid-cols-3"><article className="rounded-xl border border-slate-800 bg-slate-900 p-5"><h2 className="font-semibold">Secure NFC</h2><p className="mt-2 text-sm text-slate-400">Opaque fragment credentials; only HMAC hashes are stored.</p></article><article className="rounded-xl border border-slate-800 bg-slate-900 p-5"><h2 className="font-semibold">Shared attendance</h2><p className="mt-2 text-sm text-slate-400">Web NFC, authenticated URL, and manual methods share one policy engine.</p></article><article className="rounded-xl border border-slate-800 bg-slate-900 p-5"><h2 className="font-semibold">Operational control</h2><p className="mt-2 text-sm text-slate-400">Role enforcement, card lifecycle, metrics, and sanitized audit logs.</p></article></div></section></main>;
 }
-

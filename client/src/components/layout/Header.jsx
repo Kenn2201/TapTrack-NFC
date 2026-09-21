@@ -44,6 +44,7 @@ export default function Header() {
                 </Link>
                 <Link to="/events" className="text-slate-300 hover:text-white px-3 py-2 text-sm font-medium transition-colors">Events</Link>
                 <Link to="/attendance" className="text-slate-300 hover:text-white px-3 py-2 text-sm font-medium transition-colors">Attendance</Link>
+                <Link to="/my-card" className="text-slate-300 hover:text-white px-3 py-2 text-sm font-medium transition-colors">My Card</Link>
                 {(user?.role === 'OPERATOR' || user?.role === 'ADMIN') && (
                   <>
                     <Link to="/operator" className="text-amber-400 hover:text-amber-300 px-3 py-2 text-sm font-medium transition-colors">
@@ -136,6 +137,7 @@ export default function Header() {
               </Link>
               <Link to="/events" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">Events</Link>
               <Link to="/attendance" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">My Attendance</Link>
+              <Link to="/my-card" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">My NFC Card</Link>
               {(user?.role === 'OPERATOR' || user?.role === 'ADMIN') && (
                 <>
                   <Link

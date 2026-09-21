@@ -25,6 +25,11 @@ export const nfcCardService = {
     return nfcCredentialService.formatSafeCard(card);
   },
 
+  async getUserCard(userId) {
+    const card = await nfcCardRepository.findLatestByUserId(userId);
+    return nfcCredentialService.formatSafeCard(card);
+  },
+
   /**
    * Provision a physical NFC card:
    * 1. Validates physical label uniqueness (e.g. NFC-001)

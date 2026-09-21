@@ -1,7 +1,7 @@
 -- ============================================================================
 -- TapTrack NFC — Database Schema
 -- PostgreSQL
--- Version: 0.6.0 BETA (In Development)
+-- Version: 1.0.0 Production Candidate (Manual Acceptance Pending)
 -- ============================================================================
 
 -- Enums

@@ -275,6 +275,14 @@ export const nfcCardRepository = {
     return result.rows[0] ? this._mapRow(result.rows[0]) : null;
   },
 
+  async findLatestByUserId(userId) {
+    const result = await pool.query(`
+      SELECT c.* FROM nfc_cards c WHERE c.user_id = $1
+      ORDER BY CASE WHEN c.status = 'ACTIVE' THEN 0 ELSE 1 END, c.created_at DESC LIMIT 1;
+    `, [userId]);
+    return result.rows[0] ? this._mapRow(result.rows[0]) : null;
+  },
+
   async updateLifecycle(id, { status, actorId, reason }) {
     const result = await pool.query(`
       UPDATE nfc_cards SET status = $1,

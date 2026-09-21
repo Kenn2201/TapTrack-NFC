@@ -5,7 +5,15 @@ All notable changes to TapTrack NFC will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — v0.9.0 RC (Manual Testing Pending)
+## [Unreleased] — v1.0.0 Production Candidate (Manual Acceptance Pending)
+
+### Changed
+- Stabilized the complete ADMIN, OPERATOR, USER, and public NFC flows without adding new product scope.
+- Synchronized the UI and health endpoint to canonical package version `1.0.0`.
+- Replaced remaining placeholder/stale roadmap content and completed the member card view and public landing experience.
+- Preserved the pending Android physical NDEFReader validation and did not claim manual acceptance, friend testing, or 20-card physical testing.
+
+## [0.9.0] — 2026-09-21 — Public Testing Preparation (RC / Manual Testing Pending)
 
 ### Added
 - Safe NFC-001–NFC-020 inventory visibility without automatically provisioning cards or generating credentials.

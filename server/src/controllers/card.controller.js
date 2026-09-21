@@ -2,6 +2,10 @@ import { nfcCardService } from '../services/nfcCard.service.js';
 import { cardLifecycleService } from '../services/cardLifecycle.service.js';
 
 export const cardController = {
+  async getMine(req, res, next) {
+    try { return res.json({ card: await nfcCardService.getUserCard(req.user.id) }); }
+    catch (error) { return next(error); }
+  },
   /**
    * GET /api/admin/cards
    * List all NFC cards (safe metadata only; token_hash is strictly stripped)

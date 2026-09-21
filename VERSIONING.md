@@ -1,66 +1,38 @@
-# TapTrack NFC — Versioning & Release Policy
+# TapTrack NFC — Versioning and Release Policy
 
-TapTrack NFC follows [Semantic Versioning](https://semver.org/).
+TapTrack NFC follows Semantic Versioning. The canonical runtime version is `server/package.json`; the client label in `client/src/constants/version.js`, both package files, README, CHANGELOG, and this file must remain synchronized.
 
-## Source of Truth
+## Current status
 
-    client/src/constants/version.js
+- Version: `1.0.0`
+- Label: `v1.0.0 — Production Candidate`
+- Acceptance: `Manual Acceptance Pending`
+- Development branch: `kenn/develop`
+- Production branch: `master`
+- No v1.0 tag or GitHub Release is permitted until human acceptance passes.
 
-## Synced Release Files
-
-1. `client/src/constants/version.js`
-2. `package.json`
-3. `CHANGELOG.md`
-4. `VERSIONING.md`
-5. `README.md`
-
-## Pre-1.0 Rules
-
-| Type | Description |
-|------|-------------|
-| PATCH | Bug fixes and small maintenance changes |
-| MINOR | New functionality, API routes, NFC features or UI workflows |
-
-## Current Status
-
-- **Released Baseline**: `v0.3.0 ALPHA` (Release: `v0.3.0`, Branch: `master`)
-- **Previous Release**: `v0.2.0 ALPHA`
-- **Production Release Candidate**: `v0.4.0 ALPHA` (Deployed on `master`; physical Android Web NFC NDEFReader test pending)
-- **Active Development**: `v0.9.0 RC (Manual Testing Pending)` (Branch: `kenn/develop`)
-- **Milestone Scope**: Public testing, physical-card inventory visibility, compatibility, and benchmark support
-
-## Locked Release Roadmap
+## History
 
 | Version | Stage | Deliverable | Status |
-|---------|-------|-------------|--------|
-| v0.1.0 | ALPHA | Foundation architecture + initial UI | Released |
-| v0.2.0 | ALPHA | Authentication, roles, users, responsive profiles, Resend | Released |
-| v0.3.0 | ALPHA | NFC provisioning, card assignment, token generation, NFC Tools workflow | Released |
-| v0.4.0 | ALPHA | Android Web NFC reader with NDEFReader | RC / Validation Pending |
-| v0.5.0 | ALPHA | Universal NFC URL /t#token fallback | Complete; iPhone physical test passed |
-| v0.6.0 | BETA | Events, attendance sessions, shared attendance engine | Complete |
-| v0.7.0 | BETA | Admin dashboard + complete card lifecycle (lost/revoke/replace/disable) | Complete |
-| v0.8.0 | BETA | Mobile UX, Activity Pulse, audit logs, accessibility/security hardening | Complete |
-| v0.9.0 | RC | Public friend testing preparation + 20-card inventory + QR/NFC benchmarking | Manual Testing Pending |
-| v1.0.0 | LIVE | Stable public TapTrack NFC demo | Planned |
+|---|---|---|---|
+| v0.1.0 | ALPHA | Foundation architecture and initial UI | Released |
+| v0.2.0 | ALPHA | Authentication, roles, users, Resend | Released |
+| v0.3.0 | ALPHA | NFC provisioning and assignment | Released |
+| v0.4.0 | ALPHA | Android Web NFC reader | Engineering complete; physical validation pending |
+| v0.5.0 | ALPHA | Universal URL fallback | Complete; iPhone physical test passed |
+| v0.6.0 | BETA | Events, sessions, shared attendance engine | Complete |
+| v0.7.0 | BETA | Admin metrics and complete card lifecycle | Complete |
+| v0.8.0 | BETA | Activity Pulse, audits, UX and security hardening | Complete |
+| v0.9.0 | RC | Public testing, inventory, compatibility, benchmark preparation | Engineering complete; manual testing pending |
+| v1.0.0 | Production Candidate | Stabilized public TapTrack NFC demo | Manual acceptance pending |
 
-## Release Stages
+## Release rules
 
-| Stage | Description |
-|-------|-------------|
-| ALPHA | Core development |
-| BETA | Feature-complete enough for public testing |
-| RC | Release candidate |
-| LIVE | Stable public release |
+- Pre-1.0 PATCH: maintenance and fixes; MINOR: functionality.
+- Post-1.0 follows standard Semantic Versioning.
+- Never label a build LIVE, tag it, or publish a GitHub Release before required human acceptance.
+- Never claim physical Android validation, friend testing, or 20-card testing without the corresponding human test.
 
-## Required Checks
+## Required checks
 
-```bash
-npm test
-npm run build
-git status
-```
-
-- No secrets
-- No private data
-- No unrelated project terminology
+Run server tests, client tests, client build and lint, both npm audits, `git diff --check`, privacy scan, secret scan, database migration review, and production smoke verification before release.

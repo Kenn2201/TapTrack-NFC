@@ -229,7 +229,7 @@ export default function TapLanding() {
                 <div className="leading-relaxed">
                   <strong className="font-semibold text-blue-200">No attendance has been recorded.</strong>
                   <div className="text-blue-200/80 mt-1">
-                    v0.5 universal NFC fallback resolves card authenticity and assignment only. Real check-in and attendance recording will activate during scheduled event sessions (Milestone v0.6.0).
+                    Public NFC fallback resolves card authenticity and assignment only. Attendance requires an authenticated operator and an open event session.
                   </div>
                 </div>
               </div>
