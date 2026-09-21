@@ -65,6 +65,7 @@ function App() {
           <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/cards" element={<AdminCards />} />
+            <Route path="/admin/nfc-cards" element={<AdminCards />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/events" element={<AdminEvents />} />
             <Route path="/admin/audit" element={<AuditLogs />} />

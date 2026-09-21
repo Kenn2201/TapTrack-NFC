@@ -46,10 +46,20 @@ export const updateProfileSchema = z.object({
   lastName: z.string().min(1).max(100).optional(),
 });
 
-// Placeholders for future phases
-export const createCardSchema = z.object({
-  cardLabel: z.string().min(1).max(50),
-  userId: z.number().int().optional(),
+// ─── NFC CARD PROVISIONING (v0.3.0) ──────────────────────────────────────────
+export const provisionCardSchema = z.object({
+  cardLabel: z.string().min(1, 'Card label is required').max(50, 'Card label cannot exceed 50 characters'),
+  userId: z.number().int().positive('User ID must be a positive integer').optional(),
+});
+
+export const activateCardSchema = z.object({
+  confirmWritten: z.boolean().refine((val) => val === true, {
+    message: 'You must confirm that the physical card was written and verified with NFC Tools',
+  }),
+});
+
+export const assignCardSchema = z.object({
+  userId: z.number().int().positive('User ID must be a positive integer'),
 });
 
 export const createEventSchema = z.object({

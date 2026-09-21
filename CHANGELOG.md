@@ -5,7 +5,40 @@ All notable changes to TapTrack NFC will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — v0.2.0 ALPHA (In Development)
+## [Unreleased] — v0.3.0 ALPHA (In Development)
+
+### Added
+- **NFC Credential Service (`server/src/services/nfcCredential.service.js`)**:
+  - Cryptographically secure opaque random token generation using `crypto.randomBytes(24).toString('base64url')`.
+  - Deterministic HMAC-SHA256 hash derivation with required `CARD_TOKEN_PEPPER` environment variable.
+  - Safe DTO normalization strictly stripping `token_hash` before returning card objects to clients.
+  - Write URL generation in `/t#<rawToken>` format to prevent credential exposure in HTTP access logs.
+- **NFC Card Database Migration (`database/migrations/002_v0.3.0_nfc_provisioning.sql`)**:
+  - Non-destructive migration ensuring `card_status` enum lifecycle states (`UNASSIGNED`, `ACTIVE`, `REVOKED`, `LOST`, `REPLACED`, `DISABLED`).
+  - Creates/updates `nfc_cards` table with `card_label`, `user_id`, `token_hash`, `status`, `issued_by`, `issued_at`, `activated_at`, `created_at`, `updated_at`.
+  - Comprehensive database indexes on `card_label`, `user_id`, `token_hash`, and `status`.
+- **NFC Card Repository (`server/src/repositories/nfcCard.repository.js`)**:
+  - Methods for `findByCardLabel`, `findById`, `findByTokenHash`, `findAll`, `create`, `updateStatus`, and `assignUser`.
+- **NFC Card Business Logic Service (`server/src/services/nfcCard.service.js`)**:
+  - `listCards`: Filtered card listing with safe metadata.
+  - `getCardById`: Individual card detail lookup.
+  - `provisionCard`: Validates unique label and active user account, generates opaque credential, persists derived hash only, and returns write URL exactly once.
+  - `activateCard`: Enforces physical write confirmation before transitioning card from `UNASSIGNED` to `ACTIVE`.
+  - `assignCard`: Safe member account assignment and reassignment.
+- **Admin NFC Card Controller & Routes (`server/src/controllers/card.controller.js`, `server/src/routes/index.js`)**:
+  - Protected endpoints with `authenticate` and `requireRole('ADMIN')`.
+  - `GET /api/admin/cards`, `GET /api/admin/cards/:id`, `POST /api/admin/cards/provision`, `PATCH /api/admin/cards/:id/activate`, `PATCH /api/admin/cards/:id/assign`.
+  - Zod request validation schemas (`provisionCardSchema`, `activateCardSchema`, `assignCardSchema`).
+- **Responsive Admin NFC Cards UI (`client/src/pages/AdminCards.jsx`, `client/src/components/cards/CardStatusBadge.jsx`)**:
+  - Card registry table with status badges, assigned member details, and activation actions.
+  - Multi-step guided provisioning modal with label suggestion (`NFC-001`), user picker, and one-time URL display.
+  - Prominent Copy button and comprehensive step-by-step **NFC Tools** write instructions.
+  - Explicit confirmation check requiring operator verification of physical write before activation.
+- **Automated Testing (`server/tests/nfcCard.test.js`)**:
+  - 18 test cases covering RBAC, security boundaries, non-persistence of raw tokens, zero exposure of `token_hash`, duplicate label rejection, disabled user rejection, and lifecycle transitions.
+  - Verified 43 total backend tests passing (25 v0.2 auth regression tests + 18 v0.3 card tests).
+
+## [0.2.0] - 2026-09-21 — Authentication, Roles, Users, Responsive Profiles & Resend (ALPHA)
 
 ### Production Infrastructure (Completed)
 - **Frontend Hosting (Vercel)**: Production frontend deployed at `https://nfc.kenncode.me` with Vite + React 19.

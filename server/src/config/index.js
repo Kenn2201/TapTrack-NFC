@@ -13,6 +13,9 @@ export const config = {
   get jwtExpiresIn() { return process.env.JWT_EXPIRES_IN || '7d'; },
   cookieName: 'taptrack_session',
 
+  // NFC Card Security
+  get cardTokenPepper() { return process.env.CARD_TOKEN_PEPPER; },
+
   // Resend Email
   get resendApiKey() { return process.env.RESEND_API_KEY; },
   get resendFromEmail() { return process.env.RESEND_FROM_EMAIL || 'TapTrack NFC <no-reply@mail.nfc.kenncode.me>'; },
@@ -27,4 +30,15 @@ export function getJwtSecret() {
     throw new Error('JWT_SECRET is required but not configured. Authentication cannot operate safely.');
   }
   return config.jwtSecret;
+}
+
+/**
+ * Returns CARD_TOKEN_PEPPER or throws an error.
+ * Ensures no default or fallback pepper is ever used in credential hashing.
+ */
+export function getCardTokenPepper() {
+  if (!config.cardTokenPepper) {
+    throw new Error('CARD_TOKEN_PEPPER is required but not configured. NFC credential operations cannot operate safely.');
+  }
+  return config.cardTokenPepper;
 }

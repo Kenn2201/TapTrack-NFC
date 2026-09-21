@@ -1,7 +1,7 @@
 -- ============================================================================
 -- TapTrack NFC — Database Schema
 -- PostgreSQL
--- Version: 0.2.0 ALPHA (In Development)
+-- Version: 0.3.0 ALPHA (In Development)
 -- ============================================================================
 
 -- Enums
@@ -49,16 +49,18 @@ CREATE TABLE nfc_cards (
     id                  SERIAL PRIMARY KEY,
     card_label          VARCHAR(50) UNIQUE NOT NULL,       -- e.g. NFC-001
     user_id             INTEGER REFERENCES users(id),
-    token_hash          VARCHAR(64) UNIQUE NOT NULL,       -- SHA-256 of raw credential
+    token_hash          VARCHAR(64) UNIQUE NOT NULL,       -- HMAC-SHA256 derived credential hash
     status              card_status NOT NULL DEFAULT 'UNASSIGNED',
     issued_at           TIMESTAMPTZ,
     issued_by           INTEGER REFERENCES users(id),
+    activated_at        TIMESTAMPTZ,
     revoked_at          TIMESTAMPTZ,
     revoked_by          INTEGER REFERENCES users(id),
     revocation_reason   VARCHAR(100),
     replaced_by_card_id INTEGER REFERENCES nfc_cards(id),
     last_used_at        TIMESTAMPTZ,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Events

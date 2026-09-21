@@ -48,9 +48,14 @@ export default function Header() {
                   </Link>
                 )}
                 {user?.role === 'ADMIN' && (
-                  <Link to="/admin/users" className="text-purple-400 hover:text-purple-300 px-3 py-2 text-sm font-medium transition-colors">
-                    Admin Users
-                  </Link>
+                  <>
+                    <Link to="/admin/cards" className="text-blue-400 hover:text-blue-300 px-3 py-2 text-sm font-medium transition-colors">
+                      NFC Cards
+                    </Link>
+                    <Link to="/admin/users" className="text-purple-400 hover:text-purple-300 px-3 py-2 text-sm font-medium transition-colors">
+                      Admin Users
+                    </Link>
+                  </>
                 )}
                 <div className="h-4 w-px bg-slate-700 mx-2" />
                 <div className="flex items-center space-x-3">
@@ -128,13 +133,22 @@ export default function Header() {
                 </Link>
               )}
               {user?.role === 'ADMIN' && (
-                <Link
-                  to="/admin/users"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-purple-400 hover:bg-slate-700"
-                >
-                  Admin User Management
-                </Link>
+                <>
+                  <Link
+                    to="/admin/cards"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-blue-400 hover:bg-slate-700"
+                  >
+                    NFC Card Provisioning
+                  </Link>
+                  <Link
+                    to="/admin/users"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-purple-400 hover:bg-slate-700"
+                  >
+                    Admin User Management
+                  </Link>
+                </>
               )}
               <button
                 onClick={() => {

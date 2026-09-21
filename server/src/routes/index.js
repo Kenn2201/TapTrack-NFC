@@ -20,6 +20,9 @@ import {
   updateRoleSchema,
   updateStatusSchema,
   updateProfileSchema,
+  provisionCardSchema,
+  activateCardSchema,
+  assignCardSchema,
 } from '../validators/schemas.js';
 
 const router = Router();
@@ -58,12 +61,16 @@ router.post('/nfc/resolve', nfcController.resolve);
 router.post('/nfc/check-in', nfcController.checkIn);
 router.post('/nfc/verify', nfcController.verify);
 
-// ─── ADMIN — CARDS & EVENTS (Planned v0.3.0 / v0.6.0 / v0.7.0) ───────────────
-router.get('/admin/cards', cardController.getAll);
-router.post('/admin/cards', cardController.create);
-router.post('/admin/cards/:id/assign', cardController.assign);
-router.post('/admin/cards/:id/revoke', cardController.revoke);
-router.post('/admin/cards/:id/replace', cardController.replace);
+// ─── ADMIN — NFC CARDS PROVISIONING (v0.3.0) ──────────────────────────────────
+router.get('/admin/cards', authenticate, requireRole('ADMIN'), cardController.getAll);
+router.get('/admin/cards/:id', authenticate, requireRole('ADMIN'), cardController.getById);
+router.post('/admin/cards', authenticate, requireRole('ADMIN'), validate(provisionCardSchema), cardController.provision);
+router.post('/admin/cards/provision', authenticate, requireRole('ADMIN'), validate(provisionCardSchema), cardController.provision);
+router.patch('/admin/cards/:id/activate', authenticate, requireRole('ADMIN'), validate(activateCardSchema), cardController.activate);
+router.patch('/admin/cards/:id/assign', authenticate, requireRole('ADMIN'), validate(assignCardSchema), cardController.assign);
+router.post('/admin/cards/:id/assign', authenticate, requireRole('ADMIN'), validate(assignCardSchema), cardController.assign);
+router.post('/admin/cards/:id/revoke', authenticate, requireRole('ADMIN'), cardController.revoke);
+router.post('/admin/cards/:id/replace', authenticate, requireRole('ADMIN'), cardController.replace);
 
 router.post('/admin/events', eventController.create);
 router.patch('/admin/events/:id', eventController.update);

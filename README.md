@@ -5,8 +5,8 @@
 TapTrack NFC is an independent proof-of-concept for exploring NFC-based identity
 and attendance workflows using standard NDEF-compatible NFC cards.
 
-**Current Release: v0.1.0 ALPHA**
-**Current Development Milestone: v0.2.0 ALPHA (In Development)**
+**Current Release: v0.2.0 ALPHA**
+**Current Development Milestone: v0.3.0 ALPHA (In Development)**
 
 ## Architecture & Verified Infrastructure
 
@@ -28,16 +28,17 @@ Vercel / React 19 / Vite ──> api.nfc.kenncode.me
 
 - **Frontend (`https://nfc.kenncode.me`)**: Deployed on Vercel with Vite + React 19 and Tailwind CSS v4. Active TLS/HTTPS.
 - **Backend API (`https://api.nfc.kenncode.me`)**: Deployed on Render as a long-running Node.js/Express Web Service. Active TLS/HTTPS.
-- **Deployment Health**: `GET /health` operational and tested via HTTPS and credentialed browser fetch.
+- **Deployment Health**: `GET /health` operational and tested via HTTPS and credentialed browser fetch (reports version `0.2.0`).
 - **Database**: Hosted Neon PostgreSQL with serverless connection pooling via `DATABASE_URL`.
 - **Transactional Email**: Sending domain `mail.nfc.kenncode.me` configured and verified in Resend with DKIM/SPF records.
-- **Development Milestone**: Application-level v0.2.0 authentication, users, roles, and transactional email flows are implemented on `kenn/develop` and undergoing verification.
+- **Current Milestone**: `v0.3.0 ALPHA` implements NFC provisioning, card assignment, token generation, and the manual NFC Tools physical-card workflow.
 
 ## Planned Features
 
 > v0.1.0 established the foundation architecture and initial UI.
-> v0.2.0 implements authentication, roles, users, responsive profiles, and Resend (undergoing validation on `kenn/develop`).
-> NFC hardware workflows and attendance engines will be implemented across future releases.
+> v0.2.0 implemented authentication, roles, users, responsive profiles, and Resend (production released).
+> v0.3.0 implements NFC card provisioning, member assignment, token generation, and NFC Tools workflows (in development).
+> Subsequent releases will implement Android Web NFC (v0.4.0), universal URL fallback (v0.5.0), and the shared attendance engine (v0.6.0).
 
 - NFC card provisioning and lifecycle management (v0.3.0+)
 - Web NFC reader mode (Android Chrome via NDEFReader) (v0.4.0)
@@ -247,19 +248,75 @@ Neither real environment file should appear as a tracked file.
 | Production API | Live | https://api.nfc.kenncode.me/api |
 | Production Health Check | Live | https://api.nfc.kenncode.me/health |
 
+## NFC Credential Architecture & Hardware Provisioning (v0.3.0 ALPHA)
+
+TapTrack NFC uses a decoupled, privacy-first credential architecture for physical NFC cards:
+
+### Hardware Specifications
+
+- **Tag IC**: NXP NTAG215
+- **Standard**: NFC Forum Type 2 Tag / ISO 14443-3A
+- **Memory**: ~504 bytes total, ~492 bytes user NDEF writable capacity
+- **Inventory & Labelling**: 20 physical test cards labeled generically `NFC-001` through `NFC-020`. `NFC-001` is the designated primary development/test card.
+- **Development Rules**: Never password-protect or lock tags permanently during development. Do NOT use the hardware NFC UID as an application credential.
+
+### Card Security Model
+
+1. **Zero PII on Card**: No member names, email addresses, database user IDs, roles, or attendance records are stored on physical tags.
+2. **High-Entropy Opaque Credential**: Raw credentials are generated using Node.js `crypto.randomBytes(24).toString('base64url')` (~32 URL-safe characters).
+3. **URL Fragment Storage (`/t#token`)**:
+   - The card stores the raw credential inside the URL fragment:
+     ```text
+     https://nfc.kenncode.me/t#RAW_RANDOM_TOKEN
+     ```
+   - The `#` hash fragment is handled entirely on the client and is never sent automatically in HTTP server request lines, preventing credential leaks into access logs.
+4. **Hashed Database Storage**:
+   - The database **NEVER** stores raw card credentials.
+   - The database stores only an HMAC-SHA256 hash derived using the private `CARD_TOKEN_PEPPER`.
+   - `token_hash` is never returned to clients in any API response.
+5. **One-Time Write Exposure**:
+   - The raw token and write URL are returned to the ADMIN **exactly once** during the provisioning call (`POST /api/admin/cards/provision`).
+   - Subsequent `GET` endpoints return only safe metadata (label, assigned user, status, timestamps).
+
+### NFC Tools Manual Write Workflow (e.g. NFC-001)
+
+Follow this procedure to write and activate physical cards:
+
+1. **Provision in TapTrack**:
+   - Navigate to `/admin/cards` in the TapTrack application.
+   - Click **Provision Physical Card**.
+   - Enter card label (e.g. `NFC-001`) and select the member account to assign.
+   - Click **Generate Write URL**.
+2. **Copy Generated URL**:
+   - Copy the generated URL (`https://nfc.kenncode.me/t#...`).
+3. **Write with NFC Tools**:
+   - Open the **NFC Tools** app on an NFC-capable smartphone (Android or iOS).
+   - Tap **Write** ➔ **Add a record**.
+   - Choose **URL / URI**.
+   - Paste the complete TapTrack URL (including the `#` fragment).
+   - Tap **Write** / **OK** and hold the phone against physical card `NFC-001`.
+4. **Read Back & Verify**:
+   - In NFC Tools, switch to the **Read** tab and tap `NFC-001`.
+   - Confirm that the stored URL matches the generated URL exactly.
+5. **Confirm & Activate in TapTrack**:
+   - Return to TapTrack.
+   - Check the confirmation box: *"I have physically written this URL to card NFC-001 and verified it in NFC Tools."*
+   - Click **Confirm Write & Activate Card**.
+   - Card status transitions from `UNASSIGNED` to `ACTIVE`.
+
 ## NFC Modes
 
-**Mode A — Web NFC** (Android Chrome): Direct `NDEFReader.scan()` for instant attendance.
+**Mode A — Web NFC** (Android Chrome — Planned v0.4.0): Direct in-browser `NDEFReader.scan()` for instant operator attendance capture.
 
-**Mode B — NFC URL** (iPhone / fallback): Card contains `https://nfc.kenncode.me/t#<credential>`, OS opens browser, app resolves credential.
+**Mode B — Universal NFC URL Fallback** (iPhone / all browsers — Planned v0.5.0): Card contains `https://nfc.kenncode.me/t#<token>`, OS detects NDEF URI, opens browser, and the `/t` page resolves the fragment.
 
 ## Release Roadmap
 
 | Version | Stage | Deliverable | Status |
 |---------|-------|-------------|--------|
 | v0.1.0 | ALPHA | Foundation architecture + initial UI | Released |
-| v0.2.0 | ALPHA | Authentication, roles, users, responsive profiles, Resend | In Development |
-| v0.3.0 | ALPHA | NFC provisioning, card assignment, token generation, NFC Tools workflow | Planned |
+| v0.2.0 | ALPHA | Authentication, roles, users, responsive profiles, Resend | Released |
+| v0.3.0 | ALPHA | NFC provisioning, card assignment, token generation, NFC Tools workflow | In Development |
 | v0.4.0 | ALPHA | Android Web NFC reader with NDEFReader | Planned |
 | v0.5.0 | ALPHA | Universal NFC URL /t#token fallback | Planned |
 | v0.6.0 | BETA | Events, attendance sessions, shared attendance engine | Planned |
