@@ -1,5 +1,3 @@
 ﻿// Event service — event business logic
-export const eventService = {
-  // Will be implemented in v0.4.0
-};
-
+// Implementation planned for v0.6.0 BETA
+export const eventService = {};

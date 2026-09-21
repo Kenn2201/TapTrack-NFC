@@ -1,7 +1,7 @@
 ﻿// Audit service — audit log recording
+// Implementation planned for v0.7.0 BETA
 export const auditService = {
   async log({ actorId, action, entityType, entityId, metadata }) {
-    // Will be implemented in v0.7.0
+    throw new Error('Not implemented');
   },
 };
-

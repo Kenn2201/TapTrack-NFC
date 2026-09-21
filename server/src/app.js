@@ -1,13 +1,11 @@
-﻿import express from 'express';
+import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import pino from 'pino';
 import { config } from './config/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import routes from './routes/index.js';
 
-const logger = pino({ level: config.logLevel || 'info' });
 const app = express();
 
 // Security
@@ -26,10 +24,5 @@ app.get('/health', (req, res) => res.json({ status: 'ok', version: '0.1.0' }));
 
 // Error handler
 app.use(errorHandler);
-
-const PORT = config.port || 3001;
-app.listen(PORT, () => {
-  logger.info('TapTrack NFC API running on port ' + PORT);
-});
 
 export default app;

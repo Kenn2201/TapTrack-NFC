@@ -1,9 +1,11 @@
 ﻿// Card controller — NFC card CRUD and lifecycle
-export const cardController = {
-  getAll: async (req, res, next) => { res.json({ cards: [] }); },
-  create: async (req, res, next) => { res.json({ message: 'create stub' }); },
-  assign: async (req, res, next) => { res.json({ message: 'assign stub' }); },
-  revoke: async (req, res, next) => { res.json({ message: 'revoke stub' }); },
-  replace: async (req, res, next) => { res.json({ message: 'replace stub' }); },
-};
+// Implementation planned for v0.3.0 ALPHA (provisioning), v0.7.0 BETA (full lifecycle)
+const notImplemented = (req, res) => res.status(501).json({ error: 'Not implemented' });
 
+export const cardController = {
+  getAll: notImplemented,
+  create: notImplemented,
+  assign: notImplemented,
+  revoke: notImplemented,
+  replace: notImplemented,
+};

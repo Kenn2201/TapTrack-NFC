@@ -15,7 +15,9 @@ UNASSIGNED → ACTIVE → LOST
 - Revocation preserves audit history
 - Replacement creates a new card and links to the old one
 - Attendance history stays with the USER, not the card
-- Cards store only opaque hashed credentials
+- Physical NFC card contains the raw opaque random credential in its URL
+- Database stores only the SHA-256 hash of that credential
+- The card itself never contains a hash — it contains the raw token
 
 ## Physical Card Content
 

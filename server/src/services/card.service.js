@@ -1,5 +1,3 @@
 ﻿// Card service — card lifecycle business logic
-export const cardService = {
-  // Will be implemented in v0.5.0
-};
-
+// Implementation planned for v0.3.0 ALPHA (provisioning), v0.7.0 BETA (full lifecycle)
+export const cardService = {};

@@ -1,8 +1,10 @@
 ﻿// Event controller — event CRUD
-export const eventController = {
-  getAll: async (req, res, next) => { res.json({ events: [] }); },
-  getById: async (req, res, next) => { res.json({ message: 'event stub' }); },
-  create: async (req, res, next) => { res.json({ message: 'create stub' }); },
-  update: async (req, res, next) => { res.json({ message: 'update stub' }); },
-};
+// Implementation planned for v0.6.0 BETA
+const notImplemented = (req, res) => res.status(501).json({ error: 'Not implemented' });
 
+export const eventController = {
+  getAll: notImplemented,
+  getById: notImplemented,
+  create: notImplemented,
+  update: notImplemented,
+};

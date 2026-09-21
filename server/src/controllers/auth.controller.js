@@ -1,7 +1,9 @@
 ﻿// Auth controller — login, logout, session
-export const authController = {
-  login: async (req, res, next) => { res.json({ message: 'login stub' }); },
-  logout: async (req, res, next) => { res.json({ message: 'logout stub' }); },
-  me: async (req, res, next) => { res.json({ message: 'me stub' }); },
-};
+// Implementation planned for v0.2.0 ALPHA
+const notImplemented = (req, res) => res.status(501).json({ error: 'Not implemented' });
 
+export const authController = {
+  login: notImplemented,
+  logout: notImplemented,
+  me: notImplemented,
+};
