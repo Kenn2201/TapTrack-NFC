@@ -8,9 +8,22 @@ import routes from './routes/index.js';
 
 const app = express();
 
+// Trust reverse proxy (e.g. Render, Cloudflare) - 1 hop
+app.set('trust proxy', 1);
+
 // Security
 app.use(helmet());
-app.use(cors({ origin: config.clientUrl, credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow server-to-server, curl, or matching clientUrl
+    if (!origin || origin === config.clientUrl) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true,
+}));
 
 // Parsing
 app.use(express.json());

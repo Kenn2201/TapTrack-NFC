@@ -1,48 +1,77 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./hooks/useAuth";
+
+// Layout Guards
+import RequireAuth from "./components/layout/RequireAuth";
+import RequireRole from "./components/layout/RequireRole";
+
+// Public Pages
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
+import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import TapLanding from "./pages/TapLanding";
+import Compatibility from "./pages/Compatibility";
+
+// Authenticated User Pages
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import MyCard from "./pages/MyCard";
 import Events from "./pages/Events";
-import TapLanding from "./pages/TapLanding";
+import AttendanceHistory from "./pages/AttendanceHistory";
+
+// Operator Pages
 import Operator from "./pages/Operator";
+
+// Admin Pages
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCards from "./pages/AdminCards";
 import AdminUsers from "./pages/AdminUsers";
 import AdminEvents from "./pages/AdminEvents";
-import AttendanceHistory from "./pages/AttendanceHistory";
 import AuditLogs from "./pages/AuditLogs";
-import Compatibility from "./pages/Compatibility";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/t" element={<TapLanding />} />
-        <Route path="/compatibility" element={<Compatibility />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/auth/verify" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/t" element={<TapLanding />} />
+          <Route path="/compatibility" element={<Compatibility />} />
 
-        {/* User */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/my-card" element={<MyCard />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/attendance" element={<AttendanceHistory />} />
+          {/* Authenticated Member Routes */}
+          <Route element={<RequireAuth />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/my-card" element={<MyCard />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/attendance" element={<AttendanceHistory />} />
+          </Route>
 
-        {/* Operator */}
-        <Route path="/operator" element={<Operator />} />
+          {/* Operator Protected Routes */}
+          <Route element={<RequireRole allowedRoles={['OPERATOR', 'ADMIN']} />}>
+            <Route path="/operator" element={<Operator />} />
+          </Route>
 
-        {/* Admin */}
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/cards" element={<AdminCards />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="/admin/events" element={<AdminEvents />} />
-        <Route path="/admin/audit" element={<AuditLogs />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Admin Protected Routes */}
+          <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/cards" element={<AdminCards />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/events" element={<AdminEvents />} />
+            <Route path="/admin/audit" element={<AuditLogs />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

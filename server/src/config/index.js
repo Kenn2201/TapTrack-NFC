@@ -1,10 +1,30 @@
 import 'dotenv/config';
 
 export const config = {
-  port: process.env.PORT || 3001,
-  nodeEnv: process.env.NODE_ENV || 'development',
-  databaseUrl: process.env.DATABASE_URL,
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
-  nfcDomain: process.env.NFC_DOMAIN || 'https://nfc.kenncode.me',
-  logLevel: process.env.LOG_LEVEL || 'info',
+  get port() { return process.env.PORT || 3001; },
+  get nodeEnv() { return process.env.NODE_ENV || 'development'; },
+  get databaseUrl() { return process.env.DATABASE_URL; },
+  get clientUrl() { return process.env.CLIENT_URL || 'http://localhost:5173'; },
+  get nfcDomain() { return process.env.NFC_DOMAIN || 'https://nfc.kenncode.me'; },
+  get logLevel() { return process.env.LOG_LEVEL || 'info'; },
+
+  // Authentication
+  get jwtSecret() { return process.env.JWT_SECRET; },
+  get jwtExpiresIn() { return process.env.JWT_EXPIRES_IN || '7d'; },
+  cookieName: 'taptrack_session',
+
+  // Resend Email
+  get resendApiKey() { return process.env.RESEND_API_KEY; },
+  get resendFromEmail() { return process.env.RESEND_FROM_EMAIL || 'TapTrack NFC <no-reply@mail.nfc.kenncode.me>'; },
 };
+
+/**
+ * Returns JWT_SECRET or throws an error.
+ * Ensures no default or fallback secret is ever used.
+ */
+export function getJwtSecret() {
+  if (!config.jwtSecret) {
+    throw new Error('JWT_SECRET is required but not configured. Authentication cannot operate safely.');
+  }
+  return config.jwtSecret;
+}

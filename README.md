@@ -11,22 +11,19 @@ and attendance workflows using standard NDEF-compatible NFC cards.
 ## Architecture & Verified Infrastructure
 
 ```text
-User Browser
-      |
-      v
-nfc.kenncode.me
-Vercel / React 19 / Vite
-      |
-      v
-api.nfc.kenncode.me
-Render / Express Web Service
-      |
-      +------> Neon PostgreSQL
-      |
-      +------> Resend
-                |
-                v
-        mail.nfc.kenncode.me
+User Browser                   cron-job.org
+      |                             |
+      v                             | GET /health (every 10m)
+nfc.kenncode.me                     v
+Vercel / React 19 / Vite ──> api.nfc.kenncode.me
+                             Render / Express Web Service
+                                    |
+                                    +------> Neon PostgreSQL
+                                    |
+                                    +------> Resend
+                                              |
+                                              v
+                                      mail.nfc.kenncode.me
 ```
 
 - **Frontend (`https://nfc.kenncode.me`)**: Deployed on Vercel with Vite + React 19 and Tailwind CSS v4. Active TLS/HTTPS.
@@ -34,12 +31,12 @@ Render / Express Web Service
 - **Deployment Health**: `GET /health` operational and tested via HTTPS and credentialed browser fetch.
 - **Database**: Hosted Neon PostgreSQL with serverless connection pooling via `DATABASE_URL`.
 - **Transactional Email**: Sending domain `mail.nfc.kenncode.me` configured and verified in Resend with DKIM/SPF records.
-- **Development Milestone**: Application-level v0.2.0 authentication, users, roles, and transactional email flows are currently in active development on `kenn/develop`.
+- **Development Milestone**: Application-level v0.2.0 authentication, users, roles, and transactional email flows are implemented on `kenn/develop` and undergoing verification.
 
 ## Planned Features
 
 > v0.1.0 established the foundation architecture and initial UI.
-> v0.2.0 is actively implementing authentication, roles, users, responsive profiles, and Resend.
+> v0.2.0 implements authentication, roles, users, responsive profiles, and Resend (undergoing validation on `kenn/develop`).
 > NFC hardware workflows and attendance engines will be implemented across future releases.
 
 - NFC card provisioning and lifecycle management (v0.3.0+)
@@ -92,6 +89,44 @@ The TapTrack NFC backend runs as a standard long-running Node.js Web Service on 
 - **Custom Domain**: `api.nfc.kenncode.me`
 
 Render dynamically injects `PORT`, and the server automatically binds to `process.env.PORT`. All production secrets are configured securely in Render's environment settings.
+
+### Render Health Check & Keep-Alive
+
+Production health endpoint:
+
+```text
+GET https://api.nfc.kenncode.me/health
+```
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "version": "0.1.0"
+}
+```
+
+> [!NOTE]
+> During the released `v0.1.0` baseline, the version reports `0.1.0`. Once `v0.2.0` is deployed to production, it will report `0.2.0`.
+
+The current free Render Web Service is monitored by an external cron-job.org job:
+
+```text
+Job:      TapTrack Render Keep Alive
+Schedule: Every 10 minutes
+Cron:     */10 * * * *
+Timezone: Asia/Manila
+Target:   https://api.nfc.kenncode.me/health
+Method:   GET
+Expected: HTTP 200
+```
+
+#### Operational Details
+
+- **Warm Instances**: Periodically exercises the lightweight public health endpoint to reduce idle cold starts during development and demo use.
+- **Availability Monitoring**: Provides an external uptime check with automated failure and recovery notifications via cron-job.org.
+- **Infrastructure Only**: This keep-alive job is purely operational infrastructure. The TapTrack NFC application does not depend on cron-job.org for business logic. If the job is paused or removed, the free Render instance will simply sleep when idle and perform a standard cold start upon the next incoming request.
 
 ## Environment Setup
 

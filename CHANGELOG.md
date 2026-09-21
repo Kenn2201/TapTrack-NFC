@@ -17,17 +17,21 @@ and this project uses [Semantic Versioning](https://semver.org/).
 - **Email Domain Verification (Resend)**: `mail.nfc.kenncode.me` fully verified with DKIM, SPF, and CNAME records for outbound transactional email.
 - **Environment Split**: Established clean separation between Vercel public browser configuration (`VITE_API_URL`) and Render private server environment variables.
 
-### Application Features (In Development / Planned for v0.2.0)
-- User registration with email normalization, password hashing, and duplicate protection.
-- HttpOnly cookie session management (`taptrack_session`) with SameSite policy.
-- Generic login responses preventing account enumeration.
-- Account status enforcement (active vs. disabled).
-- Safe user serialization (`/api/auth/me`).
-- Secure email verification via random hashed tokens and Resend templates.
-- Secure password reset via random hashed tokens and Resend templates.
-- Role-based authorization middleware (ADMIN, OPERATOR, USER).
-- Admin user management endpoints and role promotion controls.
-- Responsive mobile-first user dashboard and profile pages.
+### Application Features (Implemented — Pending Release Review)
+- User registration with email normalization, bcrypt password hashing, and duplicate email protection.
+- HttpOnly cookie session management (`taptrack_session`) with `SameSite: 'lax'` and `Secure: true` in production.
+- Generic login responses preventing account enumeration and immediate rejection for disabled accounts.
+- Active account status enforcement (disabled users lose access on subsequent requests even with existing sessions).
+- Safe user serialization (`/api/auth/me`) never exposing password hashes or internal tokens.
+- Secure email verification via cryptographic SHA-256 hashed single-use tokens and centralized Resend email service.
+- Secure password reset via cryptographic SHA-256 hashed single-use tokens and non-enumerating generic responses.
+- Role-based authorization middleware strictly enforcing `ADMIN`, `OPERATOR`, and `USER` access boundaries.
+- Admin user management endpoints (`/api/admin/users`) with promotion/demotion between `USER` and `OPERATOR` and account enable/disable controls.
+- Self-lockout protection preventing administrators from demoting or disabling their own accounts.
+- Production administrator CLI bootstrap script (`server/scripts/create-admin.js`) ensuring zero hardcoded production credentials.
+- Database migration script (`database/migrations/001_v0.2.0_auth_users.sql`) adding `email_verified_at` and token tables.
+- Responsive mobile-first user interface: Login, Register, VerifyEmail, ForgotPassword, ResetPassword, Dashboard, Profile, Operator, AdminUsers.
+- Comprehensive Vitest test suite (`server/tests/auth.test.js`) verifying 25 functional, authorization, token lifecycle, and security test cases.
 
 ## [0.1.0] - 2026-09-21 — Initial Architecture (ALPHA)
 

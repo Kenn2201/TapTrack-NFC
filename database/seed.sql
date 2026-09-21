@@ -3,19 +3,20 @@
 -- All data is FICTIONAL — no real people or organizations
 -- ============================================================================
 
--- Admin user (password: Admin@2026!)
-INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES
-('admin@taptrack.demo', '$2b$12$placeholder.hash.admin', 'Kenn', 'Admin', 'ADMIN');
+-- Fictional Test Users (password hash is for local dev testing only: TestPassword123!)
+-- Admin
+INSERT INTO users (email, password_hash, first_name, last_name, role, status, email_verified_at) VALUES
+('admin.taptrack@yopmail.com', '$2b$10$PJcBXHH9BvzO3rfTqzBQtONWGsZi0RWhOTMVtT8OfTy20Hvpr9MMW', 'Alex', 'Admin', 'ADMIN', 'ACTIVE', NOW());
 
--- Operator (password: Operator@2026!)
-INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES
-('operator@taptrack.demo', '$2b$12$placeholder.hash.operator', 'Jordan', 'Operator', 'OPERATOR');
+-- Operator
+INSERT INTO users (email, password_hash, first_name, last_name, role, status, email_verified_at) VALUES
+('operator.taptrack@yopmail.com', '$2b$10$PJcBXHH9BvzO3rfTqzBQtONWGsZi0RWhOTMVtT8OfTy20Hvpr9MMW', 'Jordan', 'Operator', 'OPERATOR', 'ACTIVE', NOW());
 
--- Users (password: User@2026!)
-INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES
-('alex@taptrack.demo', '$2b$12$placeholder.hash.alex', 'Alex', 'Rivera', 'USER'),
-('jamie@taptrack.demo', '$2b$12$placeholder.hash.jamie', 'Jamie', 'Chen', 'USER'),
-('sam@taptrack.demo', '$2b$12$placeholder.hash.sam', 'Sam', 'Torres', 'USER');
+-- Regular Users
+INSERT INTO users (email, password_hash, first_name, last_name, role, status, email_verified_at) VALUES
+('alex.taptrack@yopmail.com', '$2b$10$PJcBXHH9BvzO3rfTqzBQtONWGsZi0RWhOTMVtT8OfTy20Hvpr9MMW', 'Alex', 'Rivera', 'USER', 'ACTIVE', NOW()),
+('jamie.taptrack@yopmail.com', '$2b$10$PJcBXHH9BvzO3rfTqzBQtONWGsZi0RWhOTMVtT8OfTy20Hvpr9MMW', 'Jamie', 'Chen', 'USER', 'ACTIVE', NOW()),
+('sam.taptrack@yopmail.com', '$2b$10$PJcBXHH9BvzO3rfTqzBQtONWGsZi0RWhOTMVtT8OfTy20Hvpr9MMW', 'Sam', 'Torres', 'USER', 'ACTIVE', NOW());
 
 -- Events
 INSERT INTO events (name, description, location, starts_at, ends_at, status, created_by) VALUES

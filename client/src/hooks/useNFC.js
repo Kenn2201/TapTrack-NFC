@@ -1,11 +1,11 @@
-﻿// Web NFC hook — feature detection and NDEFReader management
+// Web NFC hook — feature detection and NDEFReader management
 import { useState, useCallback } from 'react';
 
 const supportsWebNFC = typeof window !== 'undefined' && 'NDEFReader' in window;
 
 export default function useNFC() {
   const [scanning, setScanning] = useState(false);
-  const [lastRead, setLastRead] = useState(null);
+  const [lastRead, _setLastRead] = useState(null);
   const [error, setError] = useState(null);
 
   const startScan = useCallback(async () => {

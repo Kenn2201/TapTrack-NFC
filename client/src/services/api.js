@@ -1,4 +1,4 @@
-﻿// API client — base HTTP client for TapTrack backend
+// API client — base HTTP client for TapTrack backend
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 async function request(endpoint, options = {}) {
@@ -7,10 +7,16 @@ async function request(endpoint, options = {}) {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });
+
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.message || 'Request failed');
+    const errorData = await res.json().catch(() => ({ message: res.statusText }));
+    const errorMessage = errorData.error || errorData.message || (errorData.errors ? Object.values(errorData.errors).flat().join(', ') : 'Request failed');
+    const err = new Error(errorMessage);
+    err.status = res.status;
+    err.data = errorData;
+    throw err;
   }
+
   return res.json();
 }
 

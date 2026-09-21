@@ -13,15 +13,35 @@ CREATE TYPE session_status AS ENUM ('OPEN', 'CLOSED', 'EXPIRED');
 
 -- Users
 CREATE TABLE users (
-    id              SERIAL PRIMARY KEY,
-    email           VARCHAR(255) UNIQUE NOT NULL,
-    password_hash   VARCHAR(255) NOT NULL,
-    first_name      VARCHAR(100) NOT NULL,
-    last_name       VARCHAR(100) NOT NULL,
-    role            user_role NOT NULL DEFAULT 'USER',
-    status          VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                  SERIAL PRIMARY KEY,
+    email               VARCHAR(255) UNIQUE NOT NULL,
+    password_hash       VARCHAR(255) NOT NULL,
+    first_name          VARCHAR(100) NOT NULL,
+    last_name           VARCHAR(100) NOT NULL,
+    role                user_role NOT NULL DEFAULT 'USER',
+    status              VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    email_verified_at   TIMESTAMPTZ,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Email Verification Tokens
+CREATE TABLE email_verification_tokens (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash  VARCHAR(64) UNIQUE NOT NULL,
+    expires_at  TIMESTAMPTZ NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Password Reset Tokens
+CREATE TABLE password_reset_tokens (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash  VARCHAR(64) UNIQUE NOT NULL,
+    expires_at  TIMESTAMPTZ NOT NULL,
+    used_at     TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- NFC Cards
@@ -98,6 +118,9 @@ CREATE TABLE audit_logs (
 );
 
 -- Indexes
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_email_verification_tokens_hash ON email_verification_tokens(token_hash);
+CREATE INDEX idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
 CREATE INDEX idx_nfc_cards_user_id ON nfc_cards(user_id);
 CREATE INDEX idx_nfc_cards_token_hash ON nfc_cards(token_hash);
 CREATE INDEX idx_nfc_cards_status ON nfc_cards(status);
