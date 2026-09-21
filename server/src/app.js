@@ -20,7 +20,7 @@ app.use(cookieParser());
 app.use('/api', routes);
 
 // Health check
-app.get('/health', (req, res) => res.json({ status: 'ok', version: '0.1.0' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', version: '0.2.0' }));
 
 // Error handler
 app.use(errorHandler);
