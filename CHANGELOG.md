@@ -5,7 +5,15 @@ All notable changes to TapTrack NFC will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — v0.8.0 BETA (In Development)
+## [Unreleased] — v0.9.0 RC (Manual Testing Pending)
+
+### Added
+- Safe NFC-001–NFC-020 inventory visibility without automatically provisioning cards or generating credentials.
+- Compatibility guidance and copy-safe local diagnostics excluding tokens, hashes, cookies, account data, and secrets.
+- In-memory NFC/QR benchmark timing for start, resolution, and attendance completion with credential-free JSON export.
+- Representative open-session, NFC attendance, duplicate, close-session integration coverage plus polished 404 handling.
+
+## [0.8.0] — 2026-09-21 — Hardening and Activity Pulse (BETA)
 
 ### Added
 - Server-calculated Activity Pulse: total check-ins, distinct events, honest unavailable attendance rate, and a documented weekly streak.

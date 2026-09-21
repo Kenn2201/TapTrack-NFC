@@ -32,6 +32,8 @@ import AdminCards from "./pages/AdminCards";
 import AdminUsers from "./pages/AdminUsers";
 import AdminEvents from "./pages/AdminEvents";
 import AuditLogs from "./pages/AuditLogs";
+import Benchmark from "./pages/Benchmark";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -61,6 +63,7 @@ function App() {
           <Route element={<RequireRole allowedRoles={['OPERATOR', 'ADMIN']} />}>
             <Route path="/operator" element={<Operator />} />
             <Route path="/operator/nfc-reader" element={<NfcReaderPage />} />
+            <Route path="/operator/benchmark" element={<Benchmark />} />
           </Route>
 
           {/* Admin Protected Routes */}
@@ -71,7 +74,9 @@ function App() {
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/events" element={<AdminEvents />} />
             <Route path="/admin/audit" element={<AuditLogs />} />
+            <Route path="/admin/audits" element={<AuditLogs />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -189,6 +189,10 @@ export default function AdminCards() {
       (c.assignedUser?.lastName && c.assignedUser.lastName.toLowerCase().includes(term));
     return matchesStatus && matchesSearch;
   });
+  const inventorySlots = Array.from({ length: 20 }, (_, index) => {
+    const label = `NFC-${String(index + 1).padStart(3, '0')}`;
+    return { label, card: cards.find((item) => item.cardLabel.toUpperCase() === label) || null };
+  });
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -292,6 +296,12 @@ export default function AdminCards() {
             </div>
           </div>
         </div>
+
+        <section aria-labelledby="inventory-title" className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <h2 id="inventory-title" className="font-semibold">Physical test inventory: NFC-001–NFC-020</h2>
+          <p className="mt-1 text-xs text-slate-400">Visibility only. Missing slots are not provisioned and no credentials are generated here.</p>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">{inventorySlots.map(({ label, card }) => <div key={label} className="rounded-lg border border-slate-800 bg-slate-950 p-3"><p className="font-mono text-xs text-white">{label}</p><p className={`mt-1 text-xs ${card ? 'text-emerald-400' : 'text-slate-500'}`}>{card ? `${card.status}${card.assignedUser ? ' · assigned' : ' · unassigned'}` : 'Not provisioned'}</p></div>)}</div>
+        </section>
 
         {/* Filter / Search Controls */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">

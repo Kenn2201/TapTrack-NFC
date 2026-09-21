@@ -57,4 +57,14 @@ describe('v0.6 shared attendance engine', () => {
   it('rejects an invalid event', async () => { repos.event.findById.mockResolvedValue(null); await expect(attendanceService.recordAttendance({ eventId: 99, sessionId: 20, userId: 30, method: 'MANUAL', actor: operator })).rejects.toMatchObject({ code: 'EVENT_NOT_FOUND' }); });
   it('rejects an invalid session', async () => { repos.attendance.findSessionById.mockResolvedValue(null); await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 99, userId: 30, method: 'MANUAL', actor: operator })).rejects.toMatchObject({ code: 'SESSION_NOT_FOUND' }); });
   it('rejects a session/event mismatch', async () => { repos.attendance.findSessionById.mockResolvedValue({ ...session, eventId: 11 }); await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, method: 'MANUAL', actor: operator })).rejects.toMatchObject({ code: 'SESSION_EVENT_MISMATCH' }); });
+  it('covers the representative open → NFC → duplicate → close flow', async () => {
+    repos.event.findById.mockResolvedValueOnce({ ...event, status: 'DRAFT' });
+    repos.attendance.findOpenSessionByEvent.mockResolvedValue(null); repos.attendance.openSession.mockResolvedValue(session);
+    await attendanceService.openSession({ eventId: 10, actor: admin });
+    await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, cardId: 40, method: 'NFC_WEB', actor: operator })).resolves.toMatchObject({ method: 'NFC_WEB' });
+    repos.attendance.createRecord.mockRejectedValueOnce(Object.assign(new Error(), { code: '23505' }));
+    await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, cardId: 40, method: 'NFC_WEB', actor: operator })).rejects.toMatchObject({ code: 'ALREADY_RECORDED' });
+    repos.attendance.closeSession.mockResolvedValue({ ...session, status: 'CLOSED' });
+    await expect(attendanceService.closeSession({ sessionId: 20, actor: admin })).resolves.toMatchObject({ status: 'CLOSED' });
+  });
 });

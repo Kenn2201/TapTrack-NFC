@@ -1,10 +1,9 @@
-﻿// Browser and device NFC compatibility info
+import { useMemo, useState } from 'react';
+import Header from '../components/layout/Header';
+import { CURRENT_VERSION_LABEL } from '../constants/version';
+import { getSafeDiagnostics } from '../utils/testingTools';
 export default function Compatibility() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Compatibility</h1>
-      <p className="text-gray-500 mt-2">Browser and device NFC compatibility info</p>
-    </div>
-  );
+  const diagnostics = useMemo(() => getSafeDiagnostics(CURRENT_VERSION_LABEL, window), []); const [copied, setCopied] = useState(false);
+  const copy = async () => { await navigator.clipboard.writeText(JSON.stringify(diagnostics, null, 2)); setCopied(true); };
+  return <div className="min-h-screen bg-slate-950 text-white"><Header /><main className="mx-auto max-w-4xl p-4 sm:p-8"><h1 className="text-3xl font-bold">Device compatibility</h1><p className="mt-1 text-slate-400">Safe testing guidance and credential-free diagnostics.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><article className="rounded-xl border border-slate-800 bg-slate-900 p-5"><h2 className="font-semibold">Universal URL fallback</h2><p className="mt-2 text-sm text-slate-400">Supported on iPhone Safari and Android browsers. A public tap resolves card status only and never records attendance.</p></article><article className="rounded-xl border border-slate-800 bg-slate-900 p-5"><h2 className="font-semibold">Android Web NFC</h2><p className="mt-2 text-sm text-slate-400">Requires HTTPS and a compatible Chromium browser with NDEFReader support. Physical Android validation remains pending.</p></article><article className="rounded-xl border border-slate-800 bg-slate-900 p-5"><h2 className="font-semibold">Desktop</h2><p className="mt-2 text-sm text-slate-400">Management features work normally; direct Web NFC scanning is unavailable.</p></article><article className="rounded-xl border border-slate-800 bg-slate-900 p-5"><h2 className="font-semibold">Mobile fallback</h2><p className="mt-2 text-sm text-slate-400">If direct scanning is unavailable, use the card URL or an operator-assisted manual check-in.</p></article></div><section className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-5"><h2 className="font-semibold">Safe diagnostics</h2><pre className="mt-3 overflow-x-auto whitespace-pre-wrap text-xs text-slate-400">{JSON.stringify(diagnostics, null, 2)}</pre><button onClick={copy} className="mt-4 min-h-11 rounded-lg bg-blue-600 px-4 text-sm">{copied ? 'Copied' : 'Copy diagnostics'}</button><p className="mt-2 text-xs text-slate-500">This report excludes credentials, cookies, account data, hashes, and secrets.</p></section></main></div>;
 }
-

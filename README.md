@@ -354,8 +354,8 @@ TapTrack NFC v0.4.0 implements direct in-browser Web NFC reading using the W3C `
 | v0.5.0 | ALPHA | Universal NFC URL /t#token fallback | Complete; iPhone physical test passed |
 | v0.6.0 | BETA | Events, attendance sessions, shared attendance engine | Complete |
 | v0.7.0 | BETA | Admin dashboard + complete card lifecycle (lost/revoke/replace/disable) | Complete |
-| v0.8.0 | BETA | Mobile UX, Activity Pulse, audit logs, accessibility/security hardening | In Development |
-| v0.9.0 | RC | Public friend testing + 20 physical cards + QR/NFC benchmarking | Planned |
+| v0.8.0 | BETA | Mobile UX, Activity Pulse, audit logs, accessibility/security hardening | Complete |
+| v0.9.0 | RC | Public friend testing preparation + 20-card inventory + QR/NFC benchmarking | Manual Testing Pending |
 | v1.0.0 | LIVE | Stable public TapTrack NFC demo | Planned |
 
 ## License
