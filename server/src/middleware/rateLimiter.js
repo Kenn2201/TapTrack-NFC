@@ -49,8 +49,18 @@ export const resolveLimiter = rateLimit({
   validate: { trustProxy: true },
 });
 
+export const attendanceLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: config.nodeEnv === 'test' ? 500 : 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitHandler,
+  validate: { trustProxy: true },
+});
+
 export default {
   authLimiter,
   resetLimiter,
   resolveLimiter,
+  attendanceLimiter,
 };

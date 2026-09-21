@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+html, body, #root { min-width: 0; min-height: 100%; }
+body { overflow-x: hidden; }
+:focus-visible { outline: 3px solid #60a5fa; outline-offset: 2px; }
+button, a, input, select { touch-action: manipulation; }

@@ -10,6 +10,7 @@ vi.mock('../src/repositories/event.repository.js', () => ({ eventRepository: rep
 vi.mock('../src/repositories/attendance.repository.js', () => ({ attendanceRepository: repos.attendance }));
 vi.mock('../src/repositories/user.repository.js', () => ({ userRepository: repos.user }));
 vi.mock('../src/repositories/nfcCard.repository.js', () => ({ nfcCardRepository: repos.card }));
+vi.mock('../src/services/audit.service.js', () => ({ auditService: { log: vi.fn().mockResolvedValue({}) } }));
 
 const { attendanceService } = await import('../src/services/attendance.service.js');
 const { eventService } = await import('../src/services/event.service.js');

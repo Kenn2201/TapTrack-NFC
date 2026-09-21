@@ -65,6 +65,7 @@ export default function Header() {
                       Admin Users
                     </Link>
                     <Link to="/admin/events" className="text-cyan-400 hover:text-cyan-300 px-3 py-2 text-sm font-medium transition-colors">Events</Link>
+                    <Link to="/admin/audit" className="text-slate-300 hover:text-white px-3 py-2 text-sm font-medium transition-colors">Audits</Link>
                   </>
                 )}
                 <div className="h-4 w-px bg-slate-700 mx-2" />
@@ -171,6 +172,7 @@ export default function Header() {
                     Admin User Management
                   </Link>
                   <Link to="/admin/events" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-cyan-400 hover:bg-slate-700">Event Management</Link>
+                  <Link to="/admin/audit" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">Audit Logs</Link>
                 </>
               )}
               <button

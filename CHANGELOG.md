@@ -5,7 +5,15 @@ All notable changes to TapTrack NFC will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — v0.7.0 BETA (In Development)
+## [Unreleased] — v0.8.0 BETA (In Development)
+
+### Added
+- Server-calculated Activity Pulse: total check-ins, distinct events, honest unavailable attendance rate, and a documented weekly streak.
+- Immutable, administrator-readable audit log with recursively sanitized metadata for user, card, event, session, and attendance actions.
+- Trusted-origin enforcement on state-changing API requests and dedicated attendance rate limiting.
+- Responsive Activity Pulse and audit views, visible focus styles, larger mobile controls, and clearer live status feedback.
+
+## [0.7.0] — 2026-09-21 — Admin Dashboard and Card Lifecycle (BETA)
 
 ### Added
 - Real database-backed administrative metrics for users, cards, events, sessions, and recent attendance.

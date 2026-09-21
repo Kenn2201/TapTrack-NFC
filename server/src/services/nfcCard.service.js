@@ -1,6 +1,7 @@
 import { nfcCardRepository } from '../repositories/nfcCard.repository.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { nfcCredentialService } from './nfcCredential.service.js';
+import { auditService } from './audit.service.js';
 
 export const nfcCardService = {
   /**
@@ -93,6 +94,8 @@ export const nfcCardService = {
       };
     }
 
+    await auditService.log({ actorId, action: 'CARD_PROVISIONED', entityType: 'NFC_CARD', entityId: createdCard.id, metadata: { cardLabel: trimmedLabel, userId: userId || null } });
+
     return {
       card: nfcCredentialService.formatSafeCard(createdCard),
       rawToken, // Provided ONLY during provisioning response for writing to physical tag
@@ -155,6 +158,8 @@ export const nfcCardService = {
       status: 'ACTIVE',
       activatedAt: new Date(),
     });
+
+    await auditService.log({ actorId, action: 'CARD_ACTIVATED', entityType: 'NFC_CARD', entityId: id, metadata: { cardLabel: card.cardLabel } });
 
     return nfcCredentialService.formatSafeCard(updatedCard);
   },

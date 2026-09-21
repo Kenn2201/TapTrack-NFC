@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { config } from './config/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import routes from './routes/index.js';
+import { requireTrustedOrigin } from './middleware/originGuard.js';
 
 const app = express();
 
@@ -30,7 +31,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes
-app.use('/api', routes);
+app.use('/api', requireTrustedOrigin, routes);
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', version: config.version }));

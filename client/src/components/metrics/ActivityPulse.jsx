@@ -1,5 +1,5 @@
-﻿// Activity Pulse metrics display
-export default function ActivityPulse() {
-  return <div className="activitypulse">ActivityPulse</div>;
+export default function ActivityPulse({ metrics }) {
+  if (!metrics) return <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 text-sm text-slate-400">Loading Activity Pulse…</div>;
+  const items = [['Total Check-ins', metrics.totalCheckIns], ['Events Attended', metrics.eventsAttended], ['Attendance Rate', metrics.attendanceRateLabel], ['Current Streak', `${metrics.currentStreak} week${metrics.currentStreak === 1 ? '' : 's'}`]];
+  return <section aria-labelledby="activity-pulse-title"><h2 id="activity-pulse-title" className="mb-4 text-lg font-semibold">Activity Pulse</h2><div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{items.map(([label, value]) => <article key={label} className="rounded-xl border border-slate-800 bg-slate-900 p-4"><p className="text-xs text-slate-400">{label}</p><p className="mt-2 text-2xl font-bold text-emerald-300">{value}</p></article>)}</div><p className="mt-3 text-xs text-slate-500">Attendance Rate: {metrics.attendanceRateReason} Streak means {metrics.streakUnit}.</p></section>;
 }
-

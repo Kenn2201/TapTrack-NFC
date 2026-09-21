@@ -1,6 +1,7 @@
 import { userRepository } from '../repositories/user.repository.js';
 import { toSafeUser } from '../services/auth.service.js';
 import { emailService } from '../services/email.service.js';
+import { auditService } from '../services/audit.service.js';
 
 export const adminUserController = {
   /**
@@ -63,6 +64,7 @@ export const adminUserController = {
 
       // Update role
       const updated = await userRepository.updateRole(id, role);
+      await auditService.log({ actorId: req.user.id, action: 'USER_ROLE_CHANGED', entityType: 'USER', entityId: id, metadata: { from: targetUser.role, to: role } });
 
       // Notify user via transactional email
       try {
@@ -107,6 +109,7 @@ export const adminUserController = {
       }
 
       const updated = await userRepository.updateStatus(id, status);
+      await auditService.log({ actorId: req.user.id, action: status === 'DISABLED' ? 'USER_DISABLED' : 'USER_REACTIVATED', entityType: 'USER', entityId: id, metadata: { from: targetUser.status, to: status } });
 
       // Notify user via transactional email
       try {

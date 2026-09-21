@@ -11,5 +11,6 @@ export const attendanceService = {
   getSessionRecords: (id) => api.get(`/sessions/${id}/attendance`),
   closeSession: (id) => api.post(`/sessions/${id}/close`, {}),
   recordManual: (data) => api.post('/attendance/manual', data),
+  getActivityPulse: () => api.get('/users/me/activity-pulse'),
 };
 

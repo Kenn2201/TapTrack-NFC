@@ -1,5 +1,6 @@
 import { nfcCardRepository } from '../repositories/nfcCard.repository.js';
 import { nfcCredentialService } from './nfcCredential.service.js';
+import { auditService } from './audit.service.js';
 
 export const CARD_TRANSITIONS = Object.freeze({
   ACTIVE: ['LOST', 'REVOKED', 'DISABLED'],
@@ -27,6 +28,7 @@ export const cardLifecycleService = {
       actorId: actor.id,
       reason: reason?.trim() || null,
     });
+    await auditService.log({ actorId: actor.id, action: `CARD_${targetStatus}`, entityType: 'NFC_CARD', entityId: cardId, metadata: { from: card.status, to: targetStatus, reason: reason?.trim() || null } });
     return nfcCredentialService.formatSafeCard(updated);
   },
 
@@ -45,6 +47,7 @@ export const cardLifecycleService = {
       oldCardId: cardId, cardLabel: newCardLabel.trim().toUpperCase(), userId: oldCard.userId,
       tokenHash, actorId: actor.id, reason: reason?.trim() || 'Card replaced',
     });
+    await auditService.log({ actorId: actor.id, action: 'CARD_REPLACED', entityType: 'NFC_CARD', entityId: cardId, metadata: { replacementCardId: replacement.newCard.id, reason: reason?.trim() || 'Card replaced' } });
     return {
       oldCard: nfcCredentialService.formatSafeCard(replacement.oldCard),
       newCard: nfcCredentialService.formatSafeCard(replacement.newCard),

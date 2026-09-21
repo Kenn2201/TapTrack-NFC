@@ -2,6 +2,7 @@ import { attendanceRepository } from '../repositories/attendance.repository.js';
 import { eventRepository } from '../repositories/event.repository.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { nfcCardRepository } from '../repositories/nfcCard.repository.js';
+import { auditService } from './audit.service.js';
 
 export const ATTENDANCE_METHODS = Object.freeze(['NFC_WEB', 'NFC_URL', 'MANUAL']);
 const fail = (status, code, message) => Object.assign(new Error(message), { status, code });
@@ -17,6 +18,7 @@ export const attendanceService = {
     try {
       const session = await attendanceRepository.openSession({ eventId, openedBy: actor.id });
       if (event.status !== 'OPEN') await eventRepository.update(eventId, { status: 'OPEN' });
+      await auditService.log({ actorId: actor.id, action: 'SESSION_OPENED', entityType: 'ATTENDANCE_SESSION', entityId: session.id, metadata: { eventId } });
       return session;
     } catch (error) {
       if (error.code === '23505') throw fail(409, 'SESSION_ALREADY_OPEN', 'This event already has an open attendance session.');
@@ -30,6 +32,7 @@ export const attendanceService = {
     if (session.status !== 'OPEN') throw fail(409, 'SESSION_CLOSED', 'Attendance session is already closed.');
     const closed = await attendanceRepository.closeSession(sessionId, actor.id);
     await eventRepository.update(session.eventId, { status: 'CLOSED' });
+    await auditService.log({ actorId: actor.id, action: 'SESSION_CLOSED', entityType: 'ATTENDANCE_SESSION', entityId: sessionId, metadata: { eventId: session.eventId } });
     return closed;
   },
   async recordAttendance({ eventId, sessionId, userId, cardId = null, method, actor }) {
@@ -53,7 +56,9 @@ export const attendanceService = {
       if (card.userId !== userId) throw fail(409, 'CARD_USER_MISMATCH', 'NFC card is assigned to a different user.');
     }
     try {
-      return await attendanceRepository.createRecord({ eventId, sessionId, userId, cardId, method, recordedBy: actor.id });
+      const record = await attendanceRepository.createRecord({ eventId, sessionId, userId, cardId, method, recordedBy: actor.id });
+      await auditService.log({ actorId: actor.id, action: 'ATTENDANCE_RECORDED', entityType: 'ATTENDANCE_RECORD', entityId: record.id, metadata: { eventId, sessionId, userId, cardId, method } });
+      return record;
     } catch (error) {
       if (error.code === '23505') throw fail(409, 'ALREADY_RECORDED', 'Attendance has already been recorded for this user and session.');
       throw error;

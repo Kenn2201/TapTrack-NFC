@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/authService';
 import Header from '../components/layout/Header';
+import ActivityPulse from '../components/metrics/ActivityPulse';
+import { attendanceService } from '../services/attendanceService';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [resending, setResending] = useState(false);
   const [resendStatus, setResendStatus] = useState(null);
+  const [activityPulse, setActivityPulse] = useState(null);
+  useEffect(() => { attendanceService.getActivityPulse().then((r) => setActivityPulse(r.activityPulse)).catch(() => setActivityPulse({ totalCheckIns: 0, eventsAttended: 0, attendanceRateLabel: 'N/A', attendanceRateReason: 'Activity is temporarily unavailable.', currentStreak: 0, streakUnit: 'consecutive calendar weeks with at least one check-in' })); }, []);
 
   const handleResendVerification = async () => {
     setResending(true);
@@ -124,6 +128,8 @@ export default function Dashboard() {
             <p className="text-xs text-slate-500 mt-1">ID: #{user?.id}</p>
           </div>
         </div>
+
+        <div className="mb-8"><ActivityPulse metrics={activityPulse} /></div>
 
         {/* Quick Navigation Cards */}
         <div className="mb-8">

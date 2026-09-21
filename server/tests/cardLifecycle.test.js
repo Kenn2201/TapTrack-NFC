@@ -4,6 +4,7 @@ process.env.NFC_DOMAIN = 'https://nfc.kenncode.me';
 
 const repo = vi.hoisted(() => ({ findById: vi.fn(), updateLifecycle: vi.fn(), findByCardLabel: vi.fn(), replaceCard: vi.fn() }));
 vi.mock('../src/repositories/nfcCard.repository.js', () => ({ nfcCardRepository: repo }));
+vi.mock('../src/services/audit.service.js', () => ({ auditService: { log: vi.fn().mockResolvedValue({}) } }));
 const { cardLifecycleService, CARD_TRANSITIONS } = await import('../src/services/cardLifecycle.service.js');
 const admin = { id: 1, role: 'ADMIN' };
 const operator = { id: 2, role: 'OPERATOR' };

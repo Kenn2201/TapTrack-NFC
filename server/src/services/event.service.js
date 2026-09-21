@@ -1,4 +1,5 @@
 import { eventRepository } from '../repositories/event.repository.js';
+import { auditService } from './audit.service.js';
 
 const fail = (status, code, message) => Object.assign(new Error(message), { status, code });
 
@@ -12,7 +13,9 @@ export const eventService = {
   async createEvent(data, actor) {
     if (actor?.role !== 'ADMIN') throw fail(403, 'FORBIDDEN', 'Only administrators can create events.');
     if (new Date(data.endAt) <= new Date(data.startAt)) throw fail(400, 'INVALID_EVENT_WINDOW', 'Event end must be after its start.');
-    return eventRepository.create({ ...data, status: data.status || 'DRAFT', createdBy: actor.id });
+    const event = await eventRepository.create({ ...data, status: data.status || 'DRAFT', createdBy: actor.id });
+    await auditService.log({ actorId: actor.id, action: 'EVENT_CREATED', entityType: 'EVENT', entityId: event.id, metadata: { name: event.name, status: event.status } });
+    return event;
   },
   async updateEvent(id, data, actor) {
     if (actor?.role !== 'ADMIN') throw fail(403, 'FORBIDDEN', 'Only administrators can edit events.');
@@ -23,7 +26,9 @@ export const eventService = {
     const start = data.startAt || current.startAt;
     const end = data.endAt || current.endAt;
     if (new Date(end) <= new Date(start)) throw fail(400, 'INVALID_EVENT_WINDOW', 'Event end must be after its start.');
-    return eventRepository.update(id, data);
+    const event = await eventRepository.update(id, data);
+    await auditService.log({ actorId: actor.id, action: 'EVENT_UPDATED', entityType: 'EVENT', entityId: id, metadata: { fields: Object.keys(data), status: event.status } });
+    return event;
   },
 };
 

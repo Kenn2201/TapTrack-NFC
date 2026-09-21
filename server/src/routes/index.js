@@ -6,11 +6,13 @@ import { eventController } from '../controllers/event.controller.js';
 import { nfcController } from '../controllers/nfc.controller.js';
 import { attendanceController } from '../controllers/attendance.controller.js';
 import { dashboardController } from '../controllers/dashboard.controller.js';
+import { auditController } from '../controllers/audit.controller.js';
+import { activityPulseController } from '../controllers/activityPulse.controller.js';
 
 import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roles.js';
 import { validate } from '../middleware/validate.js';
-import { authLimiter, resetLimiter, resolveLimiter } from '../middleware/rateLimiter.js';
+import { authLimiter, resetLimiter, resolveLimiter, attendanceLimiter } from '../middleware/rateLimiter.js';
 import {
   registerSchema,
   loginSchema,
@@ -49,10 +51,12 @@ router.post('/auth/reset-password', resetLimiter, validate(resetPasswordSchema),
 // ─── USER PROFILE (v0.2.0) ───────────────────────────────────────────────────
 router.patch('/users/me', authenticate, validate(updateProfileSchema), authController.updateProfile);
 router.get('/users/me/attendance', authenticate, attendanceController.getUserHistory);
+router.get('/users/me/activity-pulse', authenticate, activityPulseController.get);
 
 // ─── ADMIN — USERS & ROLES (v0.2.0) ───────────────────────────────────────────
 router.get('/admin/users', authenticate, requireRole('ADMIN'), adminUserController.getAllUsers);
 router.get('/admin/dashboard', authenticate, requireRole('ADMIN'), dashboardController.get);
+router.get('/admin/audits', authenticate, requireRole('ADMIN'), auditController.list);
 router.get('/admin/users/:id', authenticate, requireRole('ADMIN'), adminUserController.getUserById);
 router.patch('/admin/users/:id/role', authenticate, requireRole('ADMIN'), validate(updateRoleSchema), adminUserController.updateUserRole);
 router.patch('/admin/users/:id/status', authenticate, requireRole('ADMIN'), validate(updateStatusSchema), adminUserController.updateUserStatus);
@@ -66,12 +70,12 @@ router.get('/sessions/open', authenticate, requireRole('ADMIN', 'OPERATOR'), att
 router.get('/sessions/:id/attendance', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.getSessionRecords);
 router.post('/events/:id/sessions', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.openSession);
 router.post('/sessions/:id/close', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.closeSession);
-router.post('/attendance/manual', authenticate, requireRole('ADMIN', 'OPERATOR'), validate(manualAttendanceSchema), attendanceController.manual);
+router.post('/attendance/manual', attendanceLimiter, authenticate, requireRole('ADMIN', 'OPERATOR'), validate(manualAttendanceSchema), attendanceController.manual);
 
 // ─── NFC WORKFLOWS (v0.4.0 ALPHA & v0.5.0 ALPHA) ───────────────────────────
 router.post('/nfc/verify', authenticate, requireRole('ADMIN', 'OPERATOR'), validate(verifyCardTokenSchema), nfcController.verify);
 router.post('/nfc/resolve', resolveLimiter, optionalAuthenticate, validate(verifyCardTokenSchema), nfcController.resolve);
-router.post('/nfc/check-in', authenticate, requireRole('ADMIN', 'OPERATOR'), validate(nfcAttendanceSchema), nfcController.checkIn);
+router.post('/nfc/check-in', attendanceLimiter, authenticate, requireRole('ADMIN', 'OPERATOR'), validate(nfcAttendanceSchema), nfcController.checkIn);
 
 // ─── ADMIN — NFC CARDS PROVISIONING (v0.3.0) ──────────────────────────────────
 router.get('/admin/cards', authenticate, requireRole('ADMIN'), cardController.getAll);
