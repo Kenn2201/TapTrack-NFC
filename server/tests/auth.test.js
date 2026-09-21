@@ -701,10 +701,10 @@ describe('TapTrack NFC v0.2.0 ALPHA — Comprehensive Test Suite', () => {
   // 6. SECURITY, CORS, CONFIG & HEALTH
   // ──────────────────────────────────────────────────────────────────────────
   describe('Security & Configuration', () => {
-    it('22. /health is public and lightweight returning version 0.2.0', async () => {
+    it('22. /health is public and lightweight returning version 0.3.0', async () => {
       const res = await request(app).get('/health');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ status: 'ok', version: '0.2.0' });
+      expect(res.body).toEqual({ status: 'ok', version: '0.3.0' });
     });
 
     it('23. CORS allows configured CLIENT_URL with credentials: true', async () => {
