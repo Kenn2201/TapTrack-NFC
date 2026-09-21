@@ -5,7 +5,7 @@ All notable changes to TapTrack NFC will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — v0.3.0 ALPHA (In Development)
+## [0.3.0] - 2026-09-21 — NFC Provisioning, Card Assignment & NFC Tools Workflow (ALPHA)
 
 ### Added
 - **NFC Credential Service (`server/src/services/nfcCredential.service.js`)**:

@@ -5,8 +5,7 @@
 TapTrack NFC is an independent proof-of-concept for exploring NFC-based identity
 and attendance workflows using standard NDEF-compatible NFC cards.
 
-**Current Release: v0.2.0 ALPHA**
-**Current Development Milestone: v0.3.0 ALPHA (In Development)**
+**Current Release: v0.3.0 ALPHA**
 
 ## Architecture & Verified Infrastructure
 
@@ -28,16 +27,16 @@ Vercel / React 19 / Vite ──> api.nfc.kenncode.me
 
 - **Frontend (`https://nfc.kenncode.me`)**: Deployed on Vercel with Vite + React 19 and Tailwind CSS v4. Active TLS/HTTPS.
 - **Backend API (`https://api.nfc.kenncode.me`)**: Deployed on Render as a long-running Node.js/Express Web Service. Active TLS/HTTPS.
-- **Deployment Health**: `GET /health` operational and tested via HTTPS and credentialed browser fetch (reports version `0.2.0`).
+- **Deployment Health**: `GET /health` operational and tested via HTTPS and credentialed browser fetch (reports version `0.3.0`).
 - **Database**: Hosted Neon PostgreSQL with serverless connection pooling via `DATABASE_URL`.
 - **Transactional Email**: Sending domain `mail.nfc.kenncode.me` configured and verified in Resend with DKIM/SPF records.
-- **Current Milestone**: `v0.3.0 ALPHA` implements NFC provisioning, card assignment, token generation, and the manual NFC Tools physical-card workflow.
+- **Current Release**: `v0.3.0 ALPHA` — NFC provisioning, card assignment, token generation, and the manual NFC Tools physical-card workflow.
 
 ## Planned Features
 
 > v0.1.0 established the foundation architecture and initial UI.
-> v0.2.0 implemented authentication, roles, users, responsive profiles, and Resend (production released).
-> v0.3.0 implements NFC card provisioning, member assignment, token generation, and NFC Tools workflows (in development).
+> v0.2.0 implemented authentication, roles, users, responsive profiles, and Resend (released).
+> v0.3.0 implemented NFC card provisioning, member assignment, token generation, and NFC Tools workflows (released).
 > Subsequent releases will implement Android Web NFC (v0.4.0), universal URL fallback (v0.5.0), and the shared attendance engine (v0.6.0).
 
 - NFC card provisioning and lifecycle management (v0.3.0+)
@@ -104,12 +103,9 @@ Example response:
 ```json
 {
   "status": "ok",
-  "version": "0.1.0"
+  "version": "0.3.0"
 }
 ```
-
-> [!NOTE]
-> During the released `v0.1.0` baseline, the version reports `0.1.0`. Once `v0.2.0` is deployed to production, it will report `0.2.0`.
 
 The current free Render Web Service is monitored by an external cron-job.org job:
 
@@ -316,7 +312,7 @@ Follow this procedure to write and activate physical cards:
 |---------|-------|-------------|--------|
 | v0.1.0 | ALPHA | Foundation architecture + initial UI | Released |
 | v0.2.0 | ALPHA | Authentication, roles, users, responsive profiles, Resend | Released |
-| v0.3.0 | ALPHA | NFC provisioning, card assignment, token generation, NFC Tools workflow | In Development |
+| v0.3.0 | ALPHA | NFC provisioning, card assignment, token generation, NFC Tools workflow | Released |
 | v0.4.0 | ALPHA | Android Web NFC reader with NDEFReader | Planned |
 | v0.5.0 | ALPHA | Universal NFC URL /t#token fallback | Planned |
 | v0.6.0 | BETA | Events, attendance sessions, shared attendance engine | Planned |
