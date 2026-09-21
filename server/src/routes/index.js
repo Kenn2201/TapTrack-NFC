@@ -6,10 +6,10 @@ import { eventController } from '../controllers/event.controller.js';
 import { nfcController } from '../controllers/nfc.controller.js';
 import { attendanceController } from '../controllers/attendance.controller.js';
 
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roles.js';
 import { validate } from '../middleware/validate.js';
-import { authLimiter, resetLimiter } from '../middleware/rateLimiter.js';
+import { authLimiter, resetLimiter, resolveLimiter } from '../middleware/rateLimiter.js';
 import {
   registerSchema,
   loginSchema,
@@ -57,9 +57,9 @@ router.get('/events/:id', eventController.getById);
 router.post('/events/:id/sessions', attendanceController.openSession);
 router.post('/sessions/:id/close', attendanceController.closeSession);
 
-// ─── NFC WORKFLOWS (v0.4.0 ALPHA) ──────────────────────────────────────────
+// ─── NFC WORKFLOWS (v0.4.0 ALPHA & v0.5.0 ALPHA) ───────────────────────────
 router.post('/nfc/verify', authenticate, requireRole('ADMIN', 'OPERATOR'), validate(verifyCardTokenSchema), nfcController.verify);
-router.post('/nfc/resolve', nfcController.resolve); // Planned v0.5.0
+router.post('/nfc/resolve', resolveLimiter, optionalAuthenticate, validate(verifyCardTokenSchema), nfcController.resolve);
 router.post('/nfc/check-in', nfcController.checkIn); // Planned v0.6.0
 
 // ─── ADMIN — NFC CARDS PROVISIONING (v0.3.0) ──────────────────────────────────

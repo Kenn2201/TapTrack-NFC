@@ -6,7 +6,8 @@ TapTrack NFC is an independent proof-of-concept for exploring NFC-based identity
 and attendance workflows using standard NDEF-compatible NFC cards.
 
 **Current Release: v0.3.0 ALPHA**
-**Current Development Milestone: v0.4.0 ALPHA (In Development)**
+**Production Release Candidate: v0.4.0 ALPHA (Physical Android Web NFC testing pending)**
+**Current Development Milestone: v0.5.0 ALPHA (In Development)**
 
 ## Architecture & Verified Infrastructure
 
@@ -38,8 +39,9 @@ Vercel / React 19 / Vite ──> api.nfc.kenncode.me
 > v0.1.0 established the foundation architecture and initial UI.
 > v0.2.0 implemented authentication, roles, users, responsive profiles, and Resend (released).
 > v0.3.0 implemented NFC card provisioning, member assignment, token generation, and NFC Tools workflows (released).
-> v0.4.0 implements Android Web NFC reader mode with NDEFReader and backend credential verification (in development).
-> Subsequent releases will implement universal URL fallback (v0.5.0) and the shared attendance engine (v0.6.0).
+> v0.4.0 implemented Android Web NFC reader mode with NDEFReader and backend credential verification (RC deployed, physical test pending).
+> v0.5.0 implements universal NFC URL fallback (/t#token) for iPhone Safari and mobile browsers (in development).
+> Subsequent releases will implement the shared attendance engine (v0.6.0) and admin card lifecycle (v0.7.0).
 
 - NFC card provisioning and lifecycle management (v0.3.0+)
 - Web NFC reader mode (Android Chrome via NDEFReader) (v0.4.0)

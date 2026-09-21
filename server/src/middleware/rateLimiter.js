@@ -36,7 +36,21 @@ export const resetLimiter = rateLimit({
   validate: { trustProxy: true },
 });
 
+/**
+ * Public NFC credential resolution limiter
+ * 15-minute window, generous 60 attempts per IP in production (100 in test)
+ */
+export const resolveLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: config.nodeEnv === 'test' ? 100 : 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitHandler,
+  validate: { trustProxy: true },
+});
+
 export default {
   authLimiter,
   resetLimiter,
+  resolveLimiter,
 };

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import { nfcCredentialService } from '../src/services/nfcCredential.service.js';
+import { config } from '../src/config/index.js';
 
 // Configure test environment variables before app import
 process.env.NODE_ENV = 'test';
@@ -171,12 +172,12 @@ describe('TapTrack NFC v0.4.0 ALPHA — Web NFC Credential Verification Test Sui
   });
 
   describe('Health Endpoint Dynamic Versioning', () => {
-    it('returns dynamically resolved package.json version 0.4.0 from GET /health', async () => {
+    it('returns dynamically resolved package.json version from GET /health', async () => {
       const res = await request(app).get('/health');
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         status: 'ok',
-        version: '0.4.0',
+        version: config.version,
       });
     });
   });

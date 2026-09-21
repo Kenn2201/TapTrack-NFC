@@ -194,15 +194,10 @@ export const nfcCardService = {
   },
 
   /**
-   * Verify an NFC card by its raw token (v0.4.0 ALPHA)
-   * 1. Derives HMAC-SHA256 token_hash using existing CARD_TOKEN_PEPPER
-   * 2. Finds card record by token_hash in PostgreSQL
-   * 3. Authoritatively confirms card exists and is ACTIVE
-   * 4. Confirms assigned member exists and is ACTIVE
-   * 5. Returns safe card and member metadata with ZERO credential exposure
-   * 6. Strictly read-only: does NOT create attendance, sessions, or touch database
+   * Internal helper to find and authoritatively validate a card credential (v0.4/v0.5)
+   * Enforces HMAC-SHA256 derivation, card status, and assigned user status.
    */
-  async verifyCardToken(rawToken) {
+  async _lookupAndValidateCard(rawToken) {
     if (!rawToken || typeof rawToken !== 'string') {
       const err = new Error('Raw card token is required for verification.');
       err.status = 400;
@@ -249,6 +244,14 @@ export const nfcCardService = {
       throw err;
     }
 
+    return card;
+  },
+
+  /**
+   * Verify an NFC card by its raw token for authorized operators/admins (v0.4.0 ALPHA)
+   */
+  async verifyCardToken(rawToken) {
+    const card = await this._lookupAndValidateCard(rawToken);
     const displayName = `${card.assignedUser.firstName || ''} ${card.assignedUser.lastName || ''}`.trim() || card.assignedUser.email;
 
     return {
@@ -261,6 +264,50 @@ export const nfcCardService = {
         displayName,
         email: card.assignedUser.email,
       },
+    };
+  },
+
+  /**
+   * Resolve an NFC card credential for universal /t#token fallback (v0.5.0 ALPHA)
+   * Card-holder-facing or public OS NFC resolution.
+   * Public consumers receive a minimal privacy-preserving response (no email).
+   * Authenticated operators/admins receive full details.
+   * Strictly read-only: does NOT create attendance, sessions, or touch database.
+   */
+  async resolveCardToken(rawToken, { isOperatorOrAdmin = false } = {}) {
+    const card = await this._lookupAndValidateCard(rawToken);
+
+    if (isOperatorOrAdmin) {
+      const displayName = `${card.assignedUser.firstName || ''} ${card.assignedUser.lastName || ''}`.trim() || card.assignedUser.email;
+      return {
+        valid: true,
+        card: {
+          cardLabel: card.cardLabel,
+          status: card.status,
+        },
+        member: {
+          displayName,
+          email: card.assignedUser.email,
+        },
+        isPublic: false,
+      };
+    }
+
+    // Public resolution: minimal privacy-preserving display (no email)
+    const publicDisplayName = card.assignedUser.firstName
+      ? `${card.assignedUser.firstName} ${card.assignedUser.lastName ? card.assignedUser.lastName[0] + '.' : ''}`.trim()
+      : 'Assigned Member';
+
+    return {
+      valid: true,
+      card: {
+        cardLabel: card.cardLabel,
+        status: card.status,
+      },
+      member: {
+        displayName: publicDisplayName,
+      },
+      isPublic: true,
     };
   },
 };

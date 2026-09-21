@@ -84,7 +84,10 @@ export function parseTapTrackUrl(urlString, expectedHost = null) {
     return { valid: false, code: 'MISSING_FRAGMENT_TOKEN', error: 'NFC URL is missing credential fragment (#token).' };
   }
 
-  const rawToken = parsed.hash.slice(1).trim();
+  const rawToken = parsed.hash.slice(1);
+  if (/\s/.test(rawToken)) {
+    return { valid: false, code: 'INVALID_TOKEN_FORMAT', error: 'Credential contains invalid whitespace.' };
+  }
 
   // 6. Validate base64url token structure (~24-32 characters, alphanumeric + '-' + '_')
   const base64UrlRegex = /^[A-Za-z0-9_-]{16,128}$/;
@@ -120,4 +123,43 @@ export function createScanDebouncer(debounceMs = 1800) {
       lastTime = 0;
     },
   };
+}
+
+/**
+ * Extracts and structurally validates a raw token from a URL hash string (e.g. window.location.hash).
+ * @param {string} hashString - The URL hash (e.g. "#4nF7-y9_kL02pQmZ1aBcDeFgHiJkLmNo")
+ * @returns {{ valid: boolean, token?: string, error?: string, code?: string }}
+ */
+export function extractTokenFromHash(hashString) {
+  if (!hashString || typeof hashString !== 'string') {
+    return { valid: false, code: 'MISSING_FRAGMENT_TOKEN', error: 'No credential fragment found in URL.' };
+  }
+
+  // Reject credentials containing leading, trailing, or internal whitespace
+  if (/\s/.test(hashString)) {
+    return { valid: false, code: 'INVALID_TOKEN_FORMAT', error: 'Credential contains invalid whitespace.' };
+  }
+
+  const clean = hashString.startsWith('#') ? hashString.slice(1) : hashString;
+  if (!clean) {
+    return { valid: false, code: 'EMPTY_FRAGMENT_TOKEN', error: 'Credential fragment is empty.' };
+  }
+
+  const base64UrlRegex = /^[A-Za-z0-9_-]{16,128}$/;
+  if (!base64UrlRegex.test(clean)) {
+    return { valid: false, code: 'INVALID_TOKEN_FORMAT', error: 'Credential format is structurally invalid.' };
+  }
+
+  return { valid: true, token: clean };
+}
+
+/**
+ * Sanitizes the browser URL by stripping the fragment (#token) from visible navigation.
+ * Uses window.history.replaceState to avoid leaving sensitive credential fragments in browser history.
+ */
+export function sanitizeUrlFragment() {
+  if (typeof window !== 'undefined' && window.history?.replaceState && window.location) {
+    const cleanUrl = window.location.pathname + (window.location.search || '');
+    window.history.replaceState(null, '', cleanUrl);
+  }
 }

@@ -5,6 +5,8 @@ import {
   isSecureContextSupported,
   parseTapTrackUrl,
   createScanDebouncer,
+  extractTokenFromHash,
+  sanitizeUrlFragment,
 } from '../src/utils/nfcParser.js';
 
 describe('TapTrack NFC v0.4.0 ALPHA — Client Web NFC & URL Parser Test Suite', () => {
@@ -137,6 +139,70 @@ describe('TapTrack NFC v0.4.0 ALPHA — Client Web NFC & URL Parser Test Suite',
       assert.equal(debouncer.shouldProcess('token-A-1234567890'), false);
       debouncer.reset();
       assert.equal(debouncer.shouldProcess('token-A-1234567890'), true);
+    });
+  });
+
+  describe('v0.5.0 Universal URL Hash Fragment Extraction & Privacy Sanitization', () => {
+    const validToken = '4nF7-y9_kL02pQmZ1aBcDeFgHiJkLmNo';
+
+    test('extractTokenFromHash extracts token from standard #<token> hash', () => {
+      const res = extractTokenFromHash(`#${validToken}`);
+      assert.equal(res.valid, true);
+      assert.equal(res.token, validToken);
+    });
+
+    test('extractTokenFromHash handles hash string without leading # gracefully', () => {
+      const res = extractTokenFromHash(validToken);
+      assert.equal(res.valid, true);
+      assert.equal(res.token, validToken);
+    });
+
+    test('extractTokenFromHash rejects null, undefined, or non-string hash', () => {
+      assert.equal(extractTokenFromHash(null).valid, false);
+      assert.equal(extractTokenFromHash(null).code, 'MISSING_FRAGMENT_TOKEN');
+      assert.equal(extractTokenFromHash(undefined).valid, false);
+      assert.equal(extractTokenFromHash('').valid, false);
+    });
+
+    test('extractTokenFromHash rejects empty hash (# or empty string)', () => {
+      const res = extractTokenFromHash('#');
+      assert.equal(res.valid, false);
+      assert.equal(res.code, 'EMPTY_FRAGMENT_TOKEN');
+    });
+
+    test('extractTokenFromHash rejects invalid characters or malformed tokens', () => {
+      const invalidChars = extractTokenFromHash('#invalid@token!with$special*chars');
+      assert.equal(invalidChars.valid, false);
+      assert.equal(invalidChars.code, 'INVALID_TOKEN_FORMAT');
+
+      const tooShort = extractTokenFromHash('#abc123');
+      assert.equal(tooShort.valid, false);
+      assert.equal(tooShort.code, 'INVALID_TOKEN_FORMAT');
+    });
+
+    test('extractTokenFromHash rejects credentials with leading, trailing, or internal whitespace', () => {
+      // Leading whitespace
+      const leadingRes = extractTokenFromHash(` # ${validToken}`);
+      assert.equal(leadingRes.valid, false);
+      assert.equal(leadingRes.code, 'INVALID_TOKEN_FORMAT');
+
+      const leadingAfterHash = extractTokenFromHash(`# ${validToken}`);
+      assert.equal(leadingAfterHash.valid, false);
+      assert.equal(leadingAfterHash.code, 'INVALID_TOKEN_FORMAT');
+
+      // Trailing whitespace
+      const trailingRes = extractTokenFromHash(`#${validToken} `);
+      assert.equal(trailingRes.valid, false);
+      assert.equal(trailingRes.code, 'INVALID_TOKEN_FORMAT');
+
+      // Internal whitespace
+      const internalRes = extractTokenFromHash(`#4nF7-y9_ kL02pQmZ1aBcDeFgHiJkLmNo`);
+      assert.equal(internalRes.valid, false);
+      assert.equal(internalRes.code, 'INVALID_TOKEN_FORMAT');
+    });
+
+    test('sanitizeUrlFragment executes safely without throwing in non-browser Node environment', () => {
+      assert.doesNotThrow(() => sanitizeUrlFragment());
     });
   });
 });

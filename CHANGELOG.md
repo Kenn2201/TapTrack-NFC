@@ -5,7 +5,28 @@ All notable changes to TapTrack NFC will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — v0.4.0 ALPHA (In Development)
+## [Unreleased] — v0.5.0 ALPHA (In Development)
+
+### Added
+- **Universal NFC Credential Resolution Endpoint (`server/src/controllers/nfc.controller.js`, `server/src/services/nfcCard.service.js`, `server/src/routes/index.js`)**:
+  - Dedicated `POST /api/nfc/resolve` endpoint equipped with `resolveLimiter` rate limiting and `optionalAuthenticate` session detection.
+  - Validates card token strictly in HTTPS POST body; never exposes tokens in URL, query parameters, or logs.
+  - Reuses existing v0.3 `CARD_TOKEN_PEPPER` HMAC-SHA256 credential derivation architecture (`_lookupAndValidateCard`).
+  - Strict privacy protection: public unauthenticated consumers receive minimal safe payload (card label, status, and masked member display name; strictly NO email address).
+  - Authenticated `ADMIN` and `OPERATOR` users receive full member details.
+  - Comprehensive card lifecycle handling with distinct error codes: `CARD_UNASSIGNED`, `CARD_LOST`, `CARD_REVOKED`, `CARD_REPLACED`, `CARD_DISABLED`, `MEMBER_INACTIVE`, `MEMBER_NOT_ASSIGNED`, `CARD_NOT_FOUND`.
+  - Zero side effects: strictly read-only card verification without altering database state or recording attendance.
+- **Client Mobile-First /t#token Fallback Page (`client/src/pages/TapLanding.jsx`, `client/src/utils/nfcParser.js`)**:
+  - Mobile-first resolution page supporting iPhone Safari (iOS 13+) and Android mobile browsers independent of NDEFReader.
+  - Instant hash fragment capture and URL bar sanitization via `history.replaceState` to prevent sensitive tokens lingering in browser address bar.
+  - Ephemeral memory management: token exists strictly in temporary memory during request execution and is wiped immediately; zero browser storage persistence.
+  - Comprehensive UX states: Verifying, Valid Active Card, Card Status Restrictions, Unrecognized Card, Missing Token, Malformed Token, and Connection Error.
+  - Prominent user disclosure: *"No attendance has been recorded."*
+- **Automated Verification Testing (`server/tests/nfcResolve.test.js`, `client/tests/nfcParser.test.js`)**:
+  - 14 server test cases covering public resolution, privacy boundaries, operator authorization, error states, and zero-write invariants.
+  - 6 client parser test cases covering `#<token>` extraction, leading hash omission, empty fragments, invalid tokens, and SSR safety.
+
+## [0.4.0-rc] — 2026-09-21 — Android Web NFC Reader with NDEFReader (RC / Physical Test Pending)
 
 ### Added
 - **Dynamic Server Health Check (`server/src/app.js`, `server/src/config/index.js`)**:

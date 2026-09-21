@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { config } from '../src/config/index.js';
 
 // Set test environment variables before importing app
 process.env.NODE_ENV = 'test';
@@ -704,7 +705,7 @@ describe('TapTrack NFC v0.2.0 ALPHA — Comprehensive Test Suite', () => {
     it('22. /health is public and lightweight returning canonical version', async () => {
       const res = await request(app).get('/health');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ status: 'ok', version: '0.4.0' });
+      expect(res.body).toEqual({ status: 'ok', version: config.version });
     });
 
     it('23. CORS allows configured CLIENT_URL with credentials: true', async () => {
