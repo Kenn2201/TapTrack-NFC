@@ -5,6 +5,28 @@ All notable changes to TapTrack NFC will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] — v0.4.0 ALPHA (In Development)
+
+### Added
+- **Dynamic Server Health Check (`server/src/app.js`, `server/src/config/index.js`)**:
+  - Dynamically resolves server package version at runtime, ensuring `/health` reflects `package.json` without manual hardcoding.
+- **Backend NFC Credential Verification Endpoint (`server/src/controllers/nfc.controller.js`, `server/src/services/nfcCard.service.js`)**:
+  - Dedicated `POST /api/nfc/verify` endpoint protected by `authenticate` and `requireRole('ADMIN', 'OPERATOR')`.
+  - Validates card token strictly in HTTPS POST body; never exposes tokens in URL, query parameters, or logs.
+  - Derives HMAC-SHA256 hash using existing `CARD_TOKEN_PEPPER` and queries card by `token_hash`.
+  - Authoritative verification: verifies card is `ACTIVE`, assigned to an existing user, and user is `ACTIVE`.
+  - Safe response payload returning card label, status, member display name, and email with zero credential exposure.
+  - Zero side effects: strictly read-only card verification without modifying attendance or sessions.
+- **Client Web NFC URL & NDEF Parser (`client/src/utils/nfcParser.js`)**:
+  - Pure helper parsing physical `/t#<rawToken>` NDEF records with HTTPS protocol and domain validation.
+  - Rejects insecure HTTP, evil domains, missing hash fragments, and query string token parameters.
+  - In-memory ephemeral debounce mechanism preventing rapid duplicate scans (~1.5–2s window).
+- **Client Web NFC Reader Experience (`client/src/pages/NfcReaderPage.jsx`, `client/src/hooks/useNFC.js`)**:
+  - Dedicated `/operator/nfc-reader` route accessible to authenticated `ADMIN` and `OPERATOR` roles.
+  - Native `NDEFReader.scan({ signal })` with `AbortController` lifecycle management.
+  - Clean graceful handling of all UI states: Ready, Unsupported, Insecure Context, Requesting Permission, Scanning, Verifying, Success, Invalid Card, and Permission Denied.
+  - Clear user disclosure confirming no attendance is recorded during v0.4 verification.
+
 ## [0.3.0] - 2026-09-21 — NFC Provisioning, Card Assignment & NFC Tools Workflow (ALPHA)
 
 ### Added

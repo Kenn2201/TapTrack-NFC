@@ -43,9 +43,15 @@ export default function Header() {
                   Profile
                 </Link>
                 {(user?.role === 'OPERATOR' || user?.role === 'ADMIN') && (
-                  <Link to="/operator" className="text-amber-400 hover:text-amber-300 px-3 py-2 text-sm font-medium transition-colors">
-                    Operator
-                  </Link>
+                  <>
+                    <Link to="/operator" className="text-amber-400 hover:text-amber-300 px-3 py-2 text-sm font-medium transition-colors">
+                      Operator
+                    </Link>
+                    <Link to="/operator/nfc-reader" className="text-emerald-400 hover:text-emerald-300 px-3 py-2 text-sm font-medium transition-colors flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      NFC Reader
+                    </Link>
+                  </>
                 )}
                 {user?.role === 'ADMIN' && (
                   <>
@@ -124,13 +130,22 @@ export default function Header() {
                 Profile
               </Link>
               {(user?.role === 'OPERATOR' || user?.role === 'ADMIN') && (
-                <Link
-                  to="/operator"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-amber-400 hover:bg-slate-700"
-                >
-                  Operator Console
-                </Link>
+                <>
+                  <Link
+                    to="/operator"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-amber-400 hover:bg-slate-700"
+                  >
+                    Operator Console
+                  </Link>
+                  <Link
+                    to="/operator/nfc-reader"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-emerald-400 hover:bg-slate-700"
+                  >
+                    NFC Card Reader
+                  </Link>
+                </>
               )}
               {user?.role === 'ADMIN' && (
                 <>

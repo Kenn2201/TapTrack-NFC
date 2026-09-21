@@ -38,12 +38,30 @@ export default function Operator() {
                 In accordance with the TapTrack roadmap:
               </p>
               <ul className="mt-3 space-y-2 text-xs text-slate-400 list-disc list-inside">
-                <li><strong className="text-slate-200">v0.3.0 ALPHA:</strong> Physical card provisioning and token generation</li>
-                <li><strong className="text-slate-200">v0.4.0 ALPHA:</strong> Android Web NFC reader mode (NDEFReader API)</li>
+                <li><strong className="text-slate-200">v0.3.0 ALPHA:</strong> Physical card provisioning and token generation (completed)</li>
+                <li><strong className="text-emerald-400">v0.4.0 ALPHA:</strong> Android Web NFC reader mode (NDEFReader API) — Available Now</li>
                 <li><strong className="text-slate-200">v0.5.0 ALPHA:</strong> Universal URL fallback resolution (/t#token)</li>
                 <li><strong className="text-slate-200">v0.6.0 BETA:</strong> Operator attendance sessions and shared attendance engine</li>
               </ul>
             </div>
+          </div>
+
+          <div className="bg-slate-950 border border-emerald-500/30 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <h3 className="text-sm font-bold text-white">Live Web NFC Reader</h3>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Scan physical NTAG215 cards (such as NFC-001) using Android Chrome and authoritatively verify credentials.
+              </p>
+            </div>
+            <Link
+              to="/operator/nfc-reader"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors text-center whitespace-nowrap"
+            >
+              Launch NFC Reader
+            </Link>
           </div>
 
           <div className="pt-4 border-t border-slate-800 flex items-center justify-between">

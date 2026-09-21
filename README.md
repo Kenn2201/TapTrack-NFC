@@ -6,6 +6,7 @@ TapTrack NFC is an independent proof-of-concept for exploring NFC-based identity
 and attendance workflows using standard NDEF-compatible NFC cards.
 
 **Current Release: v0.3.0 ALPHA**
+**Current Development Milestone: v0.4.0 ALPHA (In Development)**
 
 ## Architecture & Verified Infrastructure
 
@@ -37,7 +38,8 @@ Vercel / React 19 / Vite ──> api.nfc.kenncode.me
 > v0.1.0 established the foundation architecture and initial UI.
 > v0.2.0 implemented authentication, roles, users, responsive profiles, and Resend (released).
 > v0.3.0 implemented NFC card provisioning, member assignment, token generation, and NFC Tools workflows (released).
-> Subsequent releases will implement Android Web NFC (v0.4.0), universal URL fallback (v0.5.0), and the shared attendance engine (v0.6.0).
+> v0.4.0 implements Android Web NFC reader mode with NDEFReader and backend credential verification (in development).
+> Subsequent releases will implement universal URL fallback (v0.5.0) and the shared attendance engine (v0.6.0).
 
 - NFC card provisioning and lifecycle management (v0.3.0+)
 - Web NFC reader mode (Android Chrome via NDEFReader) (v0.4.0)
@@ -300,11 +302,44 @@ Follow this procedure to write and activate physical cards:
    - Click **Confirm Write & Activate Card**.
    - Card status transitions from `UNASSIGNED` to `ACTIVE`.
 
-## NFC Modes
+## Web NFC Reader & Credential Verification (v0.4.0 ALPHA)
 
-**Mode A — Web NFC** (Android Chrome — Planned v0.4.0): Direct in-browser `NDEFReader.scan()` for instant operator attendance capture.
+TapTrack NFC v0.4.0 implements direct in-browser Web NFC reading using the W3C `NDEFReader` API on compatible Android Chromium browsers.
 
-**Mode B — Universal NFC URL Fallback** (iPhone / all browsers — Planned v0.5.0): Card contains `https://nfc.kenncode.me/t#<token>`, OS detects NDEF URI, opens browser, and the `/t` page resolves the fragment.
+### Architecture & Security Guarantees
+
+1. **Feature Detection & Secure Context**:
+   - Web NFC is accessed strictly via standard feature detection (`'NDEFReader' in window && window.isSecureContext`).
+   - Unsupported desktop browsers or iOS browsers cleanly display the unsupported state while all other TapTrack consoles remain fully operational.
+2. **NDEF URL Record Parsing**:
+   - The reader scans for NDEF records formatted as `https://nfc.kenncode.me/t#<rawToken>`.
+   - The token is parsed from the `#` URL fragment client-side and never transmitted via URL or query parameters.
+   - Malformed URLs, unexpected domains, or query-based tokens (`?token=...`) are rejected immediately.
+3. **Backend Authoritative Verification**:
+   - Client sends token in the POST body to `/api/nfc/verify` (`ADMIN` or `OPERATOR` role required).
+   - Backend derives HMAC-SHA256 hash using `CARD_TOKEN_PEPPER` and looks up `nfc_cards` by `token_hash`.
+   - Authoritatively validates card is `ACTIVE`, assigned to an active user account, and returns safe card and member display metadata.
+   - Raw tokens and `token_hash` are never stored, logged, or returned in API responses.
+4. **No Attendance Side Effects**:
+   - Verification in v0.4 is strictly read-only validation of credential resolution; no attendance or check-in records are created.
+
+### Android Physical NFC-001 Validation Procedure
+
+1. Use an Android smartphone with NFC enabled in system settings.
+2. Open a Web NFC-capable Chromium browser (such as Google Chrome on Android) over HTTPS (`https://nfc.kenncode.me`).
+3. Log in with an `OPERATOR` or `ADMIN` account.
+4. Navigate to `/operator/nfc-reader` via the navigation menu or Operator console.
+5. Confirm the browser reports Web NFC is supported and status is **Ready**.
+6. Tap **Start NFC Scanner** and approve the browser NFC permission prompt.
+7. Tap the existing physical test card **NFC-001** against the back of the phone.
+8. TapTrack reads the NDEF record, extracts the fragment token, and sends it to `POST /api/nfc/verify`.
+9. The UI displays **Card Verified Successfully**:
+   - Card Label: `NFC-001`
+   - Status: `ACTIVE`
+   - Assigned Member: Display Name & Email
+   - Confirmation notice: *"No attendance has been recorded. v0.4 validates NFC reading only."*
+10. Verify that holding the card near the phone does not trigger duplicate verification calls (in-memory debounce).
+11. Tap **Stop Scanner** to cancel scanning cleanly.
 
 ## Release Roadmap
 
@@ -313,7 +348,7 @@ Follow this procedure to write and activate physical cards:
 | v0.1.0 | ALPHA | Foundation architecture + initial UI | Released |
 | v0.2.0 | ALPHA | Authentication, roles, users, responsive profiles, Resend | Released |
 | v0.3.0 | ALPHA | NFC provisioning, card assignment, token generation, NFC Tools workflow | Released |
-| v0.4.0 | ALPHA | Android Web NFC reader with NDEFReader | Planned |
+| v0.4.0 | ALPHA | Android Web NFC reader with NDEFReader | In Development |
 | v0.5.0 | ALPHA | Universal NFC URL /t#token fallback | Planned |
 | v0.6.0 | BETA | Events, attendance sessions, shared attendance engine | Planned |
 | v0.7.0 | BETA | Admin dashboard + complete card lifecycle (lost/revoke/replace/disable) | Planned |

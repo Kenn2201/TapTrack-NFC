@@ -23,6 +23,7 @@ import {
   provisionCardSchema,
   activateCardSchema,
   assignCardSchema,
+  verifyCardTokenSchema,
 } from '../validators/schemas.js';
 
 const router = Router();
@@ -56,10 +57,10 @@ router.get('/events/:id', eventController.getById);
 router.post('/events/:id/sessions', attendanceController.openSession);
 router.post('/sessions/:id/close', attendanceController.closeSession);
 
-// ─── NFC WORKFLOWS (Planned v0.3.0 - v0.5.0) ──────────────────────────────────
-router.post('/nfc/resolve', nfcController.resolve);
-router.post('/nfc/check-in', nfcController.checkIn);
-router.post('/nfc/verify', nfcController.verify);
+// ─── NFC WORKFLOWS (v0.4.0 ALPHA) ──────────────────────────────────────────
+router.post('/nfc/verify', authenticate, requireRole('ADMIN', 'OPERATOR'), validate(verifyCardTokenSchema), nfcController.verify);
+router.post('/nfc/resolve', nfcController.resolve); // Planned v0.5.0
+router.post('/nfc/check-in', nfcController.checkIn); // Planned v0.6.0
 
 // ─── ADMIN — NFC CARDS PROVISIONING (v0.3.0) ──────────────────────────────────
 router.get('/admin/cards', authenticate, requireRole('ADMIN'), cardController.getAll);

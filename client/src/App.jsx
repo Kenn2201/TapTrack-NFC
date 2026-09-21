@@ -24,6 +24,7 @@ import AttendanceHistory from "./pages/AttendanceHistory";
 
 // Operator Pages
 import Operator from "./pages/Operator";
+import NfcReaderPage from "./pages/NfcReaderPage";
 
 // Admin Pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -59,6 +60,7 @@ function App() {
           {/* Operator Protected Routes */}
           <Route element={<RequireRole allowedRoles={['OPERATOR', 'ADMIN']} />}>
             <Route path="/operator" element={<Operator />} />
+            <Route path="/operator/nfc-reader" element={<NfcReaderPage />} />
           </Route>
 
           {/* Admin Protected Routes */}

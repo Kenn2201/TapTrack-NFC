@@ -33,7 +33,7 @@ app.use(cookieParser());
 app.use('/api', routes);
 
 // Health check
-app.get('/health', (req, res) => res.json({ status: 'ok', version: '0.3.0' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', version: config.version }));
 
 // Error handler
 app.use(errorHandler);

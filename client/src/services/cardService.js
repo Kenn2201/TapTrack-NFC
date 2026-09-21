@@ -8,6 +8,7 @@ export const cardService = {
   provision: (data) => api.post('/admin/cards/provision', data),
   activate: (id, data) => api.patch(`/admin/cards/${id}/activate`, data),
   assign: (id, data) => api.patch(`/admin/cards/${id}/assign`, data),
+  verifyCardToken: (token) => api.post('/nfc/verify', { token }),
 };
 
 export default cardService;

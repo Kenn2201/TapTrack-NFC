@@ -25,7 +25,8 @@ TapTrack NFC follows [Semantic Versioning](https://semver.org/).
 
 - **Released Baseline**: `v0.3.0 ALPHA` (Release: `v0.3.0`, Branch: `master`)
 - **Previous Release**: `v0.2.0 ALPHA`
-- **Next Development**: `v0.4.0 ALPHA` (Branch: `kenn/develop`)
+- **Active Development**: `v0.4.0 ALPHA (In Development)` (Branch: `kenn/develop`)
+- **Milestone Scope**: Android Web NFC Reader with NDEFReader
 
 ## Locked Release Roadmap
 
@@ -34,7 +35,7 @@ TapTrack NFC follows [Semantic Versioning](https://semver.org/).
 | v0.1.0 | ALPHA | Foundation architecture + initial UI | Released |
 | v0.2.0 | ALPHA | Authentication, roles, users, responsive profiles, Resend | Released |
 | v0.3.0 | ALPHA | NFC provisioning, card assignment, token generation, NFC Tools workflow | Released |
-| v0.4.0 | ALPHA | Android Web NFC reader with NDEFReader | Planned |
+| v0.4.0 | ALPHA | Android Web NFC reader with NDEFReader | In Development |
 | v0.5.0 | ALPHA | Universal NFC URL /t#token fallback | Planned |
 | v0.6.0 | BETA | Events, attendance sessions, shared attendance engine | Planned |
 | v0.7.0 | BETA | Admin dashboard + complete card lifecycle (lost/revoke/replace/disable) | Planned |

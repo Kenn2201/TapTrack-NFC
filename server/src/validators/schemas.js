@@ -62,6 +62,12 @@ export const assignCardSchema = z.object({
   userId: z.number().int().positive('User ID must be a positive integer'),
 });
 
+export const verifyCardTokenSchema = z.object({
+  token: z.string({ required_error: 'Card token is required' })
+    .min(1, 'Card token is required')
+    .max(200, 'Card token cannot exceed 200 characters'),
+});
+
 export const createEventSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),

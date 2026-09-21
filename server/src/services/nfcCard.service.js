@@ -192,4 +192,75 @@ export const nfcCardService = {
     const updatedCard = await nfcCardRepository.assignUser(id, userId);
     return nfcCredentialService.formatSafeCard(updatedCard);
   },
+
+  /**
+   * Verify an NFC card by its raw token (v0.4.0 ALPHA)
+   * 1. Derives HMAC-SHA256 token_hash using existing CARD_TOKEN_PEPPER
+   * 2. Finds card record by token_hash in PostgreSQL
+   * 3. Authoritatively confirms card exists and is ACTIVE
+   * 4. Confirms assigned member exists and is ACTIVE
+   * 5. Returns safe card and member metadata with ZERO credential exposure
+   * 6. Strictly read-only: does NOT create attendance, sessions, or touch database
+   */
+  async verifyCardToken(rawToken) {
+    if (!rawToken || typeof rawToken !== 'string') {
+      const err = new Error('Raw card token is required for verification.');
+      err.status = 400;
+      err.code = 'INVALID_TOKEN';
+      throw err;
+    }
+
+    const tokenHash = nfcCredentialService.deriveCredentialHash(rawToken);
+    const card = await nfcCardRepository.findByTokenHash(tokenHash);
+
+    if (!card) {
+      const err = new Error('Card not found or unrecognized credential.');
+      err.status = 404;
+      err.code = 'CARD_NOT_FOUND';
+      throw err;
+    }
+
+    if (card.status !== 'ACTIVE') {
+      const statusErrors = {
+        UNASSIGNED: { status: 400, code: 'CARD_UNASSIGNED', message: 'Card has not been activated yet.' },
+        LOST: { status: 400, code: 'CARD_LOST', message: 'Card has been reported lost.' },
+        REVOKED: { status: 400, code: 'CARD_REVOKED', message: 'Card has been revoked.' },
+        REPLACED: { status: 400, code: 'CARD_REPLACED', message: 'Card has been replaced by another card.' },
+        DISABLED: { status: 400, code: 'CARD_DISABLED', message: 'Card is permanently disabled.' },
+      };
+      const info = statusErrors[card.status] || { status: 400, code: 'CARD_INACTIVE', message: `Card is ${card.status.toLowerCase()}.` };
+      const err = new Error(info.message);
+      err.status = info.status;
+      err.code = info.code;
+      throw err;
+    }
+
+    if (!card.userId || !card.assignedUser) {
+      const err = new Error('Card has no assigned member.');
+      err.status = 400;
+      err.code = 'MEMBER_NOT_ASSIGNED';
+      throw err;
+    }
+
+    if (card.assignedUser.status !== 'ACTIVE') {
+      const err = new Error('Assigned member account is disabled or inactive.');
+      err.status = 400;
+      err.code = 'MEMBER_INACTIVE';
+      throw err;
+    }
+
+    const displayName = `${card.assignedUser.firstName || ''} ${card.assignedUser.lastName || ''}`.trim() || card.assignedUser.email;
+
+    return {
+      valid: true,
+      card: {
+        cardLabel: card.cardLabel,
+        status: card.status,
+      },
+      member: {
+        displayName,
+        email: card.assignedUser.email,
+      },
+    };
+  },
 };

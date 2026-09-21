@@ -1,6 +1,12 @@
 import 'dotenv/config';
+import fs from 'node:fs';
+
+const packageJson = JSON.parse(
+  fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')
+);
 
 export const config = {
+  get version() { return packageJson.version || '0.4.0'; },
   get port() { return process.env.PORT || 3001; },
   get nodeEnv() { return process.env.NODE_ENV || 'development'; },
   get databaseUrl() { return process.env.DATABASE_URL; },
