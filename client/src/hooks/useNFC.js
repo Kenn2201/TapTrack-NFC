@@ -8,7 +8,7 @@ import cardService from '../services/cardService';
  * Manages NDEFReader scan lifecycle, permission requests, in-memory debounce,
  * and backend credential verification without recording attendance.
  */
-export default function useNFC() {
+export default function useNFC(attendanceContext = null) {
   const supportsWebNFC = isWebNFCSupported();
   const isSecure = isSecureContextSupported();
 
@@ -131,12 +131,14 @@ export default function useNFC() {
             return;
           }
 
-          // Send credential to backend for authoritative verification
+          // Resolve and record through the shared server attendance engine when a session is selected.
           setStatus('VERIFYING');
-          const response = await cardService.verifyCardToken(parsed.token);
+          const response = attendanceContext
+            ? await cardService.recordAttendance(parsed.token, { ...attendanceContext, method: 'NFC_WEB' })
+            : await cardService.verifyCardToken(parsed.token);
 
-          if (response.data && response.data.valid) {
-            setResult(response.data);
+          if (response.valid || response.record) {
+            setResult(response);
             setStatus('SUCCESS');
           } else {
             setError({
@@ -192,7 +194,7 @@ export default function useNFC() {
         });
       }
     }
-  }, []);
+  }, [attendanceContext]);
 
   // Clean up reader on unmount
   useEffect(() => {

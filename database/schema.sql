@@ -1,15 +1,15 @@
 -- ============================================================================
 -- TapTrack NFC — Database Schema
 -- PostgreSQL
--- Version: 0.3.0 ALPHA (In Development)
+-- Version: 0.6.0 BETA (In Development)
 -- ============================================================================
 
 -- Enums
 CREATE TYPE user_role AS ENUM ('ADMIN', 'OPERATOR', 'USER');
 CREATE TYPE card_status AS ENUM ('UNASSIGNED', 'ACTIVE', 'REVOKED', 'LOST', 'REPLACED', 'DISABLED');
-CREATE TYPE event_status AS ENUM ('DRAFT', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED');
+CREATE TYPE event_status AS ENUM ('DRAFT', 'OPEN', 'CLOSED', 'CANCELLED');
 CREATE TYPE attendance_method AS ENUM ('NFC_WEB', 'NFC_URL', 'MANUAL');
-CREATE TYPE session_status AS ENUM ('OPEN', 'CLOSED', 'EXPIRED');
+CREATE TYPE attendance_session_status AS ENUM ('OPEN', 'CLOSED');
 
 -- Users
 CREATE TABLE users (
@@ -68,44 +68,40 @@ CREATE TABLE events (
     id          SERIAL PRIMARY KEY,
     name        VARCHAR(200) NOT NULL,
     description TEXT,
-    location    VARCHAR(200),
-    starts_at   TIMESTAMPTZ NOT NULL,
-    ends_at     TIMESTAMPTZ NOT NULL,
+    start_at    TIMESTAMPTZ NOT NULL,
+    end_at      TIMESTAMPTZ NOT NULL,
     status      event_status NOT NULL DEFAULT 'DRAFT',
     created_by  INTEGER REFERENCES users(id),
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Event Participants
-CREATE TABLE event_participants (
-    event_id    INTEGER REFERENCES events(id) ON DELETE CASCADE,
-    user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (event_id, user_id)
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CHECK (end_at > start_at)
 );
 
--- Check-in Sessions
-CREATE TABLE checkin_sessions (
+-- Attendance Sessions
+CREATE TABLE attendance_sessions (
     id          SERIAL PRIMARY KEY,
     event_id    INTEGER REFERENCES events(id) NOT NULL,
     opened_by   INTEGER REFERENCES users(id) NOT NULL,
-    status      session_status NOT NULL DEFAULT 'OPEN',
+    status      attendance_session_status NOT NULL DEFAULT 'OPEN',
     opened_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     closed_at   TIMESTAMPTZ,
-    expires_at  TIMESTAMPTZ
+    closed_by   INTEGER REFERENCES users(id),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Attendance
-CREATE TABLE attendance (
+-- Attendance Records
+CREATE TABLE attendance_records (
     id                  SERIAL PRIMARY KEY,
     event_id            INTEGER REFERENCES events(id) NOT NULL,
     user_id             INTEGER REFERENCES users(id) NOT NULL,
     card_id             INTEGER REFERENCES nfc_cards(id),
-    checkin_session_id  INTEGER REFERENCES checkin_sessions(id),
+    session_id          INTEGER REFERENCES attendance_sessions(id) NOT NULL,
     method              attendance_method NOT NULL,
     recorded_by         INTEGER REFERENCES users(id),
-    checked_in_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (event_id, user_id)  -- one check-in per user per event
+    recorded_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (session_id, user_id)
 );
 
 -- Audit Logs
@@ -126,8 +122,9 @@ CREATE INDEX idx_password_reset_tokens_hash ON password_reset_tokens(token_hash)
 CREATE INDEX idx_nfc_cards_user_id ON nfc_cards(user_id);
 CREATE INDEX idx_nfc_cards_token_hash ON nfc_cards(token_hash);
 CREATE INDEX idx_nfc_cards_status ON nfc_cards(status);
-CREATE INDEX idx_attendance_event_id ON attendance(event_id);
-CREATE INDEX idx_attendance_user_id ON attendance(user_id);
+CREATE INDEX idx_attendance_event_id ON attendance_records(event_id);
+CREATE INDEX idx_attendance_user_id ON attendance_records(user_id);
 CREATE INDEX idx_audit_logs_actor_id ON audit_logs(actor_id);
 CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
-CREATE INDEX idx_checkin_sessions_event_id ON checkin_sessions(event_id);
+CREATE UNIQUE INDEX uq_attendance_sessions_one_open_event ON attendance_sessions(event_id) WHERE status = 'OPEN';
+CREATE INDEX idx_attendance_sessions_event_id ON attendance_sessions(event_id);

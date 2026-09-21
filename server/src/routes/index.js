@@ -24,6 +24,10 @@ import {
   activateCardSchema,
   assignCardSchema,
   verifyCardTokenSchema,
+  createEventSchema,
+  updateEventSchema,
+  manualAttendanceSchema,
+  nfcAttendanceSchema,
 } from '../validators/schemas.js';
 
 const router = Router();
@@ -41,7 +45,7 @@ router.post('/auth/reset-password', resetLimiter, validate(resetPasswordSchema),
 
 // ─── USER PROFILE (v0.2.0) ───────────────────────────────────────────────────
 router.patch('/users/me', authenticate, validate(updateProfileSchema), authController.updateProfile);
-router.get('/users/me/attendance', attendanceController.getUserHistory);
+router.get('/users/me/attendance', authenticate, attendanceController.getUserHistory);
 
 // ─── ADMIN — USERS & ROLES (v0.2.0) ───────────────────────────────────────────
 router.get('/admin/users', authenticate, requireRole('ADMIN'), adminUserController.getAllUsers);
@@ -50,17 +54,20 @@ router.patch('/admin/users/:id/role', authenticate, requireRole('ADMIN'), valida
 router.patch('/admin/users/:id/status', authenticate, requireRole('ADMIN'), validate(updateStatusSchema), adminUserController.updateUserStatus);
 
 // ─── EVENTS (Planned v0.6.0) ──────────────────────────────────────────────────
-router.get('/events', eventController.getAll);
-router.get('/events/:id', eventController.getById);
+router.get('/events', authenticate, eventController.getAll);
+router.get('/events/:id', authenticate, eventController.getById);
 
 // ─── OPERATOR ATTENDANCE (Planned v0.6.0) ─────────────────────────────────────
-router.post('/events/:id/sessions', attendanceController.openSession);
-router.post('/sessions/:id/close', attendanceController.closeSession);
+router.get('/sessions/open', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.getOpenSessions);
+router.get('/sessions/:id/attendance', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.getSessionRecords);
+router.post('/events/:id/sessions', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.openSession);
+router.post('/sessions/:id/close', authenticate, requireRole('ADMIN', 'OPERATOR'), attendanceController.closeSession);
+router.post('/attendance/manual', authenticate, requireRole('ADMIN', 'OPERATOR'), validate(manualAttendanceSchema), attendanceController.manual);
 
 // ─── NFC WORKFLOWS (v0.4.0 ALPHA & v0.5.0 ALPHA) ───────────────────────────
 router.post('/nfc/verify', authenticate, requireRole('ADMIN', 'OPERATOR'), validate(verifyCardTokenSchema), nfcController.verify);
 router.post('/nfc/resolve', resolveLimiter, optionalAuthenticate, validate(verifyCardTokenSchema), nfcController.resolve);
-router.post('/nfc/check-in', nfcController.checkIn); // Planned v0.6.0
+router.post('/nfc/check-in', authenticate, requireRole('ADMIN', 'OPERATOR'), validate(nfcAttendanceSchema), nfcController.checkIn);
 
 // ─── ADMIN — NFC CARDS PROVISIONING (v0.3.0) ──────────────────────────────────
 router.get('/admin/cards', authenticate, requireRole('ADMIN'), cardController.getAll);
@@ -73,8 +80,8 @@ router.post('/admin/cards/:id/assign', authenticate, requireRole('ADMIN'), valid
 router.post('/admin/cards/:id/revoke', authenticate, requireRole('ADMIN'), cardController.revoke);
 router.post('/admin/cards/:id/replace', authenticate, requireRole('ADMIN'), cardController.replace);
 
-router.post('/admin/events', eventController.create);
-router.patch('/admin/events/:id', eventController.update);
-router.get('/admin/attendance', attendanceController.getAll);
+router.post('/admin/events', authenticate, requireRole('ADMIN'), validate(createEventSchema), eventController.create);
+router.patch('/admin/events/:id', authenticate, requireRole('ADMIN'), validate(updateEventSchema), eventController.update);
+router.get('/admin/attendance', authenticate, requireRole('ADMIN'), attendanceController.getAll);
 
 export default router;

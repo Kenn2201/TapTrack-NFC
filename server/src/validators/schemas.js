@@ -71,7 +71,25 @@ export const verifyCardTokenSchema = z.object({
 export const createEventSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),
-  location: z.string().optional(),
-  startsAt: z.string().datetime(),
-  endsAt: z.string().datetime(),
+  startAt: z.string().datetime(),
+  endAt: z.string().datetime(),
+  status: z.enum(['DRAFT', 'OPEN']).optional(),
+});
+
+export const updateEventSchema = createEventSchema.partial().refine(
+  (value) => Object.keys(value).length > 0,
+  'At least one field is required'
+);
+
+export const manualAttendanceSchema = z.object({
+  eventId: z.number().int().positive(),
+  sessionId: z.number().int().positive(),
+  userId: z.number().int().positive(),
+});
+
+export const nfcAttendanceSchema = z.object({
+  token: z.string().min(16).max(200),
+  eventId: z.number().int().positive(),
+  sessionId: z.number().int().positive(),
+  method: z.enum(['NFC_WEB', 'NFC_URL']),
 });

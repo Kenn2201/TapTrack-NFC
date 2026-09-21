@@ -1,11 +1,21 @@
 import { nfcCardService } from '../services/nfcCard.service.js';
+import { attendanceService } from '../services/attendance.service.js';
 
 // NFC controller — credential resolution and verification
 // All handlers converge on the shared attendance service
-const notImplemented = (req, res) => res.status(501).json({ error: 'Not implemented' });
-
 export const nfcController = {
-  checkIn: notImplemented, // Planned v0.6.0
+  async checkIn(req, res, next) {
+    try {
+      const { token, eventId, sessionId, method } = req.validated;
+      const card = await nfcCardService._lookupAndValidateCard(token);
+      const record = await attendanceService.recordAttendance({
+        eventId, sessionId, method, userId: card.userId, cardId: card.id, actor: req.user,
+      });
+      return res.status(201).json({ record, card: { cardLabel: card.cardLabel } });
+    } catch (err) {
+      return next(err);
+    }
+  },
 
   /**
    * POST /api/nfc/resolve

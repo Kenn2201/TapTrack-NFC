@@ -7,5 +7,9 @@ export const attendanceService = {
   verify: (token) => api.post('/nfc/verify', { token }),
   getHistory: () => api.get('/users/me/attendance'),
   getAll: () => api.get('/admin/attendance'),
+  getOpenSessions: () => api.get('/sessions/open'),
+  getSessionRecords: (id) => api.get(`/sessions/${id}/attendance`),
+  closeSession: (id) => api.post(`/sessions/${id}/close`, {}),
+  recordManual: (data) => api.post('/attendance/manual', data),
 };
 

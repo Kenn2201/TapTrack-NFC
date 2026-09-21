@@ -5,7 +5,15 @@ All notable changes to TapTrack NFC will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — v0.5.0 ALPHA (In Development)
+## [Unreleased] — v0.6.0 BETA (In Development)
+
+### Added
+- Additive `003_v0.6.0_events_attendance.sql` migration for events, sessions, and attendance records with database-enforced duplicate protection per user/session.
+- Central shared attendance engine for `NFC_WEB`, authenticated `NFC_URL`, and `MANUAL` methods with stable error codes and server-side RBAC.
+- Admin event management, operator sessions, NFC/manual check-in, attendance feeds, and user history.
+- Regression coverage for event/session rules, all attendance methods, inactive users/cards, mismatches, invalid references, and duplicates.
+
+## [0.5.0] — 2026-09-21 — Universal NFC URL Fallback (ALPHA)
 
 ### Added
 - **Universal NFC Credential Resolution Endpoint (`server/src/controllers/nfc.controller.js`, `server/src/services/nfcCard.service.js`, `server/src/routes/index.js`)**:

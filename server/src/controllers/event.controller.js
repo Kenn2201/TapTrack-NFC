@@ -1,10 +1,9 @@
-﻿// Event controller — event CRUD
-// Implementation planned for v0.6.0 BETA
-const notImplemented = (req, res) => res.status(501).json({ error: 'Not implemented' });
+import { eventService } from '../services/event.service.js';
 
+const id = (value) => Number.parseInt(value, 10);
 export const eventController = {
-  getAll: notImplemented,
-  getById: notImplemented,
-  create: notImplemented,
-  update: notImplemented,
+  async getAll(req, res, next) { try { res.json({ events: await eventService.listEvents() }); } catch (e) { next(e); } },
+  async getById(req, res, next) { try { res.json({ event: await eventService.getEvent(id(req.params.id)) }); } catch (e) { next(e); } },
+  async create(req, res, next) { try { res.status(201).json({ event: await eventService.createEvent(req.validated, req.user) }); } catch (e) { next(e); } },
+  async update(req, res, next) { try { res.json({ event: await eventService.updateEvent(id(req.params.id), req.validated, req.user) }); } catch (e) { next(e); } },
 };

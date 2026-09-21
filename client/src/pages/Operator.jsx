@@ -1,82 +1,13 @@
-import React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 import Header from '../components/layout/Header';
-
+import { attendanceService } from '../services/attendanceService';
+import { authService } from '../services/authService';
 export default function Operator() {
-  const { user } = useAuth();
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Header />
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <span className="px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-semibold rounded-full">
-              OPERATOR CONSOLE
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            Event Attendance Operations
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Authenticated operator console for session management and real-time attendee check-ins.
-          </p>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6">
-          <div className="flex items-start space-x-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center flex-shrink-0">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-white">Upcoming NFC & Session Milestones</h2>
-              <p className="text-sm text-slate-300 mt-1 leading-relaxed">
-                You are authenticated with <span className="text-amber-400 font-semibold">{user?.role}</span> permissions.
-                In accordance with the TapTrack roadmap:
-              </p>
-              <ul className="mt-3 space-y-2 text-xs text-slate-400 list-disc list-inside">
-                <li><strong className="text-slate-200">v0.3.0 ALPHA:</strong> Physical card provisioning and token generation (completed)</li>
-                <li><strong className="text-emerald-400">v0.4.0 ALPHA:</strong> Android Web NFC reader mode (NDEFReader API) — Available Now</li>
-                <li><strong className="text-slate-200">v0.5.0 ALPHA:</strong> Universal URL fallback resolution (/t#token)</li>
-                <li><strong className="text-slate-200">v0.6.0 BETA:</strong> Operator attendance sessions and shared attendance engine</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="bg-slate-950 border border-emerald-500/30 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <h3 className="text-sm font-bold text-white">Live Web NFC Reader</h3>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Scan physical NTAG215 cards (such as NFC-001) using Android Chrome and authoritatively verify credentials.
-              </p>
-            </div>
-            <Link
-              to="/operator/nfc-reader"
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors text-center whitespace-nowrap"
-            >
-              Launch NFC Reader
-            </Link>
-          </div>
-
-          <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-slate-500">
-              Session Operator: {user?.firstName} {user?.lastName} ({user?.email})
-            </span>
-            <Link
-              to="/dashboard"
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors border border-slate-700"
-            >
-              Return to Dashboard
-            </Link>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+  const [sessions, setSessions] = useState([]); const [users, setUsers] = useState([]); const [userId, setUserId] = useState(''); const [message, setMessage] = useState('');
+  const load = useCallback(async () => { const [s, u] = await Promise.all([attendanceService.getOpenSessions(), authService.getUsers()]); setSessions(s.sessions || []); setUsers((u.users || []).filter((x) => x.status === 'ACTIVE')); }, []);
+  useEffect(() => { load().catch((e) => setMessage(e.message)); }, [load]);
+  const manual = async (session) => { try { await attendanceService.recordManual({ eventId: session.eventId, sessionId: session.id, userId: Number(userId) }); setMessage('Manual attendance recorded.'); } catch (e) { setMessage(e.message); } };
+  const close = async (session) => { try { await attendanceService.closeSession(session.id); setMessage('Session closed.'); await load(); } catch (e) { setMessage(e.message); } };
+  return <div className="min-h-screen bg-slate-950 text-white"><Header /><main className="mx-auto max-w-5xl p-4 sm:p-8"><h1 className="text-3xl font-bold">Attendance operations</h1><p className="mt-1 text-slate-400">Select an open session, then scan a card or record a manual check-in.</p>{message && <div role="status" className="my-4 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3">{message}</div>}<div className="mt-6 grid gap-4">{sessions.map((session) => <article key={session.id} className="rounded-xl border border-slate-800 bg-slate-900 p-5"><h2 className="font-bold">{session.event?.name}</h2><p className="text-xs text-emerald-400">OPEN since {new Date(session.openedAt).toLocaleString()}</p><div className="mt-4 flex flex-col gap-3 sm:flex-row"><Link state={{ session }} to="/operator/nfc-reader" className="min-h-11 rounded-lg bg-emerald-600 px-4 py-3 text-center text-sm font-semibold">Use NFC scanner</Link><select aria-label="Member for manual attendance" value={userId} onChange={(e) => setUserId(e.target.value)} className="min-h-11 rounded-lg border border-slate-700 bg-slate-950 px-3"><option value="">Select member</option>{users.map((u) => <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>)}</select><button disabled={!userId} onClick={() => manual(session)} className="min-h-11 rounded-lg bg-blue-600 px-4 text-sm disabled:opacity-50">Record manual</button><button onClick={() => close(session)} className="min-h-11 rounded-lg border border-rose-500/40 px-4 text-sm text-rose-300">Close session</button></div></article>)}{!sessions.length && <p className="text-slate-400">No open attendance sessions.</p>}</div></main></div>;
 }

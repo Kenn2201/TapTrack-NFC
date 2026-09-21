@@ -10,6 +10,7 @@ export const cardService = {
   assign: (id, data) => api.patch(`/admin/cards/${id}/assign`, data),
   verifyCardToken: (token) => api.post('/nfc/verify', { token }),
   resolveCardToken: (token) => api.post('/nfc/resolve', { token }),
+  recordAttendance: (token, context) => api.post('/nfc/check-in', { token, ...context }),
 };
 
 export default cardService;
