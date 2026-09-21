@@ -57,6 +57,7 @@ export default function Header() {
                 )}
                 {user?.role === 'ADMIN' && (
                   <>
+                    <Link to="/admin" className="text-slate-300 hover:text-white px-3 py-2 text-sm font-medium transition-colors">Admin</Link>
                     <Link to="/admin/cards" className="text-blue-400 hover:text-blue-300 px-3 py-2 text-sm font-medium transition-colors">
                       NFC Cards
                     </Link>
@@ -154,6 +155,7 @@ export default function Header() {
               )}
               {user?.role === 'ADMIN' && (
                 <>
+                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">Admin Dashboard</Link>
                   <Link
                     to="/admin/cards"
                     onClick={() => setMobileMenuOpen(false)}

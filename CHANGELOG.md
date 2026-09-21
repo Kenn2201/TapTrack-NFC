@@ -5,7 +5,15 @@ All notable changes to TapTrack NFC will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — v0.6.0 BETA (In Development)
+## [Unreleased] — v0.7.0 BETA (In Development)
+
+### Added
+- Real database-backed administrative metrics for users, cards, events, sessions, and recent attendance.
+- Central card lifecycle policy covering lost, revoked, disabled, administrative reactivation, and replacement workflows.
+- Atomic replacement with a new one-time credential, same-user assignment, and preserved relationship/history.
+- Admin card search, full status filters, reasons, confirmations, and lifecycle actions; operators and users remain server-side denied.
+
+## [0.6.0] — 2026-09-21 — Events and Shared Attendance Engine (BETA)
 
 ### Added
 - Additive `003_v0.6.0_events_attendance.sql` migration for events, sessions, and attendance records with database-enforced duplicate protection per user/session.

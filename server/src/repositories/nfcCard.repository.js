@@ -275,6 +275,42 @@ export const nfcCardRepository = {
     return result.rows[0] ? this._mapRow(result.rows[0]) : null;
   },
 
+  async updateLifecycle(id, { status, actorId, reason }) {
+    const result = await pool.query(`
+      UPDATE nfc_cards SET status = $1,
+        revoked_at = CASE WHEN $1 IN ('LOST', 'REVOKED', 'DISABLED') THEN NOW() ELSE revoked_at END,
+        revoked_by = CASE WHEN $1 IN ('LOST', 'REVOKED', 'DISABLED') THEN $2 ELSE revoked_by END,
+        revocation_reason = CASE WHEN $1 IN ('LOST', 'REVOKED', 'DISABLED') THEN $3 ELSE revocation_reason END,
+        updated_at = NOW()
+      WHERE id = $4 RETURNING *;
+    `, [status, actorId, reason, id]);
+    return result.rows[0] ? this._mapRow(result.rows[0]) : null;
+  },
+
+  async replaceCard({ oldCardId, cardLabel, userId, tokenHash, actorId, reason }) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const created = await client.query(`
+        INSERT INTO nfc_cards (card_label, user_id, token_hash, status, issued_by, issued_at, created_at, updated_at)
+        VALUES ($1, $2, $3, 'UNASSIGNED', $4, NOW(), NOW(), NOW()) RETURNING *;
+      `, [cardLabel, userId, tokenHash, actorId]);
+      const updated = await client.query(`
+        UPDATE nfc_cards SET status = 'REPLACED', replaced_by_card_id = $1,
+          revoked_at = NOW(), revoked_by = $2, revocation_reason = $3, updated_at = NOW()
+        WHERE id = $4 AND status IN ('LOST', 'REVOKED') RETURNING *;
+      `, [created.rows[0].id, actorId, reason, oldCardId]);
+      if (!updated.rows[0]) throw Object.assign(new Error('Card replacement state changed.'), { code: 'CARD_STATE_CHANGED', status: 409 });
+      await client.query('COMMIT');
+      return { oldCard: this._mapRow(updated.rows[0]), newCard: this._mapRow(created.rows[0]) };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
   /**
    * Helper to normalize database rows into a structured object
    */

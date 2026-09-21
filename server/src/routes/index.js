@@ -5,6 +5,7 @@ import { cardController } from '../controllers/card.controller.js';
 import { eventController } from '../controllers/event.controller.js';
 import { nfcController } from '../controllers/nfc.controller.js';
 import { attendanceController } from '../controllers/attendance.controller.js';
+import { dashboardController } from '../controllers/dashboard.controller.js';
 
 import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roles.js';
@@ -28,6 +29,8 @@ import {
   updateEventSchema,
   manualAttendanceSchema,
   nfcAttendanceSchema,
+  cardLifecycleSchema,
+  replaceCardSchema,
 } from '../validators/schemas.js';
 
 const router = Router();
@@ -49,6 +52,7 @@ router.get('/users/me/attendance', authenticate, attendanceController.getUserHis
 
 // ─── ADMIN — USERS & ROLES (v0.2.0) ───────────────────────────────────────────
 router.get('/admin/users', authenticate, requireRole('ADMIN'), adminUserController.getAllUsers);
+router.get('/admin/dashboard', authenticate, requireRole('ADMIN'), dashboardController.get);
 router.get('/admin/users/:id', authenticate, requireRole('ADMIN'), adminUserController.getUserById);
 router.patch('/admin/users/:id/role', authenticate, requireRole('ADMIN'), validate(updateRoleSchema), adminUserController.updateUserRole);
 router.patch('/admin/users/:id/status', authenticate, requireRole('ADMIN'), validate(updateStatusSchema), adminUserController.updateUserStatus);
@@ -77,8 +81,8 @@ router.post('/admin/cards/provision', authenticate, requireRole('ADMIN'), valida
 router.patch('/admin/cards/:id/activate', authenticate, requireRole('ADMIN'), validate(activateCardSchema), cardController.activate);
 router.patch('/admin/cards/:id/assign', authenticate, requireRole('ADMIN'), validate(assignCardSchema), cardController.assign);
 router.post('/admin/cards/:id/assign', authenticate, requireRole('ADMIN'), validate(assignCardSchema), cardController.assign);
-router.post('/admin/cards/:id/revoke', authenticate, requireRole('ADMIN'), cardController.revoke);
-router.post('/admin/cards/:id/replace', authenticate, requireRole('ADMIN'), cardController.replace);
+router.patch('/admin/cards/:id/lifecycle', authenticate, requireRole('ADMIN'), validate(cardLifecycleSchema), cardController.lifecycle);
+router.post('/admin/cards/:id/replace', authenticate, requireRole('ADMIN'), validate(replaceCardSchema), cardController.replace);
 
 router.post('/admin/events', authenticate, requireRole('ADMIN'), validate(createEventSchema), eventController.create);
 router.patch('/admin/events/:id', authenticate, requireRole('ADMIN'), validate(updateEventSchema), eventController.update);

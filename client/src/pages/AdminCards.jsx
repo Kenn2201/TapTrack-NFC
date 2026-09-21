@@ -13,6 +13,7 @@ export default function AdminCards() {
   const [successMsg, setSuccessMsg] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [replacement, setReplacement] = useState(null);
 
   // Provisioning Modal State
   const [isProvisionModalOpen, setIsProvisionModalOpen] = useState(false);
@@ -161,6 +162,22 @@ export default function AdminCards() {
     }
   };
 
+  const handleLifecycle = async (card, status) => {
+    const reason = window.prompt(`Reason for marking ${card.cardLabel} ${status}:`);
+    if (!reason || !window.confirm(`Confirm ${card.cardLabel}: ${card.status} → ${status}?`)) return;
+    try { await cardService.transition(card.id, { status, reason }); setSuccessMsg(`${card.cardLabel} is now ${status}.`); await fetchData(); }
+    catch (err) { setError(err.message); }
+  };
+
+  const handleReplace = async (card) => {
+    const newCardLabel = window.prompt(`New physical label replacing ${card.cardLabel}:`, suggestNextLabel());
+    if (!newCardLabel) return;
+    const reason = window.prompt('Replacement reason:', 'Replacement issued');
+    if (!reason) return;
+    try { const result = await cardService.replace(card.id, { newCardLabel, reason }); setReplacement(result); setSuccessMsg(`${card.cardLabel} replaced by ${result.newCard.cardLabel}.`); await fetchData(); }
+    catch (err) { setError(err.message); }
+  };
+
   const filteredCards = cards.filter((c) => {
     const matchesStatus = statusFilter === 'ALL' || c.status === statusFilter;
     const term = search.toLowerCase();
@@ -227,6 +244,7 @@ export default function AdminCards() {
             <button onClick={() => setSuccessMsg(null)} className="text-emerald-400 hover:text-white text-xs">Dismiss</button>
           </div>
         )}
+        {replacement?.writeUrl && <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm"><strong>One-time replacement write URL</strong><p className="mt-2 break-all font-mono text-xs">{replacement.writeUrl}</p><button onClick={() => navigator.clipboard?.writeText(replacement.writeUrl)} className="mt-3 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold">Copy URL</button><button onClick={() => setReplacement(null)} className="ml-2 px-3 py-2 text-xs">Dismiss permanently</button></div>}
 
         {/* Security & Hardware Specifications Banner */}
         <div className="mb-8 p-5 bg-slate-900/70 border border-slate-800 rounded-2xl">
@@ -280,7 +298,7 @@ export default function AdminCards() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <span className="text-xs text-slate-400">Status:</span>
             <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
-              {['ALL', 'UNASSIGNED', 'ACTIVE'].map((st) => (
+              {['ALL', 'UNASSIGNED', 'ACTIVE', 'LOST', 'REVOKED', 'REPLACED', 'DISABLED'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setStatusFilter(st)}
@@ -392,9 +410,9 @@ export default function AdminCards() {
                             Confirm & Activate
                           </button>
                         )}
-                        {card.status === 'ACTIVE' && (
-                          <span className="text-xs text-slate-500">Active</span>
-                        )}
+                        {card.status === 'ACTIVE' && <div className="flex justify-end gap-1"><button onClick={() => handleLifecycle(card, 'LOST')} className="rounded bg-amber-900/50 px-2 py-1 text-xs">Lost</button><button onClick={() => handleLifecycle(card, 'REVOKED')} className="rounded bg-rose-900/50 px-2 py-1 text-xs">Revoke</button><button onClick={() => handleLifecycle(card, 'DISABLED')} className="rounded bg-slate-700 px-2 py-1 text-xs">Disable</button></div>}
+                        {['LOST', 'REVOKED'].includes(card.status) && <button onClick={() => handleReplace(card)} className="rounded bg-blue-600 px-2 py-1 text-xs">Replace</button>}
+                        {card.status === 'DISABLED' && <button onClick={() => handleLifecycle(card, 'ACTIVE')} className="rounded bg-emerald-700 px-2 py-1 text-xs">Reactivate</button>}
                       </td>
                     </tr>
                   ))}

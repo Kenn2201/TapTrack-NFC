@@ -1,4 +1,5 @@
 import { nfcCardService } from '../services/nfcCard.service.js';
+import { cardLifecycleService } from '../services/cardLifecycle.service.js';
 
 export const cardController = {
   /**
@@ -103,12 +104,23 @@ export const cardController = {
     }
   },
 
-  // v0.7.0 lifecycle stubs
-  revoke(req, res) {
-    return res.status(501).json({ error: 'Card revocation is scheduled for v0.7.0 BETA' });
+  async lifecycle(req, res, next) {
+    try {
+      const card = await cardLifecycleService.transition({
+        cardId: parseInt(req.params.id, 10), targetStatus: req.validated.status,
+        reason: req.validated.reason, actor: req.user,
+      });
+      return res.json({ card });
+    } catch (error) { return next(error); }
   },
 
-  replace(req, res) {
-    return res.status(501).json({ error: 'Card replacement is scheduled for v0.7.0 BETA' });
+  async replace(req, res, next) {
+    try {
+      const result = await cardLifecycleService.replace({
+        cardId: parseInt(req.params.id, 10), newCardLabel: req.validated.newCardLabel,
+        reason: req.validated.reason, actor: req.user,
+      });
+      return res.status(201).json(result);
+    } catch (error) { return next(error); }
   },
 };

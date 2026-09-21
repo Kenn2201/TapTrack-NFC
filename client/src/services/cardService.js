@@ -11,6 +11,8 @@ export const cardService = {
   verifyCardToken: (token) => api.post('/nfc/verify', { token }),
   resolveCardToken: (token) => api.post('/nfc/resolve', { token }),
   recordAttendance: (token, context) => api.post('/nfc/check-in', { token, ...context }),
+  transition: (id, data) => api.patch(`/admin/cards/${id}/lifecycle`, data),
+  replace: (id, data) => api.post(`/admin/cards/${id}/replace`, data),
 };
 
 export default cardService;

@@ -93,3 +93,13 @@ export const nfcAttendanceSchema = z.object({
   sessionId: z.number().int().positive(),
   method: z.enum(['NFC_WEB', 'NFC_URL']),
 });
+
+export const cardLifecycleSchema = z.object({
+  status: z.enum(['LOST', 'REVOKED', 'DISABLED', 'ACTIVE']),
+  reason: z.string().trim().min(3).max(200).optional(),
+});
+
+export const replaceCardSchema = z.object({
+  newCardLabel: z.string().trim().min(1).max(50),
+  reason: z.string().trim().min(3).max(200).optional(),
+});
