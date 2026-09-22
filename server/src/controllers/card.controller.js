@@ -110,8 +110,12 @@ export const cardController = {
 
   async lifecycle(req, res, next) {
     try {
+      const cardId = parseInt(req.params.id, 10);
+      if (isNaN(cardId)) {
+        return res.status(400).json({ error: 'Invalid card ID' });
+      }
       const card = await cardLifecycleService.transition({
-        cardId: parseInt(req.params.id, 10), targetStatus: req.validated.status,
+        cardId, targetStatus: req.validated.status,
         reason: req.validated.reason, actor: req.user,
       });
       return res.json({ card });

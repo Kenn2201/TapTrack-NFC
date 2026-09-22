@@ -68,7 +68,7 @@ export default function Profile() {
     }
     setPasswordLoading(true);
     try {
-      await authService.changePassword({ currentPassword, newPassword });
+      await authService.changePassword({ currentPassword, newPassword, confirmPassword });
       setChangePasswordModal(false);
       setCurrentPassword('');
       setNewPassword('');

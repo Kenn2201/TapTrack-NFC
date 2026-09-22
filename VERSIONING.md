@@ -4,12 +4,12 @@ TapTrack NFC follows Semantic Versioning. The canonical runtime version is `serv
 
 ## Current status
 
-- Version: `1.0.0`
-- Label: `v1.0.0 — Production Candidate`
+- Version: `1.1.0`
+- Label: `v1.1.0 — Release Candidate`
 - Acceptance: `Manual Acceptance Pending`
 - Development branch: `kenn/develop`
 - Production branch: `master`
-- No v1.0 tag or GitHub Release is permitted until human acceptance passes.
+- No v1.1 tag or GitHub Release is permitted until human acceptance passes.
 
 ## History
 
@@ -25,6 +25,7 @@ TapTrack NFC follows Semantic Versioning. The canonical runtime version is `serv
 | v0.8.0 | BETA | Activity Pulse, audits, UX and security hardening | Complete |
 | v0.9.0 | RC | Public testing, inventory, compatibility, benchmark preparation | Engineering complete; manual testing pending |
 | v1.0.0 | Production Candidate | Stabilized public TapTrack NFC demo | Manual acceptance pending |
+| v1.1.0 | RC | SaaS pass: password change, lifecycle modal, error boundary, UX | Manual acceptance pending |
 
 ## Release rules
 

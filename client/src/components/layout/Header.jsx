@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { CURRENT_VERSION_LABEL } from '../../constants/version';
 
 export default function Header() {
   const { user, authenticated, logout } = useAuth();
@@ -111,7 +112,7 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand + Compact v1.0 RC Badge */}
+          {/* Brand + Compact Version Badge */}
           <div className="flex items-center gap-2.5">
             <Link
               to={authenticated ? '/dashboard' : '/'}
@@ -127,7 +128,7 @@ export default function Header() {
             </Link>
 
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/30 tracking-tight">
-              v1.0 RC
+              {CURRENT_VERSION_LABEL}
             </span>
           </div>
 
@@ -462,7 +463,7 @@ export default function Header() {
                   TapTrack NFC
                 </span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30">
-                  v1.0 RC
+                  {CURRENT_VERSION_LABEL}
                 </span>
               </div>
               <button

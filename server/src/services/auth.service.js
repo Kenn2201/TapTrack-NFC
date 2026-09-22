@@ -312,7 +312,11 @@ export const authService = {
     }
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
     const updated = await userRepository.updatePassword(userId, passwordHash);
-    return { message: 'Password changed successfully. Other sessions have been securely signed out.', user: toSafeUser(updated) };
+    return {
+      message: 'Password changed successfully. Other sessions have been securely signed out.',
+      user: toSafeUser(updated),
+      sessionVersion: updated?.session_version ?? user.session_version ?? 0,
+    };
   },
 };
 

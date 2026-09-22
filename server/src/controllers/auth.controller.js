@@ -1,4 +1,5 @@
-import { config } from '../config/index.js';
+import jwt from 'jsonwebtoken';
+import { config, getJwtSecret } from '../config/index.js';
 import { authService, toSafeUser } from '../services/auth.service.js';
 import { userRepository } from '../repositories/user.repository.js';
 
@@ -155,7 +156,30 @@ export const authController = {
     try {
       const { currentPassword, newPassword } = req.body;
       const result = await authService.changePassword({ userId: req.user.id, currentPassword, newPassword });
-      return res.json(result);
+
+      // One-active-session model: the password change bumped session_version,
+      // invalidating every previously issued cookie. Re-issue a fresh cookie so
+      // THIS session stays valid while all other sessions are signed out.
+      const secret = getJwtSecret();
+      const token = jwt.sign(
+        {
+          sub: result.user.id,
+          email: result.user.email,
+          role: result.user.role,
+          ver: result.sessionVersion,
+        },
+        secret,
+        { expiresIn: config.jwtExpiresIn }
+      );
+      res.cookie(config.cookieName, token, {
+        httpOnly: true,
+        secure: config.nodeEnv === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({ message: result.message, user: result.user });
     } catch (err) {
       next(err);
     }

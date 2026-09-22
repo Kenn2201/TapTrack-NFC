@@ -212,7 +212,7 @@ export default function EventDetail({ eventId }) {
                             <Badge status={p.status} className={STATUS_COLORS[p.status]} />
                           </div>
                         </div>
-                      )}
+                      )))}
                   </div>
                 </Card>
               </Section>
@@ -250,7 +250,7 @@ export default function EventDetail({ eventId }) {
                       Open Attendance Session (Not Implemented)
                     </Button>
                   </>
-                }
+                )}
                 {!isAdminOrOperator && user && !userStatus && (
                   <>
                     <Button variant="primary" className="w-full" onClick={() => handleRsvp('ACCEPTED')} loading={rsvpLoading}>I'll Attend</Button>

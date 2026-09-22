@@ -29,6 +29,7 @@ resetPasswordSchema,
 updateRoleSchema,
 updateStatusSchema,
 updateProfileSchema,
+changePasswordSchema,
 provisionCardSchema,
 activateCardSchema,
 assignCardSchema,
@@ -64,6 +65,7 @@ router.post('/auth/reset-password', resetLimiter, validate(resetPasswordSchema),
 
 // ─── USER PROFILE (v0.2.0) ───────────────────────────────────────────────────
 router.patch('/users/me', authenticate, validate(updateProfileSchema), authController.updateProfile);
+router.post('/users/me/password', authLimiter, authenticate, validate(changePasswordSchema), authController.changePassword);
 router.get('/users/me/attendance', authenticate, attendanceController.getUserHistory);
 router.get('/users/me/activity-pulse', authenticate, activityPulseController.get);
 router.get('/users/me/card', authenticate, cardController.getMine);

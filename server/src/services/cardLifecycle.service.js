@@ -12,6 +12,17 @@ export const CARD_TRANSITIONS = Object.freeze({
 });
 const fail = (status, code, message) => Object.assign(new Error(message), { status, code });
 
+/**
+ * Map known database errors to safe, human-readable client errors.
+ * 22001 = value too long for a VARCHAR column (revocation_reason is VARCHAR(100)).
+ */
+function mapDbError(err) {
+  if (err?.code === '22001') {
+    return fail(400, 'REASON_TOO_LONG', 'Reason cannot exceed 100 characters.');
+  }
+  return err;
+}
+
 export const cardLifecycleService = {
   async transition({ cardId, targetStatus, actor, reason }) {
     if (actor?.role !== 'ADMIN') throw fail(403, 'FORBIDDEN', 'Only administrators can manage card lifecycle.');
@@ -20,15 +31,25 @@ export const cardLifecycleService = {
     if (!(CARD_TRANSITIONS[card.status] || []).includes(targetStatus)) {
       throw fail(409, 'INVALID_CARD_TRANSITION', `Card cannot transition from ${card.status} to ${targetStatus}.`);
     }
-    if (['LOST', 'REVOKED', 'DISABLED'].includes(targetStatus) && !reason?.trim()) {
+    const trimmedReason = reason?.trim() || null;
+    if (['LOST', 'REVOKED', 'DISABLED'].includes(targetStatus) && !trimmedReason) {
       throw fail(400, 'REASON_REQUIRED', 'A lifecycle reason is required.');
     }
-    const updated = await nfcCardRepository.updateLifecycle(cardId, {
-      status: targetStatus,
-      actorId: actor.id,
-      reason: reason?.trim() || null,
-    });
-    await auditService.log({ actorId: actor.id, action: `CARD_${targetStatus}`, entityType: 'NFC_CARD', entityId: cardId, metadata: { from: card.status, to: targetStatus, reason: reason?.trim() || null } });
+    if (trimmedReason && trimmedReason.length > 100) {
+      throw fail(400, 'REASON_TOO_LONG', 'Reason cannot exceed 100 characters.');
+    }
+    let updated;
+    try {
+      updated = await nfcCardRepository.updateLifecycle(cardId, {
+        status: targetStatus,
+        actorId: actor.id,
+        reason: trimmedReason,
+      });
+    } catch (dbErr) {
+      throw mapDbError(dbErr);
+    }
+    if (!updated) throw fail(404, 'CARD_NOT_FOUND', 'NFC card not found.');
+    await auditService.log({ actorId: actor.id, action: `CARD_${targetStatus}`, entityType: 'NFC_CARD', entityId: cardId, metadata: { from: card.status, to: targetStatus, reason: trimmedReason } });
     return nfcCredentialService.formatSafeCard(updated);
   },
 
@@ -43,10 +64,15 @@ export const cardLifecycleService = {
     if (await nfcCardRepository.findByCardLabel(newCardLabel)) throw fail(409, 'CARD_LABEL_EXISTS', 'Replacement card label already exists.');
     const rawToken = nfcCredentialService.generateRawCredential();
     const tokenHash = nfcCredentialService.deriveCredentialHash(rawToken);
-    const replacement = await nfcCardRepository.replaceCard({
-      oldCardId: cardId, cardLabel: newCardLabel.trim().toUpperCase(), userId: oldCard.userId,
-      tokenHash, actorId: actor.id, reason: reason?.trim() || 'Card replaced',
-    });
+    let replacement;
+    try {
+      replacement = await nfcCardRepository.replaceCard({
+        oldCardId: cardId, cardLabel: newCardLabel.trim().toUpperCase(), userId: oldCard.userId,
+        tokenHash, actorId: actor.id, reason: reason?.trim() || 'Card replaced',
+      });
+    } catch (dbErr) {
+      throw mapDbError(dbErr);
+    }
     await auditService.log({ actorId: actor.id, action: 'CARD_REPLACED', entityType: 'NFC_CARD', entityId: cardId, metadata: { replacementCardId: replacement.newCard.id, reason: reason?.trim() || 'Card replaced' } });
     return {
       oldCard: nfcCredentialService.formatSafeCard(replacement.oldCard),
@@ -66,10 +92,15 @@ export const cardLifecycleService = {
     if (!oldCard.userId) throw fail(409, 'CARD_UNASSIGNED', 'Only an assigned card can be reissued.');
     const rawToken = nfcCredentialService.generateRawCredential();
     const tokenHash = nfcCredentialService.deriveCredentialHash(rawToken);
-    const replacement = await nfcCardRepository.replaceCard({
-      oldCardId: cardId, cardLabel: oldCard.cardLabel, userId: oldCard.userId,
-      tokenHash, actorId: actor.id, reason: reason?.trim() || 'Card reissued',
-    });
+    let replacement;
+    try {
+      replacement = await nfcCardRepository.replaceCard({
+        oldCardId: cardId, cardLabel: oldCard.cardLabel, userId: oldCard.userId,
+        tokenHash, actorId: actor.id, reason: reason?.trim() || 'Card reissued',
+      });
+    } catch (dbErr) {
+      throw mapDbError(dbErr);
+    }
     await auditService.log({ actorId: actor.id, action: 'CARD_REISSUED', entityType: 'NFC_CARD', entityId: cardId, metadata: { replacementCardId: replacement.newCard.id, reason: reason?.trim() || 'Card reissued' } });
     return {
       oldCard: nfcCredentialService.formatSafeCard(replacement.oldCard),

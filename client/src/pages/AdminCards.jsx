@@ -5,7 +5,54 @@ import Header from '../components/layout/Header';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import CardStatusBadge from '../components/cards/CardStatusBadge';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import Modal from '../components/ui/Modal';
+import Alert from '../components/ui/Alert';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+
+// Per-status lifecycle modal copy. RequiresReason: LOST/REVOKED/DISABLED
+// (mirrors server REASON_REQUIRED). ACTIVE reactivation needs no reason.
+const LIFECYCLE_CONFIG = {
+  LOST: {
+    title: 'Mark Card as Lost',
+    description: 'Report this physical card as lost. The card will immediately stop being accepted for attendance until it is replaced or reactivated.',
+    confirmText: 'Mark as Lost',
+    variant: 'warning',
+    requiresReason: true,
+    reasonLabel: 'Reason',
+    reasonPlaceholder: 'e.g. Card misplaced by member',
+    reasonHelper: 'Minimum 3 characters. Recorded in the audit history.',
+  },
+  REVOKED: {
+    title: 'Revoke Card',
+    description: 'Destructive action: permanently revoke this credential. The card will be rejected on every future tap and cannot be reactivated — only replaced. Audit history is preserved.',
+    confirmText: 'Revoke Card',
+    variant: 'danger',
+    requiresReason: true,
+    reasonLabel: 'Reason for revocation',
+    reasonPlaceholder: 'e.g. Security revocation by admin',
+    reasonHelper: 'Minimum 3 characters. Recorded in the audit history.',
+  },
+  DISABLED: {
+    title: 'Disable Card',
+    description: 'Temporarily disable this card. It will not be accepted for attendance, but it can be reactivated later without reissuing the tag.',
+    confirmText: 'Disable Card',
+    variant: 'warning',
+    requiresReason: true,
+    reasonLabel: 'Reason',
+    reasonPlaceholder: 'e.g. Maintenance window',
+    reasonHelper: 'Minimum 3 characters. Recorded in the audit history.',
+  },
+  ACTIVE: {
+    title: 'Reactivate Card',
+    description: 'Bring this disabled card back into service. It will be accepted for attendance again immediately.',
+    confirmText: 'Reactivate Card',
+    variant: 'success',
+    requiresReason: false,
+    reasonLabel: 'Note (optional)',
+    reasonPlaceholder: 'Optional note for the audit log',
+    reasonHelper: 'Optional. Maximum 100 characters.',
+  },
+};
 
 export default function AdminCards() {
   useDocumentTitle('NFC Cards');
@@ -27,9 +74,14 @@ export default function AdminCards() {
   const [provisionResult, setProvisionResult] = useState(null); // Contains { card, rawToken, writeUrl }
   const [copied, setCopied] = useState(false);
   const [confirmWrittenChecked, setConfirmWrittenChecked] = useState(false);
+  const [activatingLoading, setActivatingLoading] = useState(false);
   // Confirm Dialog States
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [promptDialog, setPromptDialog] = useState(null);
+
+  // Lifecycle confirmation modal — single source of truth for the open dialog.
+  // shape: { card, status, reason, error, loading }
+  const [lifecycleModal, setLifecycleModal] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -74,6 +126,7 @@ export default function AdminCards() {
     setProvisionResult(null);
     setCopied(false);
     setConfirmWrittenChecked(false);
+    setActivatingLoading(false);
     setError(null);
     setSuccessMsg(null);
     setIsProvisionModalOpen(true);
@@ -86,6 +139,7 @@ export default function AdminCards() {
     setProvisionStep(1);
     setCopied(false);
     setConfirmWrittenChecked(false);
+    setActivatingLoading(false);
   };
 
   const handleStartProvisioning = async (e) => {
@@ -171,32 +225,50 @@ export default function AdminCards() {
   };
 
   const handleLifecycle = (card, status) => {
-    setPromptDialog({
-      title: `Mark ${card.cardLabel} as ${status}`,
-      message: `Please provide a reason for this status change:`,
-      variant: 'warning',
-      confirmText: 'Next',
-      cancelText: 'Cancel',
-      input: {
-        label: 'Reason',
-        placeholder: `Reason for ${status}...`,
-        value: '',
-        onChange: (e) => setPromptDialog(prev => prev ? { ...prev, input: { ...prev.input, value: e.target.value } } : null),
-        helperText: 'Required for LOST, REVOKED, DISABLED transitions',
-      },
-      onConfirm: (reason) => {
-        if (!reason?.trim()) return;
-        setPromptDialog(prev => prev ? { ...prev, message: `Confirm ${card.cardLabel}: ${card.status} → ${status}?`, input: null, confirmText: 'Confirm', variant: 'danger', onConfirm: async () => {
-          try {
-            await cardService.transition(card.id, { status, reason: reason.trim() });
-            setSuccessMsg(`${card.cardLabel} is now ${status}.`);
-            await fetchData();
-          } catch (err) {
-            setError(err.message);
-          }
-        } } : null);
-      },
-    });
+    setLifecycleModal({ card, status, reason: '', error: null, loading: false });
+  };
+
+  const closeLifecycleModal = () => {
+    // Never close while a transition request is in flight
+    setLifecycleModal((prev) => (prev?.loading ? prev : null));
+  };
+
+  const handleLifecycleReasonChange = (e) => {
+    const value = e.target.value;
+    setLifecycleModal((prev) => (prev ? { ...prev, reason: value, error: null } : prev));
+  };
+
+  const handleLifecycleConfirm = async () => {
+    if (!lifecycleModal || lifecycleModal.loading) return;
+    const { card, status, reason } = lifecycleModal;
+    const config = LIFECYCLE_CONFIG[status];
+    const trimmed = reason.trim();
+
+    // Client-side validation — errors stay INSIDE the modal, never close it
+    if (config.requiresReason && trimmed.length < 3) {
+      setLifecycleModal((prev) => (prev ? { ...prev, error: 'Reason must be at least 3 characters.' } : prev));
+      return;
+    }
+    if (trimmed.length > 100) {
+      setLifecycleModal((prev) => (prev ? { ...prev, error: 'Reason cannot exceed 100 characters.' } : prev));
+      return;
+    }
+
+    setLifecycleModal((prev) => (prev ? { ...prev, loading: true, error: null } : prev));
+
+    const payload = { status };
+    if (trimmed) payload.reason = trimmed;
+
+    try {
+      await cardService.transition(card.id, payload);
+      // Success → close modal, refresh table, show toast
+      setLifecycleModal(null);
+      setSuccessMsg(`${card.cardLabel} is now ${status}.`);
+      await fetchData();
+    } catch (err) {
+      // Error → keep modal open, show safe message inside
+      setLifecycleModal((prev) => (prev ? { ...prev, loading: false, error: err.message || 'Failed to update card status.' } : null));
+    }
   };
 
   const handleReplace = (card) => {
@@ -711,7 +783,92 @@ export default function AdminCards() {
       />
     )}
 
-    {/* Prompt Dialog */}
+    {/* Lifecycle Confirmation Modal */}
+    {lifecycleModal && (() => {
+      const { card, status, reason, error, loading } = lifecycleModal;
+      const config = LIFECYCLE_CONFIG[status] || {};
+      const variantStyles = {
+        warning: 'bg-amber-600 hover:bg-amber-500',
+        danger: 'bg-rose-600 hover:bg-rose-500',
+        success: 'bg-emerald-600 hover:bg-emerald-500',
+      };
+      const confirmClass = variantStyles[config.variant] || variantStyles.warning;
+
+      return (
+        <Modal
+          isOpen={true}
+          onClose={closeLifecycleModal}
+          title={config.title || `Update ${card.cardLabel}`}
+          description={config.description}
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-4">
+            {/* Card being changed */}
+            <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
+              <div>
+                <p className="font-mono text-sm font-semibold text-white">{card.cardLabel}</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {card.assignedUser ? `${card.assignedUser.firstName} ${card.assignedUser.lastName}` : 'Unassigned'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <span>{card.status}</span>
+                <span aria-hidden="true">→</span>
+                <span className="font-semibold text-white">{status}</span>
+              </div>
+            </div>
+
+            {/* Reason field */}
+            <div>
+              <label htmlFor="lifecycle-reason" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                {config.reasonLabel || 'Reason'}
+                {config.requiresReason && <span className="text-rose-400 ml-1" aria-hidden="true">*</span>}
+              </label>
+              <input
+                id="lifecycle-reason"
+                type="text"
+                value={reason}
+                onChange={handleLifecycleReasonChange}
+                placeholder={config.reasonPlaceholder}
+                maxLength={100}
+                disabled={loading}
+                autoFocus
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-lg border bg-slate-950 text-slate-100 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 border-slate-700 hover:border-slate-600"
+              />
+              <p className="mt-1 text-xs text-slate-400">{config.reasonHelper}</p>
+            </div>
+
+            {/* In-modal error — modal stays open on failure */}
+            {error && (
+              <Alert type="error" title="Update failed" onClose={() => setLifecycleModal((prev) => (prev ? { ...prev, error: null } : prev))}>
+                {error}
+              </Alert>
+            )}
+
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={closeLifecycleModal}
+                disabled={loading}
+                className="min-h-[44px] px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleLifecycleConfirm}
+                disabled={loading || (config.requiresReason && reason.trim().length < 3)}
+                className={`min-h-[44px] px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${confirmClass}`}
+              >
+                {loading ? 'Applying…' : config.confirmText || 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      );
+    })()}
+
+    {/* Prompt Dialog (replace flow) */}
     {promptDialog && (
       <ConfirmDialog
         isOpen={true}

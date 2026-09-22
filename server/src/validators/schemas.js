@@ -104,7 +104,13 @@ export const rsvpSchema = z.object({
 // ─── NFC REISSUE (v1.1.0) ────────────────────────────────────────────────────
 export const reissueCardSchema = z.object({
   confirmInvalidate: z.boolean(),
-  reason: z.string().trim().min(3).max(200).optional(),
+  reason: z.preprocess(
+    (value) => (value === '' || value === null ? undefined : value),
+    z.string().trim()
+      .min(3, 'Reason must be at least 3 characters.')
+      .max(100, 'Reason cannot exceed 100 characters.')
+      .optional()
+  ),
 });
 
 // ─── NFC CARD PROVISIONING (v0.3.0) ──────────────────────────────────────────
@@ -163,10 +169,26 @@ export const nfcUrlAttendanceSchema = z.object({
 
 export const cardLifecycleSchema = z.object({
   status: z.enum(['LOST', 'REVOKED', 'DISABLED', 'ACTIVE']),
-  reason: z.string().trim().min(3).max(200).optional(),
+  // revocation_reason is VARCHAR(100) in PostgreSQL — never allow more than
+  // 100 characters through validation (overflow would surface as a 500).
+  // Empty/null reasons become undefined so the service can return a friendly
+  // REASON_REQUIRED error instead of a raw Zod "min 3 characters" message.
+  reason: z.preprocess(
+    (value) => (value === '' || value === null ? undefined : value),
+    z.string().trim()
+      .min(3, 'Reason must be at least 3 characters.')
+      .max(100, 'Reason cannot exceed 100 characters.')
+      .optional()
+  ),
 });
 
 export const replaceCardSchema = z.object({
   newCardLabel: z.string().trim().min(1).max(50),
-  reason: z.string().trim().min(3).max(200).optional(),
+  reason: z.preprocess(
+    (value) => (value === '' || value === null ? undefined : value),
+    z.string().trim()
+      .min(3, 'Reason must be at least 3 characters.')
+      .max(100, 'Reason cannot exceed 100 characters.')
+      .optional()
+  ),
 });

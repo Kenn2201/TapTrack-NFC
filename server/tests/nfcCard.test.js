@@ -113,6 +113,39 @@ vi.mock('../src/repositories/db.js', () => {
           return { rows: [{ ...newCard }] };
         }
 
+        // ─── LIFECYCLE UPDATE (PATCH .../lifecycle) ─────────────────────────
+        if (q.includes('UPDATE nfc_cards') && q.includes('CASE WHEN $1 IN')) {
+          const [status, actorId, reason, id] = params;
+          // Emulate PostgreSQL VARCHAR(100) overflow on revocation_reason
+          if (typeof reason === 'string' && reason.length > 100) {
+            const err = new Error('value too long for type character varying(100)');
+            err.code = '22001';
+            throw err;
+          }
+          const card = cardsTable.find((c) => c.id === id);
+          if (card) {
+            card.status = status;
+            if (['LOST', 'REVOKED', 'DISABLED'].includes(status)) {
+              card.revoked_at = new Date().toISOString();
+              card.revoked_by = actorId;
+              card.revocation_reason = reason;
+            }
+            card.updated_at = new Date().toISOString();
+            const user = usersTable.find((u) => u.id === card.user_id);
+            return {
+              rows: [{
+                ...card,
+                user_email: user?.email,
+                user_first_name: user?.first_name,
+                user_last_name: user?.last_name,
+                user_role: user?.role,
+                user_status: user?.status,
+              }],
+            };
+          }
+          return { rows: [] };
+        }
+
         if (q.includes('UPDATE nfc_cards') && q.includes('status = $1')) {
           const [status, activatedAt, revokedAt, revokedBy, revocationReason, id] = params;
           const card = cardsTable.find((c) => c.id === id);
@@ -493,6 +526,162 @@ describe('TapTrack NFC v0.3.0 ALPHA — NFC Provisioning Test Suite', () => {
 
       expect(provRes.status).toBe(201);
       expect(provRes.body.card.issuedBy).toBe(adminUser.id);
+    });
+  });
+
+  describe('Card Lifecycle Transitions (PATCH /api/admin/cards/:id/lifecycle)', () => {
+    const provisionAndActivate = async (label = 'NFC-001') => {
+      const prov = await request(app)
+        .post('/api/admin/cards/provision')
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ cardLabel: label, userId: regularUser.id });
+      const cardId = prov.body.card.id;
+      await request(app)
+        .patch(`/api/admin/cards/${cardId}/activate`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ confirmWritten: true });
+      return cardId;
+    };
+
+    it('19. ACTIVE → LOST succeeds with a valid reason', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'LOST', reason: 'Card misplaced by member' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.card.status).toBe('LOST');
+      expect(res.body.card.revocationReason).toBe('Card misplaced by member');
+      expect(res.body.card.token_hash).toBeUndefined();
+    });
+
+    it('20. ACTIVE → REVOKED succeeds with a valid reason', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'REVOKED', reason: 'Security revocation by admin' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.card.status).toBe('REVOKED');
+    });
+
+    it('21. ACTIVE → DISABLED succeeds with a valid reason', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'DISABLED', reason: 'Temporarily disabled for maintenance' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.card.status).toBe('DISABLED');
+    });
+
+    it('22. DISABLED → ACTIVE reactivation succeeds without a reason', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'DISABLED', reason: 'Maintenance window' });
+
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'ACTIVE' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.card.status).toBe('ACTIVE');
+    });
+
+    it('23. invalid lifecycle transition is rejected with 409', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'ACTIVE', reason: 'Cannot go ACTIVE to ACTIVE via invalid path' });
+
+      // ACTIVE → ACTIVE is not an allowed transition
+      expect(res.status).toBe(409);
+      expect(res.body.code).toBe('INVALID_CARD_TRANSITION');
+    });
+
+    it('24. reason shorter than 3 characters returns a friendly 400 (never raw Zod text)', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'LOST', reason: 'ab' });
+
+      expect(res.status).toBe(400);
+      const message = JSON.stringify(res.body);
+      expect(message).not.toContain('String must contain at least 3 character');
+      expect(message).toMatch(/at least 3 characters/i);
+    });
+
+    it('25. empty-string reason is rejected with a friendly 400 (never raw Zod text)', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'REVOKED', reason: '' });
+
+      expect(res.status).toBe(400);
+      const message = JSON.stringify(res.body);
+      expect(message).not.toContain('String must contain at least 3 character');
+      expect(message).toMatch(/reason/i);
+    });
+
+    it('26. reason longer than 100 characters is rejected with 400 (never a 500)', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'LOST', reason: 'R'.repeat(150) });
+
+      expect(res.status).toBe(400);
+      expect(res.status).not.toBe(500);
+      expect(JSON.stringify(res.body)).toMatch(/100 characters/i);
+    });
+
+    it('27. missing reason for LOST returns friendly 400 REASON_REQUIRED', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'LOST' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/reason is required/i);
+    });
+
+    it('28. unauthenticated lifecycle request is rejected with 401', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .send({ status: 'LOST', reason: 'Unauthenticated attempt' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('29. OPERATOR cannot change card lifecycle (403)', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(operatorUser))
+        .send({ status: 'LOST', reason: 'Operator attempt' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('30. non-numeric card id is rejected with 400 (never a 500)', async () => {
+      const res = await request(app)
+        .patch('/api/admin/cards/not-a-number/lifecycle')
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'LOST', reason: 'Invalid id attempt' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/invalid card id/i);
     });
   });
 });

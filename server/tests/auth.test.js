@@ -95,6 +95,9 @@ vi.mock('../src/repositories/db.js', () => {
           const user = usersTable.find((u) => u.id === id);
           if (user) {
             user.password_hash = password_hash;
+            if (q.includes('session_version = session_version + 1')) {
+              user.session_version = (user.session_version || 0) + 1;
+            }
             user.updated_at = new Date().toISOString();
             return { rows: [{ ...user }] };
           }
@@ -708,6 +711,210 @@ describe('TapTrack NFC v0.2.0 ALPHA — Comprehensive Test Suite', () => {
         });
 
       expect(reuseRes.status).toBe(400);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 5b. CHANGE PASSWORD (POST /api/users/me/password)
+  // ──────────────────────────────────────────────────────────────────────────
+  describe('Change Password', () => {
+    const seedUser = async (overrides = {}) => {
+      const hash = await bcrypt.hash('CurrentPassword123!', 10);
+      const user = {
+        id: 1,
+        email: 'change.me@yopmail.com',
+        password_hash: hash,
+        first_name: 'Change',
+        last_name: 'Me',
+        role: 'USER',
+        status: 'ACTIVE',
+        email_verified_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        session_version: 0,
+        ...overrides,
+      };
+      usersTable.push(user);
+      return user;
+    };
+
+    const loginAs = async (email, password = 'CurrentPassword123!') => {
+      const res = await request(app).post('/api/auth/login').send({ email, password });
+      return res.headers['set-cookie'];
+    };
+
+    it('26. authenticated user changes password with valid current password', async () => {
+      await seedUser();
+      const cookie = await loginAs('change.me@yopmail.com');
+
+      const res = await request(app)
+        .post('/api/users/me/password')
+        .set('Cookie', cookie)
+        .send({
+          currentPassword: 'CurrentPassword123!',
+          newPassword: 'BrandNewPassword456!',
+          confirmPassword: 'BrandNewPassword456!',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toMatch(/password changed/i);
+      expect(res.body.user.password_hash).toBeUndefined();
+
+      // New session cookie issued for the current device
+      const cookies = res.headers['set-cookie'] || [];
+      expect(cookies.find((c) => c.startsWith('taptrack_session='))).toBeDefined();
+
+      // Password actually changed
+      const dbUser = usersTable.find((u) => u.email === 'change.me@yopmail.com');
+      expect(await bcrypt.compare('BrandNewPassword456!', dbUser.password_hash)).toBe(true);
+      expect(await bcrypt.compare('CurrentPassword123!', dbUser.password_hash)).toBe(false);
+
+      // Can log in with the new password
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'change.me@yopmail.com', password: 'BrandNewPassword456!' });
+      expect(loginRes.status).toBe(200);
+    });
+
+    it('27. incorrect current password is rejected with 403', async () => {
+      await seedUser();
+      const cookie = await loginAs('change.me@yopmail.com');
+
+      const res = await request(app)
+        .post('/api/users/me/password')
+        .set('Cookie', cookie)
+        .send({
+          currentPassword: 'TotallyWrongPass1!',
+          newPassword: 'BrandNewPassword456!',
+          confirmPassword: 'BrandNewPassword456!',
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toMatch(/current password is incorrect/i);
+
+      // Password unchanged
+      const dbUser = usersTable.find((u) => u.email === 'change.me@yopmail.com');
+      expect(await bcrypt.compare('CurrentPassword123!', dbUser.password_hash)).toBe(true);
+    });
+
+    it('28. password too short is rejected with 400 validation error', async () => {
+      await seedUser();
+      const cookie = await loginAs('change.me@yopmail.com');
+
+      const res = await request(app)
+        .post('/api/users/me/password')
+        .set('Cookie', cookie)
+        .send({
+          currentPassword: 'CurrentPassword123!',
+          newPassword: 'short',
+          confirmPassword: 'short',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.errors).toBeDefined();
+    });
+
+    it('29. unauthenticated change-password request is rejected with 401', async () => {
+      await seedUser();
+
+      const res = await request(app)
+        .post('/api/users/me/password')
+        .send({
+          currentPassword: 'CurrentPassword123!',
+          newPassword: 'BrandNewPassword456!',
+          confirmPassword: 'BrandNewPassword456!',
+        });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('30. password change invalidates prior session cookie but keeps current session valid', async () => {
+      await seedUser();
+      const oldCookie = await loginAs('change.me@yopmail.com');
+
+      // Sanity: old cookie works before the change
+      const before = await request(app).get('/api/auth/me').set('Cookie', oldCookie);
+      expect(before.status).toBe(200);
+
+      const changeRes = await request(app)
+        .post('/api/users/me/password')
+        .set('Cookie', oldCookie)
+        .send({
+          currentPassword: 'CurrentPassword123!',
+          newPassword: 'BrandNewPassword456!',
+          confirmPassword: 'BrandNewPassword456!',
+        });
+      expect(changeRes.status).toBe(200);
+
+      const newCookie = changeRes.headers['set-cookie'];
+
+      // Old cookie (stale session_version) is revoked
+      const staleRes = await request(app).get('/api/auth/me').set('Cookie', oldCookie);
+      expect(staleRes.status).toBe(401);
+      expect(staleRes.body.code).toBe('SESSION_REVOKED');
+
+      // Re-issued cookie for the current session remains valid
+      const currentRes = await request(app).get('/api/auth/me').set('Cookie', newCookie);
+      expect(currentRes.status).toBe(200);
+      expect(currentRes.body.user.email).toBe('change.me@yopmail.com');
+    });
+
+    it('31. USER, OPERATOR and ADMIN all share password-change parity', async () => {
+      const hash = await bcrypt.hash('CurrentPassword123!', 10);
+      usersTable.push(
+        {
+          id: 1,
+          email: 'parity.user@yopmail.com',
+          password_hash: hash,
+          first_name: 'Parity',
+          last_name: 'User',
+          role: 'USER',
+          status: 'ACTIVE',
+          email_verified_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          session_version: 0,
+        },
+        {
+          id: 2,
+          email: 'parity.operator@yopmail.com',
+          password_hash: hash,
+          first_name: 'Parity',
+          last_name: 'Operator',
+          role: 'OPERATOR',
+          status: 'ACTIVE',
+          email_verified_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          session_version: 0,
+        },
+        {
+          id: 3,
+          email: 'parity.admin@yopmail.com',
+          password_hash: hash,
+          first_name: 'Parity',
+          last_name: 'Admin',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          email_verified_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          session_version: 0,
+        }
+      );
+
+      for (const email of ['parity.user@yopmail.com', 'parity.operator@yopmail.com', 'parity.admin@yopmail.com']) {
+        const cookie = await loginAs(email);
+        const res = await request(app)
+          .post('/api/users/me/password')
+          .set('Cookie', cookie)
+          .send({
+            currentPassword: 'CurrentPassword123!',
+            newPassword: 'BrandNewPassword456!',
+            confirmPassword: 'BrandNewPassword456!',
+          });
+        expect(res.status).toBe(200);
+      }
     });
   });
 
