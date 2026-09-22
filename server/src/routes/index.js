@@ -31,6 +31,7 @@ import {
   updateEventSchema,
   manualAttendanceSchema,
   nfcAttendanceSchema,
+  nfcUrlAttendanceSchema,
   cardLifecycleSchema,
   replaceCardSchema,
 } from '../validators/schemas.js';
@@ -77,6 +78,7 @@ router.post('/attendance/manual', attendanceLimiter, authenticate, requireRole('
 router.post('/nfc/verify', authenticate, requireRole('ADMIN', 'OPERATOR'), validate(verifyCardTokenSchema), nfcController.verify);
 router.post('/nfc/resolve', resolveLimiter, optionalAuthenticate, validate(verifyCardTokenSchema), nfcController.resolve);
 router.post('/nfc/check-in', attendanceLimiter, authenticate, requireRole('ADMIN', 'OPERATOR'), validate(nfcAttendanceSchema), nfcController.checkIn);
+router.post('/nfc/check-in/url', attendanceLimiter, authenticate, requireRole('ADMIN', 'OPERATOR'), validate(nfcUrlAttendanceSchema), nfcController.checkInUrl);
 
 // ─── ADMIN — NFC CARDS PROVISIONING (v0.3.0) ──────────────────────────────────
 router.get('/admin/cards', authenticate, requireRole('ADMIN'), cardController.getAll);

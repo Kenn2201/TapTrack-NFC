@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
+import { clearAttendanceContext } from '../utils/attendanceContext';
 
 const AuthContext = createContext(null);
 
@@ -38,6 +39,7 @@ export function AuthProvider({ children }) {
     try {
       await authService.logout();
     } finally {
+      clearAttendanceContext();
       setUser(null);
     }
   };

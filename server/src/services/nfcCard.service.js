@@ -204,10 +204,10 @@ export const nfcCardService = {
   },
 
   /**
-   * Internal helper to find and authoritatively validate a card credential (v0.4/v0.5)
+   * Public validated card lookup for attendance and verification.
    * Enforces HMAC-SHA256 derivation, card status, and assigned user status.
    */
-  async _lookupAndValidateCard(rawToken) {
+  async validateActiveCard(rawToken) {
     if (!rawToken || typeof rawToken !== 'string') {
       const err = new Error('Raw card token is required for verification.');
       err.status = 400;
@@ -258,10 +258,17 @@ export const nfcCardService = {
   },
 
   /**
+   * Internal alias kept for existing verify/resolve call sites.
+   */
+  async _lookupAndValidateCard(rawToken) {
+    return this.validateActiveCard(rawToken);
+  },
+
+  /**
    * Verify an NFC card by its raw token for authorized operators/admins (v0.4.0 ALPHA)
    */
   async verifyCardToken(rawToken) {
-    const card = await this._lookupAndValidateCard(rawToken);
+    const card = await this.validateActiveCard(rawToken);
     const displayName = `${card.assignedUser.firstName || ''} ${card.assignedUser.lastName || ''}`.trim() || card.assignedUser.email;
 
     return {
@@ -285,7 +292,7 @@ export const nfcCardService = {
    * Strictly read-only: does NOT create attendance, sessions, or touch database.
    */
   async resolveCardToken(rawToken, { isOperatorOrAdmin = false } = {}) {
-    const card = await this._lookupAndValidateCard(rawToken);
+    const card = await this.validateActiveCard(rawToken);
 
     if (isOperatorOrAdmin) {
       const displayName = `${card.assignedUser.firstName || ''} ${card.assignedUser.lastName || ''}`.trim() || card.assignedUser.email;

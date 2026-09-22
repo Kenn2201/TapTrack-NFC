@@ -35,6 +35,23 @@ export const attendanceService = {
     await auditService.log({ actorId: actor.id, action: 'SESSION_CLOSED', entityType: 'ATTENDANCE_SESSION', entityId: sessionId, metadata: { eventId: session.eventId } });
     return closed;
   },
+  /**
+   * iPhone / NFC URL attendance. Event is always derived from the session.
+   * Client-supplied eventId and method are ignored by the caller.
+   */
+  async recordUrlNfcAttendance({ sessionId, userId, cardId, actor }) {
+    const session = await attendanceRepository.findSessionById(sessionId);
+    if (!session) throw fail(404, 'SESSION_NOT_FOUND', 'Attendance session not found.');
+    if (session.status !== 'OPEN') throw fail(409, 'SESSION_CLOSED', 'Attendance session is closed.');
+    return this.recordAttendance({
+      eventId: session.eventId,
+      sessionId: session.id,
+      userId,
+      cardId,
+      method: 'NFC_URL',
+      actor,
+    });
+  },
   async recordAttendance({ eventId, sessionId, userId, cardId = null, method, actor }) {
     if (!['ADMIN', 'OPERATOR'].includes(actor?.role)) throw fail(403, 'FORBIDDEN', 'Attendance operation is not permitted.');
     if (!ATTENDANCE_METHODS.includes(method)) throw fail(400, 'INVALID_METHOD', 'Attendance method is invalid.');

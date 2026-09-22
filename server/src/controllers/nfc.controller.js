@@ -7,9 +7,30 @@ export const nfcController = {
   async checkIn(req, res, next) {
     try {
       const { token, eventId, sessionId, method } = req.validated;
-      const card = await nfcCardService._lookupAndValidateCard(token);
+      const card = await nfcCardService.validateActiveCard(token);
       const record = await attendanceService.recordAttendance({
         eventId, sessionId, method, userId: card.userId, cardId: card.id, actor: req.user,
+      });
+      return res.status(201).json({ record, card: { cardLabel: card.cardLabel } });
+    } catch (err) {
+      return next(err);
+    }
+  },
+
+  /**
+   * POST /api/nfc/check-in/url
+   * Authenticated iPhone / Safari URL attendance. Method is hard-coded NFC_URL.
+   * Event is derived from sessionId on the server.
+   */
+  async checkInUrl(req, res, next) {
+    try {
+      const { token, sessionId } = req.validated;
+      const card = await nfcCardService.validateActiveCard(token);
+      const record = await attendanceService.recordUrlNfcAttendance({
+        sessionId,
+        userId: card.userId,
+        cardId: card.id,
+        actor: req.user,
       });
       return res.status(201).json({ record, card: { cardLabel: card.cardLabel } });
     } catch (err) {

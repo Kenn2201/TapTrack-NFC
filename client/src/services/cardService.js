@@ -1,5 +1,6 @@
 // Card service — NFC card CRUD and lifecycle
 import api from './api';
+import { buildUrlCheckInRequest } from '../utils/attendanceContext';
 
 export const cardService = {
   getMyCard: () => api.get('/users/me/card'),
@@ -11,6 +12,7 @@ export const cardService = {
   verifyCardToken: (token) => api.post('/nfc/verify', { token }),
   resolveCardToken: (token) => api.post('/nfc/resolve', { token }),
   recordAttendance: (token, context) => api.post('/nfc/check-in', { token, ...context }),
+  recordUrlAttendance: (token, context) => api.post('/nfc/check-in/url', buildUrlCheckInRequest(token, context)),
   transition: (id, data) => api.patch(`/admin/cards/${id}/lifecycle`, data),
   replace: (id, data) => api.post(`/admin/cards/${id}/replace`, data),
 };

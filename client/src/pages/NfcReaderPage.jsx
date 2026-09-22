@@ -2,21 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import PageContainer from '../components/ui/PageContainer';
-import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
 import StatusBadge from '../components/ui/StatusBadge';
 import Button from '../components/ui/Button';
-import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
 import Scanner from '../components/bits/Scanner';
 import AttendanceResult from '../components/attendance/AttendanceResult';
 import useNFC from '../hooks/useNFC';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import useAuth from '../hooks/useAuth';
 
 export default function NfcReaderPage() {
   useDocumentTitle('NFC Reader');
   const location = useLocation();
   const session = location.state?.session;
+  const { user } = useAuth();
+
+  const isOperatorOrAdmin = user && ['ADMIN', 'OPERATOR'].includes(user.role);
 
   const context = session
     ? { eventId: session.eventId, sessionId: session.id }
@@ -221,13 +223,32 @@ export default function NfcReaderPage() {
               )}
 
               {status === 'UNSUPPORTED' && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200 text-xs sm:text-sm leading-relaxed text-left">
-                  <strong className="block text-amber-300 font-semibold mb-1">
-                    Web NFC Unsupported On This Browser
-                  </strong>
-                  Web NFC is available on Chromium browsers on Android (Chrome 89+).
-                  For Apple iOS devices, tap the card to Safari directly via the Universal URL fallback (/t).
-                  Or use Manual Attendance on the Operator Console.
+                <div>
+                  {isOperatorOrAdmin ? (
+                    <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-5 text-left text-xs sm:text-sm leading-relaxed">
+                      <strong className="block text-blue-300 font-semibold mb-1.5">
+                        Web NFC isn't supported on this device.
+                      </strong>
+                      <p className="text-blue-200/80 mb-4">
+                        Physical cards can still record attendance by tapping them to the device and opening the NFC notification. Set up an open session from the Operator Console to enable iPhone Attendance Mode.
+                      </p>
+                      <Link
+                        to="/operator"
+                        className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm min-h-[44px] transition-colors"
+                      >
+                        Use iPhone Attendance Mode
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200 text-xs sm:text-sm leading-relaxed text-left">
+                      <strong className="block text-amber-300 font-semibold mb-1">
+                        Web NFC Unsupported On This Browser
+                      </strong>
+                      Web NFC is available on Chromium browsers on Android (Chrome 89+).
+                      For Apple iOS devices, tap the card to Safari directly via the Universal URL fallback (/t).
+                      Or use Manual Attendance on the Operator Console.
+                    </div>
+                  )}
                 </div>
               )}
             </div>

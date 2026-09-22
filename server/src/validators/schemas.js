@@ -94,6 +94,12 @@ export const nfcAttendanceSchema = z.object({
   method: z.enum(['NFC_WEB', 'NFC_URL']),
 });
 
+/** iPhone / Safari URL check-in. Method is never accepted from the client. */
+export const nfcUrlAttendanceSchema = z.object({
+  token: z.string().min(16).max(200),
+  sessionId: z.number().int().positive(),
+});
+
 export const cardLifecycleSchema = z.object({
   status: z.enum(['LOST', 'REVOKED', 'DISABLED', 'ACTIVE']),
   reason: z.string().trim().min(3).max(200).optional(),

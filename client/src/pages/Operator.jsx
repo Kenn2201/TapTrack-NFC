@@ -15,9 +15,12 @@ import AttendanceResult from '../components/attendance/AttendanceResult';
 import { attendanceService } from '../services/attendanceService';
 import { authService } from '../services/authService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import useAttendanceContext from '../hooks/useAttendanceContext';
 
 export default function Operator() {
   useDocumentTitle('Operator');
+
+  const { context: attendanceContext, start, stop } = useAttendanceContext();
 
   const [sessions, setSessions] = useState([]);
   const [users, setUsers] = useState([]);
@@ -106,6 +109,9 @@ export default function Operator() {
 
     try {
       await attendanceService.closeSession(session.id);
+      if (attendanceContext?.sessionId === session.id) {
+        stop();
+      }
       setFeedback({
         type: 'CLOSED',
         message: 'Attendance Session Closed',
@@ -255,6 +261,82 @@ export default function Operator() {
                         Record Attendance
                       </Button>
                     </div>
+                  </div>
+
+                  {/* iPhone Attendance Mode */}
+                  <div className="pt-4 mt-4 border-t border-slate-800">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                        iPhone Attendance Mode
+                      </h4>
+                      <StatusBadge status={attendanceContext?.sessionId === session.id ? 'OPEN' : 'IDLE'} />
+                    </div>
+
+                    {attendanceContext?.sessionId === session.id ? (
+                      <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 sm:p-5 space-y-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="relative flex h-2.5 w-2.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
+                            </span>
+                            <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">
+                              iPhone Attendance Mode
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono text-blue-200/80 bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded">
+                            ACTIVE
+                          </span>
+                        </div>
+
+                        <div className="bg-slate-950/50 border border-slate-800/80 rounded-lg p-3 space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Event</span>
+                            <span className="font-semibold text-slate-200">
+                              {session.event?.name || `Event #${session.eventId}`}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Session</span>
+                            <span className="font-mono font-semibold text-slate-200">#{session.id}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Status</span>
+                            <span className="font-semibold text-emerald-400">OPEN</span>
+                          </div>
+                        </div>
+
+                        <ol className="list-decimal list-inside space-y-1 text-[11px] sm:text-xs text-slate-300">
+                          <li>Keep Safari signed in to TapTrack.</li>
+                          <li>Tap a member's physical NFC card.</li>
+                          <li>Open the NFC notification.</li>
+                          <li>TapTrack records attendance automatically.</li>
+                        </ol>
+
+                        <Button
+                          variant="danger"
+                          size="md"
+                          className="w-full"
+                          onClick={() => stop()}
+                        >
+                          Stop iPhone Attendance Mode
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-4 sm:p-5">
+                        <p className="text-[11px] sm:text-xs text-slate-400 mb-3 leading-relaxed">
+                          Let members tap their physical cards to an iPhone. Taps record attendance into this open session automatically, with no Web NFC required.
+                        </p>
+                        <Button
+                          variant="primary"
+                          size="md"
+                          disabled={session.status !== 'OPEN'}
+                          onClick={() => start(session)}
+                        >
+                          Enable iPhone Attendance
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </Card>
               ))}
