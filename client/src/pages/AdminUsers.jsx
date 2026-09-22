@@ -13,7 +13,64 @@ import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingState from '../components/ui/LoadingState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import Modal from '../components/ui/Modal';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+
+function getInitials(u) {
+  const first = (u?.firstName || '').trim();
+  const last = (u?.lastName || '').trim();
+  if (!first && !last) return '?';
+  return ((first.charAt(0) || '') + (last.charAt(0) || first.charAt(1) || '')).toUpperCase();
+}
+
+function UserDetailRow({ label, value, mono = false }) {
+  return (
+    <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+      <span className="text-xs text-slate-400 font-medium">{label}</span>
+      <span className={`text-sm text-slate-200 ${mono ? 'font-mono' : ''}`}>{value}</span>
+    </div>
+  );
+}
+
+function AdminUserDetail({ user: u, currentUserId }) {
+  const isSelf = u.id === currentUserId;
+  const verified = !!u.emailVerifiedAt;
+  const formatDate = (iso) =>
+    iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'long' }) : '—';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-blue-600/90 border-2 border-blue-400/30 flex items-center justify-center text-white text-xl font-black flex-shrink-0">
+          {getInitials(u)}
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-lg font-bold text-white truncate">
+            {u.firstName} {u.lastName}
+            {isSelf && <span className="ml-2 text-xs font-normal text-purple-400">(You)</span>}
+          </h3>
+          <p className="text-sm text-slate-400 truncate break-all">{u.email}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <StatusBadge status={u.role} />
+            <StatusBadge status={u.status} />
+          </div>
+        </div>
+      </div>
+
+      <div className="divide-y divide-slate-800/80">
+        <UserDetailRow label="Email Verification" value={verified ? `Verified (${formatDate(u.emailVerifiedAt)})` : 'Pending Verification'} />
+        <UserDetailRow label="Registered On" value={formatDate(u.createdAt)} />
+        <UserDetailRow label="Last Login" value={u.lastLoginAt ? formatDate(u.lastLoginAt) : 'Not available'} />
+      </div>
+
+      <div className="pt-2 border-t border-slate-800 text-xs text-slate-500 leading-relaxed">
+        NFC card label, attendance history, and event invitations are shown in their own
+        management views. This directory view displays identity, access, and verification
+        details only.
+      </div>
+    </div>
+  );
+}
 
 export default function AdminUsers() {
   useDocumentTitle('Manage Users');
@@ -25,6 +82,7 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [detailUser, setDetailUser] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -159,7 +217,11 @@ export default function AdminUsers() {
                       const isActing = actionLoadingId === u.id;
 
                       return (
-                        <tr key={u.id} className="hover:bg-slate-850/50 transition-colors">
+                        <tr
+                          key={u.id}
+                          className="hover:bg-slate-850/50 transition-colors cursor-pointer"
+                          onClick={() => setDetailUser(u)}
+                        >
                           <td className="px-5 py-3.5 font-semibold text-white">
                             {u.firstName} {u.lastName}
                             {isSelf && (
@@ -183,6 +245,16 @@ export default function AdminUsers() {
                             )}
                           </td>
                           <td className="px-5 py-3.5 text-right space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDetailUser(u);
+                              }}
+                            >
+                              View
+                            </Button>
                             {isSelf ? (
                               <span className="text-xs text-slate-500 italic">Self-account locked</span>
                             ) : (
@@ -192,7 +264,10 @@ export default function AdminUsers() {
                                     size="sm"
                                     variant="secondary"
                                     disabled={isActing}
-                                    onClick={() => handleRoleToggle(u)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRoleToggle(u);
+                                    }}
                                   >
                                     {u.role === 'OPERATOR' ? 'Demote to USER' : 'Promote to OPERATOR'}
                                   </Button>
@@ -201,7 +276,10 @@ export default function AdminUsers() {
                                   size="sm"
                                   variant={u.status === 'ACTIVE' ? 'danger' : 'success'}
                                   disabled={isActing}
-                                  onClick={() => handleStatusToggle(u)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStatusToggle(u);
+                                  }}
                                 >
                                   {u.status === 'ACTIVE' ? 'Disable' : 'Activate'}
                                 </Button>
@@ -222,7 +300,7 @@ export default function AdminUsers() {
                   const isActing = actionLoadingId === u.id;
 
                   return (
-                    <Card key={u.id} padding="p-4" className="space-y-3">
+                    <Card key={u.id} padding="p-4" className="space-y-3 cursor-pointer" onClick={() => setDetailUser(u)}>
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="font-semibold text-white text-base">
@@ -241,8 +319,14 @@ export default function AdminUsers() {
                         </span>
                       </div>
 
+                      <div>
+                        <Button size="sm" variant="outline" className="w-full" onClick={() => setDetailUser(u)}>
+                          View User Details
+                        </Button>
+                      </div>
+
                       {!isSelf && (
-                        <div className="pt-2 flex flex-col gap-2">
+                        <div className="pt-1 flex flex-col gap-2">
                           {u.role !== 'ADMIN' && (
                             <Button
                               size="sm"
@@ -273,6 +357,16 @@ export default function AdminUsers() {
           )}
         </Section>
       </PageContainer>
+
+      {/* User Detail Modal */}
+      <Modal
+        isOpen={!!detailUser}
+        onClose={() => setDetailUser(null)}
+        title="User Details"
+        maxWidth="max-w-lg"
+      >
+        {detailUser && <AdminUserDetail user={detailUser} currentUserId={currentUser?.id} />}
+      </Modal>
 
       {/* Confirm Dialog */}
       {confirmDialog && (

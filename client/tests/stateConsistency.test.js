@@ -79,3 +79,20 @@ test('no page hardcodes version labels instead of the shared constant', () => {
   const offenders = files.filter((f) => /v1\.\d+\.\d+(?:\s+RC)?/.test(readFileSync(f, 'utf8')));
   assert.deepEqual(offenders, []);
 });
+
+test('/operator/benchmark is protected by the OPERATOR/ADMIN route guard (direct navigation blocked)', () => {
+  const source = readFileSync(join(SRC, 'App.jsx'), 'utf8');
+  const operatorGuard = source.indexOf("allowedRoles={['OPERATOR', 'ADMIN']}");
+  assert.ok(operatorGuard !== -1, 'OPERATOR/ADMIN guard must be declared');
+  const afterOperatorGuard = source.slice(operatorGuard);
+  assert.ok(
+    afterOperatorGuard.includes('/operator/benchmark'),
+    '/operator/benchmark must be nested inside the OPERATOR/ADMIN guard'
+  );
+  const adminGuard = afterOperatorGuard.indexOf("allowedRoles={['ADMIN']}");
+  const benchmarkInBlock = afterOperatorGuard.indexOf('/operator/benchmark');
+  assert.ok(
+    adminGuard === -1 || benchmarkInBlock < adminGuard,
+    '/operator/benchmark must not sit inside the ADMIN-only guard block'
+  );
+});

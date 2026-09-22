@@ -4,6 +4,6 @@ export function calculateActivityPulse(records, now = new Date()) {
   const weeks = new Set(records.map((r) => weekStart(r.recordedAt).toISOString()));
   let cursor = weekStart(now); if (!weeks.has(cursor.toISOString())) cursor.setUTCDate(cursor.getUTCDate() - 7);
   let currentStreak = 0; while (weeks.has(cursor.toISOString())) { currentStreak += 1; cursor.setUTCDate(cursor.getUTCDate() - 7); }
-  return { totalCheckIns: records.length, eventsAttended: new Set(records.map((r) => r.eventId)).size, attendanceRate: null, attendanceRateLabel: 'N/A', attendanceRateReason: 'Event eligibility is not tracked, so no denominator is fabricated.', currentStreak, streakUnit: 'consecutive calendar weeks with at least one check-in' };
+  return { totalCheckIns: records.length, eventsAttended: new Set(records.map((r) => r.eventId)).size, attendanceRate: null, attendanceRateLabel: 'N/A', attendanceRateReason: 'Not enough eligible events yet. Attendance rate appears once TapTrack has events where your attendance eligibility is known.', currentStreak, streakUnit: 'consecutive calendar weeks with at least one check-in' };
 }
 export const activityPulseService = { async getForUser(userId) { return calculateActivityPulse(await attendanceRepository.listByUser(userId)); } };

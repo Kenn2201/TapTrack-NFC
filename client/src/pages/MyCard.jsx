@@ -3,11 +3,15 @@ import Header from '../components/layout/Header';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Modal from '../components/ui/Modal';
+import Textarea from '../components/ui/Textarea';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingState from '../components/ui/LoadingState';
 import Alert from '../components/ui/Alert';
 import NFCCard from '../components/cards/NFCCard';
 import { cardService } from '../services/cardService';
+import { feedbackService } from '../services/feedbackService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function MyCard() {
@@ -15,6 +19,12 @@ export default function MyCard() {
   const [card, setCard] = useState(undefined);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const [requestModal, setRequestModal] = useState(false);
+  const [requestNote, setRequestNote] = useState('');
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [requestError, setRequestError] = useState(null);
+  const [requestToast, setRequestToast] = useState(null);
 
   useEffect(() => {
     cardService
@@ -29,6 +39,28 @@ export default function MyCard() {
       });
   }, []);
 
+  const handleRequestSubmit = async (e) => {
+    e.preventDefault();
+    setRequestError(null);
+    setRequestLoading(true);
+    try {
+      await feedbackService.submit({
+        category: 'NFC_ATTENDANCE',
+        rating: 3,
+        message: requestNote.trim() || 'Requesting a new NFC setup / replacement link from an administrator.',
+        page: '/my-card',
+        reproduction: 'Request type: NFC setup / replacement link requested by the card holder.',
+      });
+      setRequestModal(false);
+      setRequestNote('');
+      setRequestToast('Your NFC setup / replacement request has been submitted to an administrator.');
+    } catch (err) {
+      setRequestError(err.message || 'Failed to submit your request. Please try again.');
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
       <Header />
@@ -36,8 +68,14 @@ export default function MyCard() {
       <PageContainer maxWidth="max-w-3xl">
         <PageHeader
           title="My NFC Card"
-          description="Your official digital identity credential. Physical credentials contain encrypted, opaque tokens."
+          description="Your official digital identity credential. Physical credentials contain opaque random NFC credentials."
         />
+
+        {requestToast && (
+          <div className="mb-6">
+            <Alert type="success" message={requestToast} onClose={() => setRequestToast(null)} />
+          </div>
+        )}
 
         {error && (
           <div className="mb-6">
@@ -85,7 +123,7 @@ export default function MyCard() {
                 <div>
                   <span className="text-slate-400 block mb-1">Security Standard:</span>
                   <span className="text-slate-200">
-                    HMAC-SHA256 Derived Hash (Zero Raw Tokens)
+                    HMAC-SHA256 Derived Verification (Raw Credential Never Stored)
                   </span>
                 </div>
               </div>
@@ -93,17 +131,70 @@ export default function MyCard() {
 
             <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 text-xs text-slate-400 leading-relaxed">
               <strong className="text-blue-300 block mb-1">Privacy Guarantee:</strong>
-              This card does not store your name, email, or database ID. If you lose your physical card,
-              an administrator can immediately revoke it and provision a replacement without losing your attendance history.
+              This card carries no personal information — no name, email, or member ID is written
+              to the NFC tag. Each card uses an opaque random NFC credential, and only a derived
+              server-side hash is stored. If you lose your physical card, an administrator can
+              revoke it and provision a replacement without losing your attendance history.
             </div>
           </div>
         ) : (
-          <EmptyState
-            title="No NFC Card Assigned"
-            description="You do not currently have a physical NFC card assigned to your account. Please ask an authorized event administrator to provision a card for you."
-          />
+          <div className="space-y-6">
+            <EmptyState
+              title="No NFC Card Assigned"
+              description="You do not currently have a physical NFC card assigned to your account. Please ask an authorized event administrator to provision a card for you."
+            />
+          </div>
         )}
+
+        {/* Setup / Replacement Request */}
+        <div className="mt-8">
+          <Card className="p-5 sm:p-6 space-y-3">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">
+              Need a new NFC setup link?
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              For security, the original NFC credential cannot be recovered. You can request a
+              replacement/setup link from an administrator.
+            </p>
+            <Button variant="outline" onClick={() => setRequestModal(true)} className="w-full sm:w-auto">
+              Request NFC Setup / Replacement
+            </Button>
+          </Card>
+        </div>
       </PageContainer>
+
+      {/* Request Modal */}
+      <Modal
+        isOpen={requestModal}
+        onClose={() => setRequestModal(false)}
+        title="Request NFC Setup / Replacement"
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={handleRequestSubmit} className="space-y-4">
+          {requestError && (
+            <Alert type="error" message={requestError} onClose={() => setRequestError(null)} />
+          )}
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Your request is sent to TapTrack administrators through the existing feedback workflow.
+            The original credential cannot be recovered or re-shown — a new setup/replacement is issued safely.
+          </p>
+          <Textarea
+            label="Note for the admin (optional)"
+            value={requestNote}
+            onChange={(e) => setRequestNote(e.target.value)}
+            rows={3}
+            placeholder="e.g. My physical card was lost and I need a replacement."
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setRequestModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={requestLoading} disabled={requestLoading}>
+              Submit Request
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

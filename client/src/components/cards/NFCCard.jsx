@@ -88,7 +88,7 @@ export default function NFCCard({ card, className = '' }) {
         </div>
 
         <div className="mt-2.5 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500">
-          <span>Encrypted Opaque Credential</span>
+          <span>Opaque Random Credential</span>
           <span>Zero Client Secrets</span>
         </div>
       </div>

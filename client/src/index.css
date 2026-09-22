@@ -4,3 +4,36 @@ html, body, #root { min-width: 0; min-height: 100%; }
 body { overflow-x: hidden; }
 :focus-visible { outline: 3px solid #60a5fa; outline-offset: 2px; }
 button, a, input, select { touch-action: manipulation; }
+
+/* iPhone Safari safe-area handling — pads fixed/sticky surfaces and page bottom. */
+html {
+  height: 100%;
+}
+#root {
+  min-height: 100dvh;
+}
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+}
+.safe-top {
+  padding-top: calc(env(safe-area-inset-top) + 1rem);
+}
+
+/* Prevent horizontal overflow from wide tables/pre blocks on small screens. */
+@media (max-width: 767px) {
+  pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}

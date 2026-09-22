@@ -426,16 +426,18 @@ Release `v1.1.0` requires synchronized versions across:
 
 **Release State:** `Release Candidate — pending human acceptance`
 
+**v1.1.0 RC — Production Repair + UX Pass** (see [CHANGELOG](CHANGELOG.md)): landing terminology glossary, branded login, auth-initialization screen, route reveal transitions, Profile redesign (avatar/edit modal/birthday/Member ID), My Card terminology + setup/replacement request workflow, friendly attendance-rate state, Admin Events redesign (create modal, event cards, detail modal, lifecycle-gated actions), Admin Users detail modal, Audit Logs redesign (humanized actions, filters, exports), deterministic event lifecycle reconciliation, responsive safe-area hardening, and a benchmark route-guard regression test. No new database migration was introduced by this pass.
+
 ---
 
 ## Release Checklist
 
 - [ ] `node --check server/src/routes/index.js` → success
-- [ ] `cd server && npm test` → 128/128 passed, exit 0
-- [ ] `cd client && npm test` → pass
+- [ ] `cd server && npm test` → 153/153 passed, exit 0
+- [ ] `cd client && npm test` → 59/59 passed, exit 0
 - [ ] `cd client && npm run build` → pass
-- [ ] `cd client && npm run lint` → pass
-- [ ] `npm audit` (both) → no critical vulnerabilities
+- [ ] `cd client && npm run lint` → 0 errors
+- [ ] `npm audit` (both) → 0 vulnerabilities
 - [ ] `git diff --check` → clean
 - [ ] Secret scan → no secrets in tracked files
 - [ ] `node generate-vault.cjs` → pass

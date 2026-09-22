@@ -59,7 +59,6 @@ test('version consistency across all client source files', () => {
     join(SRC, 'pages', 'Landing.jsx'),
     join(SRC, 'pages', 'Compatibility.jsx'),
   ];
-  const versionPattern = /v1\.1\.0\s*RC|CURRENT_VERSION_LABEL|v1\.1\.0/g;
   for (const file of files) {
     const source = readFileSync(file, 'utf8');
     assert.ok(

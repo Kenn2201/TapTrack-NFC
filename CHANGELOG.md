@@ -12,6 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Production Repair + UX Pass (v1.1.0 RC)
+- **Landing terminology glossary** - plain-English explanations for opaque credentials, HMAC-SHA256 derivation, CARD_TOKEN_PEPPER, card lifecycle states, and related security terms
+- **Login redesign** - branded sign-in with minimum 44-48px touch targets, session security copy (HttpOnly cookies), Create Account / Forgot Password links
+- **Auth initialization screen** - branded TapTrack icon with NFC pulse while the session is being secured (reduced-motion aware)
+- **Route reveal transitions** - subtle fade/slide on navigation for all routes (prefers-reduced-motion aware)
+- **Profile redesign** - circular avatar with initials fallback, Edit Profile modal (first/last name, nickname, birthday, avatar URL), friendly birthday display, Member ID labeling
+- **My Card UX** - corrected terminology ("opaque random NFC credential"); NFC setup/replacement request workflow that reuses the feedback pipeline without credential recovery
+- **Dashboard attendance rate** - friendly pending state ("Not enough eligible events yet") with plain-English explanation instead of a bare N/A
+- **Admin Events redesign** - Create Event modal (name, dates, location, description) with timezone context, clickable event cards showing invites/attendance/session state, event detail modal, lifecycle-gated attendance-session actions
+- **Admin Users details** - clickable user rows/cards with a user detail modal (identity, role, status, verification, registration/last-login dates)
+- **Audit Logs redesign** - humanized action labels, Who/Action/Target/When columns, filters (action, actor, date), detail modal with sanitized metadata, CSV/JSON/Markdown export
+- **Event lifecycle reconciliation** - deterministic scheduled status transitions (pre-open state preserved, OPEN inside the scheduled window, CLOSED after end; CANCELLED and manually CLOSED events are never auto-reopened); lazy and idempotent, never creates attendance sessions
+- **Responsive hardening** - `env(safe-area-inset-*)` support and mobile overflow guards for tables/pre blocks
+- **Benchmark route guard regression test** - static test proving `/operator/benchmark` remains nested inside the OPERATOR/ADMIN guard
+
 #### Platform Maintenance
 - **Public maintenance status endpoint** (`GET /api/platform/maintenance-status`) - accessible without authentication for health checks and client polling
 - **Admin maintenance toggle** (`POST /api/admin/platform/maintenance`) - enable/disable maintenance mode with optional custom message
@@ -89,8 +104,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Auth fingerprint: login 500 fixed, test-fake session_version parity, admin-list parity, recordLogin parity
 - Auth test suite: 25/25 passing
-- Full server test suite: 128/128 passing
+- Full server test suite: 153/153 passing (including event lifecycle reconciliation suite)
+- Client test suite: 59/59 passing
 - Client build: green
+- Lint: resolved unused variable, JSX key, and unused catch binding warnings in touched files
+- Event list payload now also exposes location, participant count, and open-session state
 
 ### Security
 - Zero raw NFC credentials ever stored (only SHA-256 hashes)
@@ -104,7 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Physical Test Status
 - **NFC-001** (Android NFC_WEB): PASSED
-- **NFC-001** (iPhone NFC_URL): PENDING
+- **NFC-001** (iPhone NFC_URL): PASSED (public `/t`, authenticated NFC_URL check-in, duplicate detection)
 - **NFC-001** (Android NDEFReader): PENDING
 - Manual attendance: VERIFIED
 

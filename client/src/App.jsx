@@ -5,6 +5,11 @@ import { AuthProvider } from "./hooks/useAuth";
 import RequireAuth from "./components/layout/RequireAuth";
 import RequireRole from "./components/layout/RequireRole";
 
+// Auth Initialization
+import AuthInitializer from "./components/AuthInitializer";
+// Route reveal transition
+import RouteReveal from "./components/RouteReveal";
+
 // Public Pages
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -50,7 +55,9 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
+        <AuthInitializer>
+          <RouteReveal>
+          <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -94,6 +101,8 @@ function App() {
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </RouteReveal>
+        </AuthInitializer>
       </BrowserRouter>
     </AuthProvider>
   );

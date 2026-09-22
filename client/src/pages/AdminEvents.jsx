@@ -11,21 +11,34 @@ import Textarea from '../components/ui/Textarea';
 import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingState from '../components/ui/LoadingState';
+import Modal from '../components/ui/Modal';
 import { eventService } from '../services/eventService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const initialForm = {
   name: '',
   description: '',
+  location: '',
   startAt: '',
   endAt: '',
 };
+
+function formatSchedule(evt) {
+  const start = new Date(evt.startAt);
+  const end = new Date(evt.endAt);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return '—';
+  const date = start.toLocaleDateString(undefined, { dateStyle: 'medium' });
+  const time = `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  return { date, time };
+}
 
 export default function AdminEvents() {
   useDocumentTitle('Manage Events');
 
   const [events, setEvents] = useState([]);
   const [form, setForm] = useState(initialForm);
+  const [createModal, setCreateModal] = useState(false);
+  const [detailEvent, setDetailEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [openingId, setOpeningId] = useState(null);
@@ -54,7 +67,6 @@ export default function AdminEvents() {
     e.preventDefault();
     setAlert(null);
 
-    // Front-end date validation
     if (!form.startAt || !form.endAt) {
       setAlert({
         type: 'error',
@@ -66,7 +78,7 @@ export default function AdminEvents() {
     const startDate = new Date(form.startAt);
     const endDate = new Date(form.endAt);
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || endDate <= startDate) {
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
       setAlert({
         type: 'error',
         message: 'Unable to create event. Please review the dates and try again.',
@@ -76,23 +88,23 @@ export default function AdminEvents() {
 
     setCreating(true);
     try {
-      // Canonical payload contract
       await eventService.create({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
+        location: form.location.trim() || undefined,
         startAt: startDate.toISOString(),
         endAt: endDate.toISOString(),
         status: 'DRAFT',
       });
 
       setForm(initialForm);
+      setCreateModal(false);
       setAlert({
         type: 'success',
         message: 'Event created successfully.',
       });
       await loadEvents();
     } catch (err) {
-      // Never expose PostgreSQL errors to users
       const raw = String(err.message || '');
       if (/postgres|relation|syntax error|constraint|null value|database/i.test(raw)) {
         setAlert({
@@ -119,6 +131,7 @@ export default function AdminEvents() {
         type: 'success',
         message: 'Attendance session opened successfully.',
       });
+      setDetailEvent(null);
       await loadEvents();
     } catch (err) {
       setAlert({
@@ -130,14 +143,36 @@ export default function AdminEvents() {
     }
   };
 
+  const renderSessionState = (evt) => {
+    if (evt.hasOpenSession) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          Session Open
+        </span>
+      );
+    }
+    if (evt.status === 'OPEN') {
+      return <span className="text-xs text-slate-400 font-medium">No open session</span>;
+    }
+    return <span className="text-xs text-slate-600">—</span>;
+  };
+
+  const timezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local time';
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Header />
 
       <PageContainer maxWidth="max-w-7xl">
         <PageHeader
-          title="Manage Events"
-          description="Create events, configure schedules, and open attendance sessions for live attendee check-ins."
+          title="Events"
+          description="Create events, review schedules, and open attendance sessions."
+          actions={
+            <Button onClick={() => setCreateModal(true)}>
+              Create Event
+            </Button>
+          }
         />
 
         {alert && (
@@ -150,182 +185,218 @@ export default function AdminEvents() {
           </div>
         )}
 
-        {/* Create Event Form */}
-        <Section title="Create New Event" subtitle="Specify event details and scheduling window">
-          <Card>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Event Name"
-                  placeholder="e.g. Annual Developer Summit 2026"
-                  required
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Start Date & Time"
-                    type="datetime-local"
-                    required
-                    value={form.startAt}
-                    onChange={(e) => setForm({ ...form, startAt: e.target.value })}
-                  />
-                  <Input
-                    label="End Date & Time"
-                    type="datetime-local"
-                    required
-                    value={form.endAt}
-                    onChange={(e) => setForm({ ...form, endAt: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <Textarea
-                label="Description (Optional)"
-                placeholder="Brief summary of event agenda, location, or operator notes..."
-                rows={2}
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-
-              <div className="flex justify-end pt-2">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  loading={creating}
-                  disabled={creating || !form.name || !form.startAt || !form.endAt}
-                >
-                  Create Event
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </Section>
-
-        {/* Existing Events List */}
-        <Section title="Existing Events" subtitle="All events in system with lifecycle and session status">
+        <Section title="All Events" subtitle="Event schedule, lifecycle, and attendance overview">
           {loading ? (
-            <LoadingState text="Loading events..." />
+            <LoadingState text="Loading events..." rows={4} />
           ) : events.length === 0 ? (
             <EmptyState
               title="No Events Found"
-              description="No events have been created yet. Use the form above to create your first event."
+              description="No events have been created yet. Click 'Create Event' to add your first event."
+              action={
+                <Button onClick={() => setCreateModal(true)}>Create Event</Button>
+              }
             />
           ) : (
-            <>
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-sm">
-                <table className="w-full text-left text-sm text-slate-300">
-                  <thead className="bg-slate-950/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                    <tr>
-                      <th className="px-5 py-3.5">Event</th>
-                      <th className="px-5 py-3.5">Status</th>
-                      <th className="px-5 py-3.5">Schedule</th>
-                      <th className="px-5 py-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {events.map((evt) => (
-                      <tr key={evt.id} className="hover:bg-slate-850/50 transition-colors">
-                        <td className="px-5 py-4">
-                          <div className="font-semibold text-white">{evt.name}</div>
-                          <div className="text-xs text-slate-400 mt-0.5 line-clamp-1">
-                            {evt.description || 'No description'}
-                          </div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <StatusBadge status={evt.status} />
-                        </td>
-                        <td className="px-5 py-4 text-xs text-slate-300">
-                          <div>
-                            {new Date(evt.startAt).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </div>
-                          <div className="text-slate-500">
-                            {new Date(evt.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            {' – '}
-                            {new Date(evt.endAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </td>
-                        <td className="px-5 py-4 text-right">
-                          {evt.status === 'DRAFT' && (
-                            <Button
-                              size="sm"
-                              variant="success"
-                              loading={openingId === evt.id}
-                              onClick={() => handleOpenSession(evt.id)}
-                            >
-                              Open Session
-                            </Button>
-                          )}
-                          {evt.status === 'OPEN' && (
-                            <span className="text-xs text-emerald-400 font-semibold inline-flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              Session Open
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Stacked Card View */}
-              <div className="md:hidden space-y-4">
-                {events.map((evt) => (
-                  <Card key={evt.id} padding="p-5" className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {events.map((evt) => {
+                const schedule = formatSchedule(evt);
+                return (
+                  <Card
+                    key={evt.id}
+                    variant="interactive"
+                    padding="p-5"
+                    className="space-y-3"
+                    onClick={() => setDetailEvent(evt)}
+                  >
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-white text-base">{evt.name}</h3>
+                      <h3 className="font-bold text-white text-base leading-snug">{evt.name}</h3>
                       <StatusBadge status={evt.status} />
                     </div>
                     {evt.description && (
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        {evt.description}
-                      </p>
+                      <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{evt.description}</p>
                     )}
-                    <div className="pt-2 border-t border-slate-800/80 text-xs text-slate-400 space-y-1">
-                      <div className="flex justify-between">
-                        <span>Date:</span>
-                        <span className="text-slate-200">
-                          {new Date(evt.startAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </span>
+                    <div className="space-y-1.5 text-xs text-slate-400">
+                      <div className="flex justify-between gap-2">
+                        <span>Schedule</span>
+                        <span className="text-slate-200 text-right">{schedule.date}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Time:</span>
-                        <span className="text-slate-200">
-                          {new Date(evt.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {' – '}
-                          {new Date(evt.endAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                      <div className="flex justify-between gap-2">
+                        <span>Time</span>
+                        <span className="text-slate-200 text-right">{schedule.time}</span>
                       </div>
+                      {evt.location && (
+                        <div className="flex justify-between gap-2">
+                          <span>Location</span>
+                          <span className="text-slate-200 text-right">{evt.location}</span>
+                        </div>
+                      )}
                     </div>
-                    {evt.status === 'DRAFT' && (
-                      <div className="pt-2">
-                        <Button
-                          variant="success"
-                          className="w-full"
-                          loading={openingId === evt.id}
-                          onClick={() => handleOpenSession(evt.id)}
-                        >
-                          Open Attendance Session
-                        </Button>
+                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                      <div className="flex gap-3 text-xs text-slate-400">
+                        <span title="Participants"><strong className="text-slate-200">{evt.participantCount ?? 0}</strong> invited</span>
+                        <span title="Attendance records"><strong className="text-slate-200">{evt.attendanceCount ?? 0}</strong> attended</span>
                       </div>
-                    )}
+                      {evt.hasOpenSession && renderSessionState(evt)}
+                    </div>
                   </Card>
-                ))}
-              </div>
-            </>
+                );
+              })}
+            </div>
           )}
         </Section>
       </PageContainer>
+
+      {/* Create Event Modal */}
+      <Modal
+        isOpen={createModal}
+        onClose={() => setCreateModal(false)}
+        title="Create Event"
+        maxWidth="max-w-lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Event Name"
+            placeholder="e.g. Annual Developer Summit 2026"
+            required
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Start Date & Time"
+              type="datetime-local"
+              required
+              value={form.startAt}
+              onChange={(e) => setForm({ ...form, startAt: e.target.value })}
+            />
+            <Input
+              label="End Date & Time"
+              type="datetime-local"
+              required
+              value={form.endAt}
+              onChange={(e) => setForm({ ...form, endAt: e.target.value })}
+            />
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Times are shown in <strong className="text-slate-400">{timezoneLabel}</strong> and stored in UTC internally.
+          </p>
+          <Input
+            label="Location (optional)"
+            placeholder="e.g. Makati City, Philippines"
+            value={form.location}
+            onChange={(e) => setForm({ ...form, location: e.target.value })}
+          />
+          <Textarea
+            label="Description (Optional)"
+            placeholder="Brief summary of event agenda, location, or operator notes..."
+            rows={3}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setCreateModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={creating}
+              disabled={creating || !form.name || !form.startAt || !form.endAt}
+            >
+              Create Event
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Event Detail Modal */}
+      <Modal
+        isOpen={!!detailEvent}
+        onClose={() => setDetailEvent(null)}
+        title="Event Details"
+        maxWidth="max-w-lg"
+      >
+        {detailEvent && (
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-lg font-bold text-white">{detailEvent.name}</h3>
+              <StatusBadge status={detailEvent.status} />
+            </div>
+            {detailEvent.description && (
+              <p className="text-sm text-slate-400 leading-relaxed">{detailEvent.description}</p>
+            )}
+            <div className="divide-y divide-slate-800/80">
+              {(() => {
+                const s = formatSchedule(detailEvent);
+                return (
+                  <>
+                    <div className="py-2.5 flex justify-between gap-2">
+                      <span className="text-xs text-slate-400">Date</span>
+                      <span className="text-sm text-slate-200">{s.date}</span>
+                    </div>
+                    <div className="py-2.5 flex justify-between gap-2">
+                      <span className="text-xs text-slate-400">Time</span>
+                      <span className="text-sm text-slate-200">{s.time} ({timezoneLabel})</span>
+                    </div>
+                    <div className="py-2.5 flex justify-between gap-2">
+                      <span className="text-xs text-slate-400">Location</span>
+                      <span className="text-sm text-slate-200">{detailEvent.location || '—'}</span>
+                    </div>
+                    <div className="py-2.5 flex justify-between gap-2">
+                      <span className="text-xs text-slate-400">Creator</span>
+                      <span className="text-sm text-slate-200">
+                        {detailEvent.createdBy ? `User #${detailEvent.createdBy}` : 'System'}
+                      </span>
+                    </div>
+                    <div className="py-2.5 flex justify-between gap-2">
+                      <span className="text-xs text-slate-400">Participants</span>
+                      <span className="text-sm text-slate-200">{detailEvent.participantCount ?? 0}</span>
+                    </div>
+                    <div className="py-2.5 flex justify-between gap-2">
+                      <span className="text-xs text-slate-400">Attendance Records</span>
+                      <span className="text-sm text-slate-200">{detailEvent.attendanceCount ?? 0}</span>
+                    </div>
+                    <div className="py-2.5 flex justify-between gap-2">
+                      <span className="text-xs text-slate-400">Session State</span>
+                      <span className="text-sm">{renderSessionState(detailEvent)}</span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {(detailEvent.status === 'DRAFT' || detailEvent.status === 'OPEN') && (
+              <div className="pt-3 border-t border-slate-800">
+                {detailEvent.status === 'DRAFT' && !detailEvent.hasOpenSession && (
+                  <Button
+                    variant="success"
+                    className="w-full"
+                    loading={openingId === detailEvent.id}
+                    onClick={() => handleOpenSession(detailEvent.id)}
+                  >
+                    Open Attendance Session
+                  </Button>
+                )}
+                {detailEvent.status === 'OPEN' && !detailEvent.hasOpenSession && (
+                  <Button
+                    variant="success"
+                    className="w-full"
+                    loading={openingId === detailEvent.id}
+                    onClick={() => handleOpenSession(detailEvent.id)}
+                  >
+                    Reopen Attendance Session
+                  </Button>
+                )}
+                {detailEvent.hasOpenSession && (
+                  <p className="text-xs text-center text-emerald-400 font-medium">
+                    An attendance session is currently open for this event.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

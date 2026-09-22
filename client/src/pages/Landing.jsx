@@ -9,6 +9,15 @@ import BlurText from '../components/bits/BlurText';
 import FadeContent from '../components/bits/FadeContent';
 import SpotlightCard from '../components/bits/SpotlightCard';
 
+function TerminologyCard({ term, definition }) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 sm:p-6 space-y-2">
+      <h3 className="font-bold text-white text-base sm:text-lg">{term}</h3>
+      <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">{definition}</p>
+    </div>
+  );
+}
+
 export default function Landing() {
   useDocumentTitle(); // Default title: "TapTrack-NFC"
   const { authenticated } = useAuth();
@@ -386,7 +395,47 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 6. ROLES SECTION */}
+      {/* 6. TERMINOLOGY GLOSSARY */}
+      <section id="terminology" className="py-20 sm:py-28 border-b border-slate-800 bg-slate-950/60">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+              Plain English Reference
+            </span>
+            <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              TapTrack terminology in plain English
+            </h2>
+            <p className="mt-3 text-slate-400 text-sm sm:text-base">
+              Simple definitions for the technical concepts used throughout TapTrack.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <TerminologyCard term="NFC" definition="Near Field Communication — a short-range wireless technology that lets devices exchange data when they're a few centimeters apart. Your phone uses it to read the card." />
+            <TerminologyCard term="NFC card / NFC tag" definition="A physical credential (like an NTAG215 sticker or card) that stores a URL with a random token fragment. It has no battery and no personal data." />
+            <TerminologyCard term="NDEF" definition="NFC Data Exchange Format — the standard structure for data stored on NFC tags. TapTrack uses an NDEF URL record." />
+            <TerminologyCard term="NDEFReader" definition="The Web NFC API interface that lets a browser read NDEF records from a physical tag. Available on Android Chrome and compatible Chromium browsers." />
+            <TerminologyCard term="Web NFC" definition="The browser API that enables websites to read and write NFC tags directly. Used for Android attendance scanning in TapTrack." />
+            <TerminologyCard term="Universal NFC URL fallback" definition="A TapTrack HTTPS URL (https://nfc.kenncode.me/t#token) that works on any phone. Tapping the card opens the URL in the system browser — no app required." />
+            <TerminologyCard term="Opaque credential" definition="A random secret stored on the NFC card that identifies the card without putting the member's personal information on it." />
+            <TerminologyCard term="Raw credential" definition="The original random token as written to the card. TapTrack never stores this — only a server-side derivation." />
+            <TerminologyCard term="Hash" definition="A one-way mathematical fingerprint of data. You can verify a match, but you cannot reverse it to get the original input." />
+            <TerminologyCard term="HMAC-SHA256" definition="A server-side cryptographic derivation used to verify the card without storing the original card secret. It combines the token with a private server key (CARD_TOKEN_PEPPER)." />
+            <TerminologyCard term="CARD_TOKEN_PEPPER" definition="A private server-side secret used when deriving the stored card verification value. It is never stored on the NFC card." />
+            <TerminologyCard term="PII" definition="Personally Identifiable Information — names, emails, IDs, etc. TapTrack never writes PII to the physical NFC card." />
+            <TerminologyCard term="RBAC" definition="Role-Based Access Control — permissions granted by role (USER, OPERATOR, ADMIN) rather than per-user." />
+            <TerminologyCard term="Attendance session" definition="A time-bounded window opened by an operator for a specific event. Only taps during an OPEN session record attendance." />
+            <TerminologyCard term="NFC_WEB" definition="Attendance method: direct browser Web NFC scan by an authenticated operator with an open session." />
+            <TerminologyCard term="NFC_URL" definition="Attendance method: iPhone/Safari Universal URL tap flow. The card URL opens in Safari; the server records attendance." />
+            <TerminologyCard term="MANUAL" definition="Attendance method: an operator manually selects an attendee on the Operator Console." />
+            <TerminologyCard term="Duplicate protection" definition="The same card cannot be recorded twice in the same session. Subsequent taps show 'Already Recorded' and do not create a second row." />
+            <TerminologyCard term="Card lifecycle" definition="States a physical card transitions through: UNASSIGNED → ACTIVE → LOST / REVOKED / DISABLED → (REPLACED). Each transition requires admin action and an audit log." />
+            <TerminologyCard term="Audit log" definition="Append-only record of security-relevant actions (role changes, card transitions, attendance records, session opens/closes). Read-only through the application interface." />
+          </div>
+        </div>
+      </section>
+
+      {/* 7. ROLES SECTION */}
       <section className="py-20 sm:py-28 border-b border-slate-800 bg-slate-950/60">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
