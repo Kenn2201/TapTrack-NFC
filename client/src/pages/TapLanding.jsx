@@ -390,7 +390,7 @@ export default function TapLanding() {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800/60">
                   <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Method</span>
                   <span className="text-xs font-bold font-mono px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    NFC URL
+                    iPhone NFC
                   </span>
                 </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/authService';
 import Header from '../components/layout/Header';
@@ -32,7 +33,7 @@ function UserDetailRow({ label, value, mono = false }) {
   );
 }
 
-function AdminUserDetail({ user: u, currentUserId }) {
+function AdminUserDetail({ user: u, currentUserId, onNavigate }) {
   const isSelf = u.id === currentUserId;
   const verified = !!u.emailVerifiedAt;
   const formatDate = (iso) =>
@@ -63,10 +64,27 @@ function AdminUserDetail({ user: u, currentUserId }) {
         <UserDetailRow label="Last Login" value={u.lastLoginAt ? formatDate(u.lastLoginAt) : 'Not available'} />
       </div>
 
-      <div className="pt-2 border-t border-slate-800 text-xs text-slate-500 leading-relaxed">
-        NFC card label, attendance history, and event invitations are shown in their own
-        management views. This directory view displays identity, access, and verification
-        details only.
+      <div className="pt-2 border-t border-slate-800 text-xs text-slate-500 leading-relaxed space-y-2">
+        <p>
+          NFC card label, attendance history, and event invitations are shown in their own
+          management views.
+        </p>
+        <div className="flex flex-wrap gap-3 pt-1">
+          <Link
+            to="/admin/cards"
+            className="text-blue-400 hover:text-blue-300 font-medium underline underline-offset-2"
+            onClick={onNavigate}
+          >
+            Open Card Directory
+          </Link>
+          <Link
+            to="/admin/events"
+            className="text-blue-400 hover:text-blue-300 font-medium underline underline-offset-2"
+            onClick={onNavigate}
+          >
+            Open Event Management
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -365,7 +383,7 @@ export default function AdminUsers() {
         title="User Details"
         maxWidth="max-w-lg"
       >
-        {detailUser && <AdminUserDetail user={detailUser} currentUserId={currentUser?.id} />}
+        {detailUser && <AdminUserDetail user={detailUser} currentUserId={currentUser?.id} onNavigate={() => setDetailUser(null)} />}
       </Modal>
 
       {/* Confirm Dialog */}
