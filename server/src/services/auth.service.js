@@ -18,11 +18,16 @@ export function toSafeUser(user) {
     email: user.email,
     firstName: user.first_name || user.firstName,
     lastName: user.last_name || user.lastName,
+    nickname: user.nickname || null,
+    birthday: user.birthday || null,
+    avatarUrl: user.avatar_url || null,
     role: user.role,
     status: user.status,
     emailVerifiedAt: user.email_verified_at || user.emailVerifiedAt,
     createdAt: user.created_at || user.createdAt,
     updatedAt: user.updated_at || user.updatedAt,
+    lastLoginAt: user.last_login_at || user.lastLoginAt || null,
+    lastSeenAt: user.last_seen_at || user.lastSeenAt || null,
   };
 }
 
@@ -118,20 +123,25 @@ export const authService = {
       throw err;
     }
 
-    // Issue JWT
+    // One-active-session policy: bump the user's session version and record the
+    // login. Every new login invalidates every previously issued session.
+    const sessionUser = await userRepository.recordLogin(user.id);
+
+    // Issue JWT. `ver` ties the token to the user's current session version.
     const secret = getJwtSecret();
     const token = jwt.sign(
       {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
+        sub: sessionUser.id,
+        email: sessionUser.email,
+        role: sessionUser.role,
+        ver: sessionUser.session_version,
       },
       secret,
       { expiresIn: config.jwtExpiresIn }
     );
 
     return {
-      user: toSafeUser(user),
+      user: toSafeUser(sessionUser),
       token,
     };
   },
@@ -275,6 +285,34 @@ export const authService = {
     await tokenRepository.markPasswordResetTokenUsed(record.id);
 
     return { message: 'Password has been successfully reset. You may now log in.' };
+  },
+
+  /**
+   * Change the current user's password. The current password must match.
+   * All other sessions are invalidated under the one-active-session policy.
+   */
+  async changePassword({ userId, currentPassword, newPassword }) {
+    if (!currentPassword || !newPassword) {
+      const err = new Error('Current and new password are required.');
+      err.status = 400;
+      throw err;
+    }
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      const err = new Error('User account not found.');
+      err.status = 404;
+      throw err;
+    }
+    const isValid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isValid) {
+      const err = new Error('Current password is incorrect.');
+      err.code = 'INVALID_PASSWORD';
+      err.status = 403;
+      throw err;
+    }
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    const updated = await userRepository.updatePassword(userId, passwordHash);
+    return { message: 'Password changed successfully. Other sessions have been securely signed out.', user: toSafeUser(updated) };
   },
 };
 

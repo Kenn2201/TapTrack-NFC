@@ -50,6 +50,14 @@ export const authController = {
    * POST /api/auth/logout
    */
   async logout(req, res) {
+    // Invalidate the user's active sessions when a vald session is present
+    if (req.user?.id) {
+      try {
+        await userRepository.revokeAllSessions(req.user.id);
+      } catch {
+        // best effort — the cookie is cleared regardless
+      }
+    }
     res.clearCookie(config.cookieName, {
       httpOnly: true,
       secure: config.nodeEnv === 'production',
@@ -124,16 +132,30 @@ export const authController = {
 
   /**
    * PATCH /api/users/me
-   * Allows authenticated users to update their own display names
+   * Allows authenticated users to update their own profile
    */
   async updateProfile(req, res, next) {
     try {
-      const { firstName, lastName } = req.body;
-      const updated = await userRepository.updateProfile(req.user.id, { firstName, lastName });
+      const { firstName, lastName, nickname, birthday, avatarUrl } = req.body;
+      const updated = await userRepository.updateProfile(req.user.id, { firstName, lastName, nickname, birthday, avatarUrl });
       return res.json({
         message: 'Profile updated successfully.',
         user: toSafeUser(updated),
       });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * POST /api/users/me/password
+   * Change the current user's password and invalidate other sessions.
+   */
+  async changePassword(req, res, next) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const result = await authService.changePassword({ userId: req.user.id, currentPassword, newPassword });
+      return res.json(result);
     } catch (err) {
       next(err);
     }

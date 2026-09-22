@@ -8,32 +8,45 @@ import { attendanceController } from '../controllers/attendance.controller.js';
 import { dashboardController } from '../controllers/dashboard.controller.js';
 import { auditController } from '../controllers/audit.controller.js';
 import { activityPulseController } from '../controllers/activityPulse.controller.js';
+import { platformController } from '../controllers/platform.controller.js';
+import { feedbackController } from '../controllers/feedback.controller.js';
+import { emailController } from '../controllers/email.controller.js';
+import { eventParticipantsController } from '../controllers/eventParticipants.controller.js';
+
+
 
 import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roles.js';
 import { validate } from '../middleware/validate.js';
 import { authLimiter, resetLimiter, resolveLimiter, attendanceLimiter } from '../middleware/rateLimiter.js';
 import {
-  registerSchema,
-  loginSchema,
-  verifyEmailSchema,
-  resendVerificationSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
-  updateRoleSchema,
-  updateStatusSchema,
-  updateProfileSchema,
-  provisionCardSchema,
-  activateCardSchema,
-  assignCardSchema,
-  verifyCardTokenSchema,
-  createEventSchema,
-  updateEventSchema,
-  manualAttendanceSchema,
-  nfcAttendanceSchema,
-  nfcUrlAttendanceSchema,
-  cardLifecycleSchema,
-  replaceCardSchema,
+registerSchema,
+loginSchema,
+verifyEmailSchema,
+resendVerificationSchema,
+forgotPasswordSchema,
+resetPasswordSchema,
+updateRoleSchema,
+updateStatusSchema,
+updateProfileSchema,
+provisionCardSchema,
+activateCardSchema,
+assignCardSchema,
+verifyCardTokenSchema,
+createEventSchema,
+updateEventSchema,
+manualAttendanceSchema,
+nfcAttendanceSchema,
+nfcUrlAttendanceSchema,
+cardLifecycleSchema,
+replaceCardSchema,
+  maintenanceSchema,
+createFeedbackSchema,
+updateFeedbackStatusSchema,
+emailSendSchema,
+inviteParticipantsSchema,
+rsvpSchema,
+reissueCardSchema,
 } from '../validators/schemas.js';
 
 const router = Router();
@@ -89,10 +102,50 @@ router.patch('/admin/cards/:id/activate', authenticate, requireRole('ADMIN'), va
 router.patch('/admin/cards/:id/assign', authenticate, requireRole('ADMIN'), validate(assignCardSchema), cardController.assign);
 router.post('/admin/cards/:id/assign', authenticate, requireRole('ADMIN'), validate(assignCardSchema), cardController.assign);
 router.patch('/admin/cards/:id/lifecycle', authenticate, requireRole('ADMIN'), validate(cardLifecycleSchema), cardController.lifecycle);
+
+// ─── PLATFORM — MAINTENANCE STATUS (public) & CONTROL (v1.1.0) ───────────────
+router.get('/platform/maintenance-status', platformController.getStatus);
+router.post('/admin/platform/maintenance', authenticate, requireRole('ADMIN'), validate(maintenanceSchema), platformController.setMaintenance);
+
+// ─── FEEDBACK (v1.1.0) ────────────────────────────────────────────────────────
+router.post('/feedback', authenticate, validate(createFeedbackSchema), feedbackController.submit);
+router.get('/feedback', authenticate, requireRole('ADMIN'), feedbackController.list);
+router.patch('/admin/feedback/:id/status', authenticate, requireRole('ADMIN'), validate(updateFeedbackStatusSchema), feedbackController.updateStatus);
+
+// ─── EMAIL SUITE (v1.1.0) ─────────────────────────────────────────────────────
+router.post('/admin/emails/send', authenticate, requireRole('ADMIN'), emailController.send);
+router.post('/admin/emails/broadcast', authenticate, requireRole('ADMIN'), emailController.broadcast);
+router.get('/admin/emails/diagnostics', authenticate, requireRole('ADMIN'), emailController.diagnostics);
+
+// ─── EVENT PARTICIPANTS (v1.1.0) ──────────────────────────────────────────────
+router.post('/admin/events/:id/participants/invite', authenticate, requireRole('ADMIN'), validate(inviteParticipantsSchema), eventParticipantsController.invite);
+router.get('/admin/events/:id/participants', authenticate, requireRole('ADMIN'), eventParticipantsController.list);
+router.post('/events/:id/participants/rsvp', authenticate, validate(rsvpSchema), eventParticipantsController.rsvp);
+
+// ─── CARD REISSUE (v1.1.0) ────────────────────────────────────────────────────
+router.post('/admin/cards/:id/reissue', authenticate, requireRole('ADMIN'), validate(reissueCardSchema), cardController.reissue);
+
 router.post('/admin/cards/:id/replace', authenticate, requireRole('ADMIN'), validate(replaceCardSchema), cardController.replace);
 
 router.post('/admin/events', authenticate, requireRole('ADMIN'), validate(createEventSchema), eventController.create);
 router.patch('/admin/events/:id', authenticate, requireRole('ADMIN'), validate(updateEventSchema), eventController.update);
 router.get('/admin/attendance', authenticate, requireRole('ADMIN'), attendanceController.getAll);
+
+
+
+// ─── SAAS PASS v1.1.0 ──────────────────────────────────────────────────────────
+// Platform maintenance (public status + ADMIN toggle)
+router.get('/platform/maintenance-status', platformController.getStatus);
+router.post('/admin/platform/maintenance', authenticate, requireRole('ADMIN'), validate(maintenanceSchema), platformController.setMaintenance);
+
+// Feedback (USER submit, ADMIN triage)
+router.post('/feedback', authenticate, validate(createFeedbackSchema), feedbackController.submit);
+router.get('/feedback', authenticate, requireRole('ADMIN'), feedbackController.list);
+router.patch('/admin/feedback/:id/status', authenticate, requireRole('ADMIN'), validate(updateFeedbackStatusSchema), feedbackController.updateStatus);
+
+// Email suite (ADMIN direct/broadcast)
+router.post('/admin/emails/send', authenticate, requireRole('ADMIN'), validate(emailSendSchema), emailController.send);
+router.post('/admin/emails/broadcast', authenticate, requireRole('ADMIN'), validate(emailSendSchema), emailController.broadcast);
+router.get('/admin/emails/diagnostics', authenticate, requireRole('ADMIN'), emailController.diagnostics);
 
 export default router;

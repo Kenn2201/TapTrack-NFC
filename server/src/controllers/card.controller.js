@@ -127,4 +127,13 @@ export const cardController = {
       return res.status(201).json(result);
     } catch (error) { return next(error); }
   },
+
+  async reissue(req, res, next) {
+    try {
+      const result = await cardLifecycleService.reissue({
+        cardId: parseInt(req.params.id, 10), reason: req.validated.reason, actor: req.user,
+      });
+      return res.status(201).json(result);
+    } catch (error) { return next(error); }
+  },
 };

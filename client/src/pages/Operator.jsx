@@ -12,6 +12,7 @@ import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingState from '../components/ui/LoadingState';
 import AttendanceResult from '../components/attendance/AttendanceResult';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { attendanceService } from '../services/attendanceService';
 import { authService } from '../services/authService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -29,6 +30,7 @@ export default function Operator() {
   const [submittingSessionId, setSubmittingSessionId] = useState(null);
   const [closingSessionId, setClosingSessionId] = useState(null);
   const [feedback, setFeedback] = useState(null); // { type, message, record, card }
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -98,33 +100,36 @@ export default function Operator() {
     }
   };
 
-  const handleCloseSession = async (session) => {
-    const confirmClose = window.confirm(
-      `Are you sure you want to close the attendance session for "${session.event?.name}"? Taps will no longer be accepted.`
-    );
-    if (!confirmClose) return;
+  const handleCloseSession = (session) => {
+    setConfirmDialog({
+      title: 'Close Attendance Session',
+      message: `Are you sure you want to close the attendance session for "${session.event?.name}"? Taps will no longer be accepted.`,
+      variant: 'danger',
+      confirmText: 'Close Session',
+      onConfirm: async () => {
+        setClosingSessionId(session.id);
+        setFeedback(null);
 
-    setClosingSessionId(session.id);
-    setFeedback(null);
-
-    try {
-      await attendanceService.closeSession(session.id);
-      if (attendanceContext?.sessionId === session.id) {
-        stop();
-      }
-      setFeedback({
-        type: 'CLOSED',
-        message: 'Attendance Session Closed',
-      });
-      await loadData();
-    } catch (err) {
-      setFeedback({
-        type: 'error',
-        message: err.message || 'Failed to close attendance session.',
-      });
-    } finally {
-      setClosingSessionId(null);
-    }
+        try {
+          await attendanceService.closeSession(session.id);
+          if (attendanceContext?.sessionId === session.id) {
+            stop();
+          }
+          setFeedback({
+            type: 'CLOSED',
+            message: 'Attendance Session Closed',
+          });
+          await loadData();
+        } catch (err) {
+          setFeedback({
+            type: 'error',
+            message: err.message || 'Failed to close attendance session.',
+          });
+        } finally {
+          setClosingSessionId(null);
+        }
+      },
+    });
   };
 
   return (
@@ -344,6 +349,20 @@ export default function Operator() {
           )}
         </Section>
       </PageContainer>
+
+      {/* Confirm Dialog */}
+      {confirmDialog && (
+        <ConfirmDialog
+          isOpen={true}
+          onClose={() => setConfirmDialog(null)}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          variant={confirmDialog.variant}
+          confirmText={confirmDialog.confirmText}
+          onConfirm={confirmDialog.onConfirm}
+          loading={closingSessionId !== null}
+        />
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import Input from '../components/ui/Input';
 import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingState from '../components/ui/LoadingState';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function AdminUsers() {
@@ -23,6 +24,7 @@ export default function AdminUsers() {
   const [actionSuccess, setActionSuccess] = useState(null);
   const [search, setSearch] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -41,40 +43,50 @@ export default function AdminUsers() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleRoleToggle = async (targetUser) => {
+  const handleRoleToggle = (targetUser) => {
     const newRole = targetUser.role === 'OPERATOR' ? 'USER' : 'OPERATOR';
-    const confirmMessage = `Are you sure you want to change ${targetUser.firstName}'s role from ${targetUser.role} to ${newRole}?`;
-    if (!window.confirm(confirmMessage)) return;
-
-    setActionLoadingId(targetUser.id);
-    setActionSuccess(null);
-    try {
-      await authService.updateRole(targetUser.id, newRole);
-      setActionSuccess(`Role for ${targetUser.email} updated to ${newRole}.`);
-      await fetchUsers();
-    } catch (err) {
-      setError(err.message || 'Failed to update role.');
-    } finally {
-      setActionLoadingId(null);
-    }
+    setConfirmDialog({
+      title: 'Confirm Role Change',
+      message: `Are you sure you want to change ${targetUser.firstName}'s role from ${targetUser.role} to ${newRole}?`,
+      variant: 'warning',
+      confirmText: 'Confirm Change',
+      onConfirm: async () => {
+        setActionLoadingId(targetUser.id);
+        setActionSuccess(null);
+        try {
+          await authService.updateRole(targetUser.id, newRole);
+          setActionSuccess(`Role for ${targetUser.email} updated to ${newRole}.`);
+          await fetchUsers();
+        } catch (err) {
+          setError(err.message || 'Failed to update role.');
+        } finally {
+          setActionLoadingId(null);
+        }
+      },
+    });
   };
 
-  const handleStatusToggle = async (targetUser) => {
+  const handleStatusToggle = (targetUser) => {
     const newStatus = targetUser.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
-    const confirmMessage = `Are you sure you want to set ${targetUser.firstName}'s account to ${newStatus}?`;
-    if (!window.confirm(confirmMessage)) return;
-
-    setActionLoadingId(targetUser.id);
-    setActionSuccess(null);
-    try {
-      await authService.updateStatus(targetUser.id, newStatus);
-      setActionSuccess(`Account for ${targetUser.email} is now ${newStatus}.`);
-      await fetchUsers();
-    } catch (err) {
-      setError(err.message || 'Failed to update status.');
-    } finally {
-      setActionLoadingId(null);
-    }
+    setConfirmDialog({
+      title: 'Confirm Status Change',
+      message: `Are you sure you want to set ${targetUser.firstName}'s account to ${newStatus}?`,
+      variant: newStatus === 'DISABLED' ? 'danger' : 'success',
+      confirmText: newStatus === 'DISABLED' ? 'Disable' : 'Activate',
+      onConfirm: async () => {
+        setActionLoadingId(targetUser.id);
+        setActionSuccess(null);
+        try {
+          await authService.updateStatus(targetUser.id, newStatus);
+          setActionSuccess(`Account for ${targetUser.email} is now ${newStatus}.`);
+          await fetchUsers();
+        } catch (err) {
+          setError(err.message || 'Failed to update status.');
+        } finally {
+          setActionLoadingId(null);
+        }
+      },
+    });
   };
 
   const filteredUsers = users.filter((u) => {
@@ -261,6 +273,20 @@ export default function AdminUsers() {
           )}
         </Section>
       </PageContainer>
+
+      {/* Confirm Dialog */}
+      {confirmDialog && (
+        <ConfirmDialog
+          isOpen={true}
+          onClose={() => setConfirmDialog(null)}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          variant={confirmDialog.variant}
+          confirmText={confirmDialog.confirmText}
+          onConfirm={confirmDialog.onConfirm}
+          loading={actionLoadingId !== null}
+        />
+      )}
     </div>
   );
 }

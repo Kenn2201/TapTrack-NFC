@@ -4,6 +4,7 @@ import { authService } from '../services/authService';
 import Header from '../components/layout/Header';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import CardStatusBadge from '../components/cards/CardStatusBadge';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function AdminCards() {
@@ -26,7 +27,9 @@ export default function AdminCards() {
   const [provisionResult, setProvisionResult] = useState(null); // Contains { card, rawToken, writeUrl }
   const [copied, setCopied] = useState(false);
   const [confirmWrittenChecked, setConfirmWrittenChecked] = useState(false);
-  const [activatingLoading, setActivatingLoading] = useState(false);
+  // Confirm Dialog States
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const [promptDialog, setPromptDialog] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -145,39 +148,85 @@ export default function AdminCards() {
   };
 
   // Direct activation for an existing UNASSIGNED card in the table
-  const handleDirectActivate = async (card) => {
-    const confirmed = window.confirm(
-      `Confirm physical write for ${card.cardLabel}:\nHave you already written the URL to this physical NTAG215 card and verified it in NFC Tools?`
-    );
-    if (!confirmed) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      await cardService.activate(card.id, { confirmWritten: true });
-      setSuccessMsg(`Card ${card.cardLabel} is now ACTIVE!`);
-      await fetchData();
-    } catch (err) {
-      setError(err.message || 'Failed to activate card.');
-    } finally {
-      setLoading(false);
-    }
+  const handleDirectActivate = (card) => {
+    setConfirmDialog({
+      title: 'Confirm Physical Write',
+      message: `Confirm physical write for ${card.cardLabel}:\nHave you already written the URL to this physical NTAG215 card and verified it in NFC Tools?`,
+      variant: 'primary',
+      confirmText: 'Confirm & Activate',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          await cardService.activate(card.id, { confirmWritten: true });
+          setSuccessMsg(`Card ${card.cardLabel} is now ACTIVE!`);
+          await fetchData();
+        } catch (err) {
+          setError(err.message || 'Failed to activate card.');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
-  const handleLifecycle = async (card, status) => {
-    const reason = window.prompt(`Reason for marking ${card.cardLabel} ${status}:`);
-    if (!reason || !window.confirm(`Confirm ${card.cardLabel}: ${card.status} → ${status}?`)) return;
-    try { await cardService.transition(card.id, { status, reason }); setSuccessMsg(`${card.cardLabel} is now ${status}.`); await fetchData(); }
-    catch (err) { setError(err.message); }
+  const handleLifecycle = (card, status) => {
+    setPromptDialog({
+      title: `Mark ${card.cardLabel} as ${status}`,
+      message: `Please provide a reason for this status change:`,
+      variant: 'warning',
+      confirmText: 'Next',
+      cancelText: 'Cancel',
+      input: {
+        label: 'Reason',
+        placeholder: `Reason for ${status}...`,
+        value: '',
+        onChange: (e) => setPromptDialog(prev => prev ? { ...prev, input: { ...prev.input, value: e.target.value } } : null),
+        helperText: 'Required for LOST, REVOKED, DISABLED transitions',
+      },
+      onConfirm: (reason) => {
+        if (!reason?.trim()) return;
+        setPromptDialog(prev => prev ? { ...prev, message: `Confirm ${card.cardLabel}: ${card.status} → ${status}?`, input: null, confirmText: 'Confirm', variant: 'danger', onConfirm: async () => {
+          try {
+            await cardService.transition(card.id, { status, reason: reason.trim() });
+            setSuccessMsg(`${card.cardLabel} is now ${status}.`);
+            await fetchData();
+          } catch (err) {
+            setError(err.message);
+          }
+        } } : null);
+      },
+    });
   };
 
-  const handleReplace = async (card) => {
-    const newCardLabel = window.prompt(`New physical label replacing ${card.cardLabel}:`, suggestNextLabel());
-    if (!newCardLabel) return;
-    const reason = window.prompt('Replacement reason:', 'Replacement issued');
-    if (!reason) return;
-    try { const result = await cardService.replace(card.id, { newCardLabel, reason }); setReplacement(result); setSuccessMsg(`${card.cardLabel} replaced by ${result.newCard.cardLabel}.`); await fetchData(); }
-    catch (err) { setError(err.message); }
+  const handleReplace = (card) => {
+    const suggestedLabel = suggestNextLabel();
+    setPromptDialog({
+      title: `Replace ${card.cardLabel}`,
+      message: `Enter the new physical card label:`,
+      variant: 'primary',
+      confirmText: 'Next',
+      input: {
+        label: 'New Card Label',
+        placeholder: suggestedLabel,
+        value: suggestedLabel,
+        onChange: (e) => setPromptDialog(prev => prev ? { ...prev, input: { ...prev.input, value: e.target.value } } : null),
+      },
+      onConfirm: (newCardLabel) => {
+        if (!newCardLabel?.trim()) return;
+        setPromptDialog(prev => prev ? { ...prev, message: 'Replacement reason:', input: { label: 'Reason', placeholder: 'Replacement issued', value: 'Replacement issued', onChange: (e) => setPromptDialog(prev => prev ? { ...prev, input: { ...prev.input, value: e.target.value } } : null) }, confirmText: 'Replace', variant: 'warning', onConfirm: async (reason) => {
+          if (!reason?.trim()) return;
+          try {
+            const result = await cardService.replace(card.id, { newCardLabel: newCardLabel.trim().toUpperCase(), reason: reason.trim() || 'Card replaced' });
+            setReplacement(result);
+            setSuccessMsg(`${card.cardLabel} replaced by ${result.newCard.cardLabel}.`);
+            await fetchData();
+          } catch (err) {
+            setError(err.message);
+          }
+        } } : null);
+      },
+    });
   };
 
   const filteredCards = cards.filter((c) => {
@@ -647,6 +696,36 @@ export default function AdminCards() {
           </div>
         </div>
       )}
-    </div>
+
+{/* Confirm Dialog */}
+    {confirmDialog && (
+      <ConfirmDialog
+        isOpen={true}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        variant={confirmDialog.variant}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
+        loading={loading}
+      />
+    )}
+
+    {/* Prompt Dialog */}
+    {promptDialog && (
+      <ConfirmDialog
+        isOpen={true}
+        onClose={() => setPromptDialog(null)}
+        title={promptDialog.title}
+        message={promptDialog.message}
+        variant={promptDialog.variant}
+        confirmText={promptDialog.confirmText}
+        cancelText={promptDialog.cancelText}
+        onConfirm={promptDialog.onConfirm}
+        loading={loading}
+        input={promptDialog.input}
+      />
+    )}
+</div>
   );
 }

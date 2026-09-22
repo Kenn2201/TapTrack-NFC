@@ -55,4 +55,27 @@ export const cardLifecycleService = {
       writeUrl: nfcCredentialService.buildWriteUrl(rawToken),
     };
   },
+
+  async reissue({ cardId, actor, reason }) {
+    if (actor?.role !== 'ADMIN') throw fail(403, 'FORBIDDEN', 'Only administrators can reissue cards.');
+    const oldCard = await nfcCardRepository.findById(cardId);
+    if (!oldCard) throw fail(404, 'CARD_NOT_FOUND', 'NFC card not found.');
+    if (!(CARD_TRANSITIONS[oldCard.status] || []).includes('REPLACED')) {
+      throw fail(409, 'INVALID_CARD_TRANSITION', `Card cannot transition from ${oldCard.status} to REPLACED.`);
+    }
+    if (!oldCard.userId) throw fail(409, 'CARD_UNASSIGNED', 'Only an assigned card can be reissued.');
+    const rawToken = nfcCredentialService.generateRawCredential();
+    const tokenHash = nfcCredentialService.deriveCredentialHash(rawToken);
+    const replacement = await nfcCardRepository.replaceCard({
+      oldCardId: cardId, cardLabel: oldCard.cardLabel, userId: oldCard.userId,
+      tokenHash, actorId: actor.id, reason: reason?.trim() || 'Card reissued',
+    });
+    await auditService.log({ actorId: actor.id, action: 'CARD_REISSUED', entityType: 'NFC_CARD', entityId: cardId, metadata: { replacementCardId: replacement.newCard.id, reason: reason?.trim() || 'Card reissued' } });
+    return {
+      oldCard: nfcCredentialService.formatSafeCard(replacement.oldCard),
+      newCard: nfcCredentialService.formatSafeCard(replacement.newCard),
+      rawToken,
+      writeUrl: nfcCredentialService.buildWriteUrl(rawToken),
+    };
+  },
 };

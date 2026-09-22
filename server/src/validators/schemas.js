@@ -44,6 +44,67 @@ export const updateStatusSchema = z.object({
 export const updateProfileSchema = z.object({
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
+  nickname: z.string().max(100).optional().nullable(),
+  birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Birthday must be a valid date (YYYY-MM-DD)').optional().nullable(),
+  avatarUrl: z.string().url('Avatar URL must be a valid URL').max(500).optional().nullable(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required').max(100),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters long').max(100),
+  confirmPassword: z.string().min(8).max(100),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'New password and confirmation do not match.',
+  path: ['confirmPassword'],
+});
+
+// ─── PLATFORM & MAINTENANCE (v1.1.0) ─────────────────────────────────────────
+export const maintenanceSchema = z.object({
+  enabled: z.boolean(),
+  message: z.string().max(1000).optional().nullable(),
+  estimatedReturn: z.string().max(120).optional().nullable(),
+  releaseLabel: z.string().max(50).optional().nullable(),
+});
+
+// ─── FEEDBACK (v1.1.0) ────────────────────────────────────────────────────────
+export const createFeedbackSchema = z.object({
+  category: z.enum(['BUG', 'UX', 'FEATURE_REQUEST', 'NFC_ATTENDANCE', 'OTHER']),
+  rating: z.number().int().min(1).max(5),
+  message: z.string().min(1, 'Feedback message is required').max(2000),
+  page: z.string().max(300).optional().nullable(),
+  reproduction: z.string().max(2000).optional().nullable(),
+});
+
+export const updateFeedbackStatusSchema = z.object({
+  status: z.enum(['NEW', 'REVIEWING', 'RESOLVED', 'ARCHIVED']),
+});
+
+// ─── EMAIL SUITE (v1.1.0) ────────────────────────────────────────────────────
+export const emailSendSchema = z.object({
+  to: z.string().email('A valid recipient email is required').optional(),
+  broadcast: z.boolean().optional(),
+  subject: z.string().min(1, 'Subject is required').max(200),
+  message: z.string().min(1, 'Message body is required').max(5000),
+  confirmBroadcast: z.boolean().optional(),
+  template: z.enum(['VERIFICATION', 'PASSWORD_RESET', 'ROLE_CHANGE', 'STATUS_CHANGE', 'GENERIC']).optional(),
+}).refine(
+  (data) => Boolean(data.to) || data.broadcast === true,
+  { message: 'Provide either a recipient email or enable broadcast.' }
+);
+
+// ─── EVENT PARTICIPANTS (v1.1.0) ─────────────────────────────────────────────
+export const inviteParticipantsSchema = z.object({
+  userIds: z.array(z.number().int().positive()).min(1),
+});
+
+export const rsvpSchema = z.object({
+  status: z.enum(['ACCEPTED', 'DECLINED']),
+});
+
+// ─── NFC REISSUE (v1.1.0) ────────────────────────────────────────────────────
+export const reissueCardSchema = z.object({
+  confirmInvalidate: z.boolean(),
+  reason: z.string().trim().min(3).max(200).optional(),
 });
 
 // ─── NFC CARD PROVISIONING (v0.3.0) ──────────────────────────────────────────

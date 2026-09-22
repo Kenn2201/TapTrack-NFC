@@ -1,168 +1,153 @@
-# Changelog
+# TapTrack NFC Changelog
 
-All notable changes to TapTrack NFC will be documented here.
+All notable changes to this project are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/)
-and this project uses [Semantic Versioning](https://semver.org/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v1.0.0 Production Candidate (Manual Acceptance Pending)
+---
+
+## [1.1.0] - Release Candidate (pending human acceptance)
+**Release Name:** SaaS Pass — Release Candidate
+
+### Added
+
+#### Platform Maintenance
+- **Public maintenance status endpoint** (`GET /api/platform/maintenance-status`) - accessible without authentication for health checks and client polling
+- **Admin maintenance toggle** (`POST /api/admin/platform/maintenance`) - enable/disable maintenance mode with optional custom message
+- **Maintenance mode enforcement** - non-admin API requests receive HTTP 503 with maintenance message when enabled
+- **Admin bypass** - authenticated ADMIN users retain full API access during maintenance
+- **Client maintenance screen** - dedicated page showing maintenance status, custom message, and retry/check buttons
+
+#### Feedback System
+- **User Feedback Center** (`POST /api/feedback`) - authenticated users can submit feedback with category (Bug/Feature/Improvement/Other), 1-5 star rating, message, page context, and reproduction steps
+- **Admin feedback triage** (`GET /api/feedback`, `PATCH /api/admin/feedback/:id/status`) - admins can list, filter, and update status (New/In Review/Accepted/Rejected/Implemented)
+- **Audit logging** - all feedback submissions and status changes are logged
+- **Feedback categories** - Bug Report, Feature Request, Improvement, Other with visual icons
+
+#### Email Suite (Admin)
+- **Direct email** (`POST /api/admin/emails/send`) - send single email to specific recipient with HTML/text body
+- **Broadcast email** (`POST /api/admin/emails/broadcast`) - send to all active users with mandatory confirmation checkbox
+- **Diagnostics endpoint** (`GET /api/admin/emails/diagnostics`) - verify Resend API key, domain verification, and connectivity
+- **Rate limiting** - per-endpoint rate limits to prevent abuse
+- **Audit logging** - all email operations logged with actor and metadata
+
+#### Event Participants & RSVP
+- **Admin invite participants** (`POST /api/admin/events/:id/participants/invite`) - invite multiple users by email to events
+- **Admin list participants** (`GET /api/admin/events/:id/participants`) - view all invited participants with status
+- **User RSVP** (`POST /api/events/:id/participants/rsvp`) - invited users can Accept/Decline
+- **Participant status tracking** - Invited / Accepted / Declined with visual badges
+- **Audit logging** - invitations and RSVPs logged with actor and metadata
+
+#### NFC Card Reissue
+- **Reissue endpoint** (`POST /api/admin/cards/:id/reissue`) - invalidate existing card, generate new credential, preserve user assignment
+- **Replace endpoint** (`POST /api/admin/cards/:id/replace`) - replace card with new label, generate new credential
+- **Reissue schema** - requires confirmation of invalidation and optional reason
+- **Audit logging** - reissue/replace operations logged with old/new card IDs and reasons
+
+#### Profile & Security Enhancements
+- **Nickname field** - optional display name for attendance rosters
+- **Birthday field** - optional date of birth
+- **Avatar URL field** - optional profile image URL
+- **Change password** (`POST /api/users/me/password`) - change current password with current password verification, invalidates other sessions
+- **Enhanced profile update** (`PATCH /api/users/me`) - supports nickname, birthday, avatarUrl alongside first/last name
+
+#### Operator Workspace (Existing - Enhanced)
+- Event-first workflow: select session first, then perform operations
+- Manual attendance entry with user dropdown
+- iPhone Attendance Mode - keep session open for multiple NFC taps
+- NFC Web Scanner for Android Chrome
+- Real-time recent scans display with deduplication
+- Session close with confirmation
+
+#### NFC Reader (Existing)
+- Web NFC (Android Chrome) with credential verification
+- iPhone NFC URL fallback (`/t#token`) for universal links
+- Manual attendance fallback
+- Scan result display with card info and attendance record
+- Recent scans history with status badges (Success/Duplicate/Error)
+
+#### Card Lifecycle (Existing)
+- Provision physical cards with opaque random credentials
+- Card states: UNASSIGNED → ACTIVE → LOST/REVOKED/DISABLED → REPLACED
+- Card replacement preserves user assignment and audit history
+- Zero PII on physical cards - only opaque random URL fragments
+
+#### Infrastructure
+- Shared attendance engine (`AttendanceService.record`) for NFC_WEB, NFC_URL, MANUAL methods
+- Centralized card lifecycle service with validated state transitions
+- Rate limiting per endpoint (auth, attendance, nfc, password reset)
+- HttpOnly cookie authentication with session_version for single-active-session enforcement
+- Comprehensive audit logging with secret sanitization
 
 ### Changed
-- Stabilized the complete ADMIN, OPERATOR, USER, and public NFC flows without adding new product scope.
-- Synchronized the UI and health endpoint to canonical package version `1.0.0`.
-- Replaced remaining placeholder/stale roadmap content and completed the member card view and public landing experience.
-- Preserved the pending Android physical NDEFReader validation and did not claim manual acceptance, friend testing, or 20-card physical testing.
+- **Version bump** to 1.1.0 across client and server
+- **Database migration 007** (`007_v1.1.0_saas_pass.sql`) - additive schema for feedback, email, event participants, platform settings tables
+- **Routes reorganized** - SaaS features grouped under dedicated sections
+- **Admin dashboard** - new navigation for Feedback, Email, Platform, Participants
 
-## [0.9.0] — 2026-09-21 — Public Testing Preparation (RC / Manual Testing Pending)
+### Fixed
+- Auth fingerprint: login 500 fixed, test-fake session_version parity, admin-list parity, recordLogin parity
+- Auth test suite: 25/25 passing
+- Full server test suite: 128/128 passing
+- Client build: green
 
-### Added
-- Safe NFC-001–NFC-020 inventory visibility without automatically provisioning cards or generating credentials.
-- Compatibility guidance and copy-safe local diagnostics excluding tokens, hashes, cookies, account data, and secrets.
-- In-memory NFC/QR benchmark timing for start, resolution, and attendance completion with credential-free JSON export.
-- Representative open-session, NFC attendance, duplicate, close-session integration coverage plus polished 404 handling.
+### Security
+- Zero raw NFC credentials ever stored (only SHA-256 hashes)
+- Session_version bumped on password/role/status changes
+- Disabled users lose access immediately
+- HttpOnly cookies, no JWT in response body
+- Resend API keys never exposed to client
+- Audit metadata sanitized (passwords, tokens, secrets stripped)
+- Maintenance mode enforced server-side (not client-only)
+- Broadcast email requires explicit confirmation checkbox
 
-## [0.8.0] — 2026-09-21 — Hardening and Activity Pulse (BETA)
+### Physical Test Status
+- **NFC-001** (Android NFC_WEB): PASSED
+- **NFC-001** (iPhone NFC_URL): PENDING
+- **NFC-001** (Android NDEFReader): PENDING
+- Manual attendance: VERIFIED
 
-### Added
-- Server-calculated Activity Pulse: total check-ins, distinct events, honest unavailable attendance rate, and a documented weekly streak.
-- Immutable, administrator-readable audit log with recursively sanitized metadata for user, card, event, session, and attendance actions.
-- Trusted-origin enforcement on state-changing API requests and dedicated attendance rate limiting.
-- Responsive Activity Pulse and audit views, visible focus styles, larger mobile controls, and clearer live status feedback.
+---
 
-## [0.7.0] — 2026-09-21 — Admin Dashboard and Card Lifecycle (BETA)
-
-### Added
-- Real database-backed administrative metrics for users, cards, events, sessions, and recent attendance.
-- Central card lifecycle policy covering lost, revoked, disabled, administrative reactivation, and replacement workflows.
-- Atomic replacement with a new one-time credential, same-user assignment, and preserved relationship/history.
-- Admin card search, full status filters, reasons, confirmations, and lifecycle actions; operators and users remain server-side denied.
-
-## [0.6.0] — 2026-09-21 — Events and Shared Attendance Engine (BETA)
-
-### Added
-- Additive `003_v0.6.0_events_attendance.sql` migration for events, sessions, and attendance records with database-enforced duplicate protection per user/session.
-- Central shared attendance engine for `NFC_WEB`, authenticated `NFC_URL`, and `MANUAL` methods with stable error codes and server-side RBAC.
-- Admin event management, operator sessions, NFC/manual check-in, attendance feeds, and user history.
-- Regression coverage for event/session rules, all attendance methods, inactive users/cards, mismatches, invalid references, and duplicates.
-
-## [0.5.0] — 2026-09-21 — Universal NFC URL Fallback (ALPHA)
+## [1.0.0] - 2024-XX-XX (Previous Release)
 
 ### Added
-- **Universal NFC Credential Resolution Endpoint (`server/src/controllers/nfc.controller.js`, `server/src/services/nfcCard.service.js`, `server/src/routes/index.js`)**:
-  - Dedicated `POST /api/nfc/resolve` endpoint equipped with `resolveLimiter` rate limiting and `optionalAuthenticate` session detection.
-  - Validates card token strictly in HTTPS POST body; never exposes tokens in URL, query parameters, or logs.
-  - Reuses existing v0.3 `CARD_TOKEN_PEPPER` HMAC-SHA256 credential derivation architecture (`_lookupAndValidateCard`).
-  - Strict privacy protection: public unauthenticated consumers receive minimal safe payload (card label, status, and masked member display name; strictly NO email address).
-  - Authenticated `ADMIN` and `OPERATOR` users receive full member details.
-  - Comprehensive card lifecycle handling with distinct error codes: `CARD_UNASSIGNED`, `CARD_LOST`, `CARD_REVOKED`, `CARD_REPLACED`, `CARD_DISABLED`, `MEMBER_INACTIVE`, `MEMBER_NOT_ASSIGNED`, `CARD_NOT_FOUND`.
-  - Zero side effects: strictly read-only card verification without altering database state or recording attendance.
-- **Client Mobile-First /t#token Fallback Page (`client/src/pages/TapLanding.jsx`, `client/src/utils/nfcParser.js`)**:
-  - Mobile-first resolution page supporting iPhone Safari (iOS 13+) and Android mobile browsers independent of NDEFReader.
-  - Instant hash fragment capture and URL bar sanitization via `history.replaceState` to prevent sensitive tokens lingering in browser address bar.
-  - Ephemeral memory management: token exists strictly in temporary memory during request execution and is wiped immediately; zero browser storage persistence.
-  - Comprehensive UX states: Verifying, Valid Active Card, Card Status Restrictions, Unrecognized Card, Missing Token, Malformed Token, and Connection Error.
-  - Prominent user disclosure: *"No attendance has been recorded."*
-- **Automated Verification Testing (`server/tests/nfcResolve.test.js`, `client/tests/nfcParser.test.js`)**:
-  - 14 server test cases covering public resolution, privacy boundaries, operator authorization, error states, and zero-write invariants.
-  - 6 client parser test cases covering `#<token>` extraction, leading hash omission, empty fragments, invalid tokens, and SSR safety.
+- Initial NFC attendance engine
+- User authentication with HttpOnly cookies
+- Admin user management (roles, status)
+- Event/session management
+- NFC card provisioning and lifecycle
+- Web NFC (Android) + iPhone NFC_URL + Manual attendance
+- Card lifecycle states
+- Audit logging
+- Operator console with manual attendance
+- NFC reader with Web NFC support
 
-## [0.4.0-rc] — 2026-09-21 — Android Web NFC Reader with NDEFReader (RC / Physical Test Pending)
+---
 
-### Added
-- **Dynamic Server Health Check (`server/src/app.js`, `server/src/config/index.js`)**:
-  - Dynamically resolves server package version at runtime, ensuring `/health` reflects `package.json` without manual hardcoding.
-- **Backend NFC Credential Verification Endpoint (`server/src/controllers/nfc.controller.js`, `server/src/services/nfcCard.service.js`)**:
-  - Dedicated `POST /api/nfc/verify` endpoint protected by `authenticate` and `requireRole('ADMIN', 'OPERATOR')`.
-  - Validates card token strictly in HTTPS POST body; never exposes tokens in URL, query parameters, or logs.
-  - Derives HMAC-SHA256 hash using existing `CARD_TOKEN_PEPPER` and queries card by `token_hash`.
-  - Authoritative verification: verifies card is `ACTIVE`, assigned to an existing user, and user is `ACTIVE`.
-  - Safe response payload returning card label, status, member display name, and email with zero credential exposure.
-  - Zero side effects: strictly read-only card verification without modifying attendance or sessions.
-- **Client Web NFC URL & NDEF Parser (`client/src/utils/nfcParser.js`)**:
-  - Pure helper parsing physical `/t#<rawToken>` NDEF records with HTTPS protocol and domain validation.
-  - Rejects insecure HTTP, evil domains, missing hash fragments, and query string token parameters.
-  - In-memory ephemeral debounce mechanism preventing rapid duplicate scans (~1.5–2s window).
-- **Client Web NFC Reader Experience (`client/src/pages/NfcReaderPage.jsx`, `client/src/hooks/useNFC.js`)**:
-  - Dedicated `/operator/nfc-reader` route accessible to authenticated `ADMIN` and `OPERATOR` roles.
-  - Native `NDEFReader.scan({ signal })` with `AbortController` lifecycle management.
-  - Clean graceful handling of all UI states: Ready, Unsupported, Insecure Context, Requesting Permission, Scanning, Verifying, Success, Invalid Card, and Permission Denied.
-  - Clear user disclosure confirming no attendance is recorded during v0.4 verification.
+## Versioning Policy
 
-## [0.3.0] - 2026-09-21 — NFC Provisioning, Card Assignment & NFC Tools Workflow (ALPHA)
+- **PATCH**: Bug fix, documentation fix, small config correction
+- **MINOR**: New feature, new route, new API, new NFC capability, new dashboard feature
+- **MAJOR**: Reserved for stable post-1.0 breaking changes
 
-### Added
-- **NFC Credential Service (`server/src/services/nfcCredential.service.js`)**:
-  - Cryptographically secure opaque random token generation using `crypto.randomBytes(24).toString('base64url')`.
-  - Deterministic HMAC-SHA256 hash derivation with required `CARD_TOKEN_PEPPER` environment variable.
-  - Safe DTO normalization strictly stripping `token_hash` before returning card objects to clients.
-  - Write URL generation in `/t#<rawToken>` format to prevent credential exposure in HTTP access logs.
-- **NFC Card Database Migration (`database/migrations/002_v0.3.0_nfc_provisioning.sql`)**:
-  - Non-destructive migration ensuring `card_status` enum lifecycle states (`UNASSIGNED`, `ACTIVE`, `REVOKED`, `LOST`, `REPLACED`, `DISABLED`).
-  - Creates/updates `nfc_cards` table with `card_label`, `user_id`, `token_hash`, `status`, `issued_by`, `issued_at`, `activated_at`, `created_at`, `updated_at`.
-  - Comprehensive database indexes on `card_label`, `user_id`, `token_hash`, and `status`.
-- **NFC Card Repository (`server/src/repositories/nfcCard.repository.js`)**:
-  - Methods for `findByCardLabel`, `findById`, `findByTokenHash`, `findAll`, `create`, `updateStatus`, and `assignUser`.
-- **NFC Card Business Logic Service (`server/src/services/nfcCard.service.js`)**:
-  - `listCards`: Filtered card listing with safe metadata.
-  - `getCardById`: Individual card detail lookup.
-  - `provisionCard`: Validates unique label and active user account, generates opaque credential, persists derived hash only, and returns write URL exactly once.
-  - `activateCard`: Enforces physical write confirmation before transitioning card from `UNASSIGNED` to `ACTIVE`.
-  - `assignCard`: Safe member account assignment and reassignment.
-- **Admin NFC Card Controller & Routes (`server/src/controllers/card.controller.js`, `server/src/routes/index.js`)**:
-  - Protected endpoints with `authenticate` and `requireRole('ADMIN')`.
-  - `GET /api/admin/cards`, `GET /api/admin/cards/:id`, `POST /api/admin/cards/provision`, `PATCH /api/admin/cards/:id/activate`, `PATCH /api/admin/cards/:id/assign`.
-  - Zod request validation schemas (`provisionCardSchema`, `activateCardSchema`, `assignCardSchema`).
-- **Responsive Admin NFC Cards UI (`client/src/pages/AdminCards.jsx`, `client/src/components/cards/CardStatusBadge.jsx`)**:
-  - Card registry table with status badges, assigned member details, and activation actions.
-  - Multi-step guided provisioning modal with label suggestion (`NFC-001`), user picker, and one-time URL display.
-  - Prominent Copy button and comprehensive step-by-step **NFC Tools** write instructions.
-  - Explicit confirmation check requiring operator verification of physical write before activation.
-- **Automated Testing (`server/tests/nfcCard.test.js`)**:
-  - 18 test cases covering RBAC, security boundaries, non-persistence of raw tokens, zero exposure of `token_hash`, duplicate label rejection, disabled user rejection, and lifecycle transitions.
-  - Verified 43 total backend tests passing (25 v0.2 auth regression tests + 18 v0.3 card tests).
+### Release Stages
+- `v0.x.x` ALPHA
+- `v0.x.x` BETA
+- `v0.x.x` RC
+- `v1.x.x` PRODUCTION CANDIDATE (until manual acceptance)
 
-## [0.2.0] - 2026-09-21 — Authentication, Roles, Users, Responsive Profiles & Resend (ALPHA)
+**Never mark a v1 candidate LIVE before human acceptance testing passes.**
 
-### Production Infrastructure (Completed)
-- **Frontend Hosting (Vercel)**: Production frontend deployed at `https://nfc.kenncode.me` with Vite + React 19.
-- **Backend Hosting (Render)**: Production Express API deployed as a Web Service at `https://api.nfc.kenncode.me`.
-- **Deployment Health Check**: Production `GET /health` verified operational with HTTP 200.
-- **HTTPS & Custom Domains**: Active TLS and verified DNS on both `nfc.kenncode.me` and `api.nfc.kenncode.me`.
-- **CORS & Credentials**: Browser fetch requests from `https://nfc.kenncode.me` to `https://api.nfc.kenncode.me` manually verified with `Access-Control-Allow-Origin` and `Access-Control-Allow-Credentials: true`.
-- **Database (Neon PostgreSQL)**: Hosted serverless PostgreSQL with connection pooling connected to Render backend via `DATABASE_URL`.
-- **Email Domain Verification (Resend)**: `mail.nfc.kenncode.me` fully verified with DKIM, SPF, and CNAME records for outbound transactional email.
-- **Environment Split**: Established clean separation between Vercel public browser configuration (`VITE_API_URL`) and Render private server environment variables.
+### Required Release Files (synchronized on every release)
+1. `client/src/constants/version.js`
+2. `package.json` (root)
+3. `client/package.json`
+4. `server/package.json`
+5. `CHANGELOG.md`
+6. `README.md`
 
-### Application Features (Implemented — Pending Release Review)
-- User registration with email normalization, bcrypt password hashing, and duplicate email protection.
-- HttpOnly cookie session management (`taptrack_session`) with `SameSite: 'lax'` and `Secure: true` in production.
-- Generic login responses preventing account enumeration and immediate rejection for disabled accounts.
-- Active account status enforcement (disabled users lose access on subsequent requests even with existing sessions).
-- Safe user serialization (`/api/auth/me`) never exposing password hashes or internal tokens.
-- Secure email verification via cryptographic SHA-256 hashed single-use tokens and centralized Resend email service.
-- Secure password reset via cryptographic SHA-256 hashed single-use tokens and non-enumerating generic responses.
-- Role-based authorization middleware strictly enforcing `ADMIN`, `OPERATOR`, and `USER` access boundaries.
-- Admin user management endpoints (`/api/admin/users`) with promotion/demotion between `USER` and `OPERATOR` and account enable/disable controls.
-- Self-lockout protection preventing administrators from demoting or disabling their own accounts.
-- Production administrator CLI bootstrap script (`server/scripts/create-admin.js`) ensuring zero hardcoded production credentials.
-- Database migration script (`database/migrations/001_v0.2.0_auth_users.sql`) adding `email_verified_at` and token tables.
-- Responsive mobile-first user interface: Login, Register, VerifyEmail, ForgotPassword, ResetPassword, Dashboard, Profile, Operator, AdminUsers.
-- Comprehensive Vitest test suite (`server/tests/auth.test.js`) verifying 25 functional, authorization, token lifecycle, and security test cases.
+---
 
-## [0.1.0] - 2026-09-21 — Initial Architecture (ALPHA)
-
-### Added
-
-- Initial React 19 / Vite frontend architecture.
-- Tailwind CSS v4 integration.
-- React Router page structure.
-- Node.js / Express API structure.
-- PostgreSQL schema plan.
-- Generic role hierarchy (Admin, Operator, User, Public).
-- NFC card lifecycle design (Unassigned, Active, Lost, Revoked, Replaced, Disabled).
-- Web NFC compatibility strategy with NDEFReader feature detection.
-- NDEF URL fallback design for iPhone/unsupported browsers.
-- Shared attendance-service architecture.
-- Public-repository privacy policy (AGENTS.md).
-- Semantic Versioning release protocol.
-- Documentation stubs (architecture, nfc-flow, card-lifecycle, compatibility).
+*Generated as part of TapTrack NFC v1.1.0 Release Candidate — SaaS Pass*

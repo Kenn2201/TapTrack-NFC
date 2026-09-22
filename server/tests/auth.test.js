@@ -66,6 +66,19 @@ vi.mock('../src/repositories/db.js', () => {
           return { rows: [] };
         }
 
+        if (q.includes('UPDATE users') && q.includes('SET session_version = session_version + 1')) {
+          const [id] = params;
+          const user = usersTable.find((u) => u.id === id);
+          if (user) {
+            user.session_version = (user.session_version || 0) + 1;
+            user.last_login_at = new Date().toISOString();
+            user.last_seen_at = new Date().toISOString();
+            user.updated_at = new Date().toISOString();
+            return { rows: [{ ...user }] };
+          }
+          return { rows: [] };
+        }
+
         if (q.includes('UPDATE users') && q.includes('SET status = $1')) {
           const [status, id] = params;
           const user = usersTable.find((u) => u.id === id);
@@ -111,7 +124,7 @@ vi.mock('../src/repositories/db.js', () => {
           return { rows: [] };
         }
 
-        if (q.includes('SELECT id, email, first_name, last_name, role, status, email_verified_at, created_at, updated_at FROM users')) {
+        if (q.includes('SELECT id, email, first_name, last_name, nickname, birthday, avatar_url, role, status, email_verified_at, created_at, updated_at, last_login_at, last_seen_at FROM users')) {
           return { rows: usersTable.map((u) => ({ ...u })) };
         }
 

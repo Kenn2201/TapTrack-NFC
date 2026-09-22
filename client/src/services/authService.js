@@ -18,6 +18,7 @@ export const authService = {
 
   // Profile
   updateProfile: (data) => api.patch('/users/me', data),
+  changePassword: (data) => api.post('/users/me/password', data),
 
   // Admin User Management
   getUsers: () => api.get('/admin/users'),
