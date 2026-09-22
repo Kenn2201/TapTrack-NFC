@@ -7,7 +7,6 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Alert from '../components/ui/Alert';
-import { useAuth } from '../hooks/useAuth';
 import { feedbackService } from '../services/feedbackService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
@@ -21,9 +20,8 @@ const CATEGORIES = [
 
 export default function FeedbackCenter() {
   useDocumentTitle('Feedback Center');
-  const { user } = useAuth();
 
-  const [category, setCategory] = useState('FEATURE');
+  const [category, setCategory] = useState('FEATURE_REQUEST');
   const [rating, setRating] = useState(3);
   const [message, setMessage] = useState('');
   const [page, setPage] = useState(window.location.pathname);
@@ -50,7 +48,7 @@ export default function FeedbackCenter() {
         page,
         reproduction: reproduction.trim() || null,
       });
-      setCategory('FEATURE');
+      setCategory('FEATURE_REQUEST');
       setRating(3);
       setMessage('');
       setReproduction('');

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
@@ -7,7 +8,6 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
-import Alert from '../components/ui/Alert';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../hooks/useAuth';
 import { eventService } from '../services/eventService';
@@ -34,7 +34,6 @@ export default function EventDetail({ eventId }) {
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [message, setMessage] = useState(null);
   const [inviteModal, setInviteModal] = useState(false);
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -47,6 +46,7 @@ export default function EventDetail({ eventId }) {
         fetchParticipants();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
   const fetchEvent = async () => {
@@ -114,7 +114,7 @@ export default function EventDetail({ eventId }) {
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold text-red-400 mb-2">Event Not Found</h1>
-          <p className="text-slate-400">The requested event does not exist.</p>
+          <p className="text-slate-400">{error || 'The requested event does not exist.'}</p>
         </div>
       </div>
     );
@@ -129,6 +129,12 @@ export default function EventDetail({ eventId }) {
       <Header />
 
       <PageContainer>
+        {error && (
+          <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+            {error}
+          </div>
+        )}
+
         <PageHeader
           title={event.name}
           description={event.description}
@@ -212,7 +218,8 @@ export default function EventDetail({ eventId }) {
                             <Badge status={p.status} className={STATUS_COLORS[p.status]} />
                           </div>
                         </div>
-                      )))}
+                      ))
+                    )}
                   </div>
                 </Card>
               </Section>
@@ -246,9 +253,12 @@ export default function EventDetail({ eventId }) {
                 {isAdminOrOperator && (
                   <>
                     <Button variant="outline" className="w-full" onClick={() => setInviteModal(true)}>Invite Participants</Button>
-                    <Button variant="primary" className="w-full" disabled title="Open session feature not yet implemented">
-                      Open Attendance Session (Not Implemented)
-                    </Button>
+                    <Link
+                      to="/operator"
+                      className="inline-flex items-center justify-center w-full px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold min-h-[44px] transition-colors"
+                    >
+                      Open Operator Console
+                    </Link>
                   </>
                 )}
                 {!isAdminOrOperator && user && !userStatus && (

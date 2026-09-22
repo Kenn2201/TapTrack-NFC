@@ -173,7 +173,7 @@ export default function Profile() {
               </div>
               <div className="py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                 <div>
-                  <span className="text-xs text-slate-400 font-medium">Member ID</span>
+                  <span className="text-xs text-slate-400 font-medium">Account ID</span>
                   <p className="text-sm font-mono text-white mt-0.5">#{user?.id}</p>
                 </div>
                 <span className="text-xs text-slate-500">Database ID</span>
@@ -201,7 +201,7 @@ export default function Profile() {
                     ? 'Full administrative control over users, cards, events, and audit logs.'
                     : user?.role === 'OPERATOR'
                     ? 'Authorized to open attendance sessions, scan NFC cards, and record manual check-ins.'
-                    : 'Standard member account with access to personal card and attendance history.'}
+                    : 'Standard account with access to personal card and attendance history.'}
                 </p>
               </div>
               <span className="text-xs text-slate-500 italic whitespace-nowrap">

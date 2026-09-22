@@ -8,7 +8,6 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Alert from '../components/ui/Alert';
 import Modal from '../components/ui/Modal';
-import Badge from '../components/ui/Badge';
 import { useAuth } from '../hooks/useAuth';
 import { adminEmailService } from '../services/adminEmailService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -22,7 +21,6 @@ export default function AdminEmail() {
   const [broadcastLoading, setBroadcastLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
-  const [broadcastConfirm, setBroadcastConfirm] = useState(false);
   const [broadcastModal, setBroadcastModal] = useState(false);
 
   const [directForm, setDirectForm] = useState({ to: '', subject: '', html: '', text: '' });

@@ -143,7 +143,8 @@ export default function Dashboard() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {events.slice(0, 4).map((evt) => (
-                    <Card key={evt.id} className="flex flex-col justify-between">
+                    <Link key={evt.id} to={`/events/${evt.id}`} className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl">
+                    <Card className="flex flex-col justify-between h-full transition-all group-hover:border-blue-500/40 group-hover:bg-slate-800/40">
                       <div>
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="font-bold text-white text-base truncate">
@@ -167,6 +168,7 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </Card>
+                    </Link>
                   ))}
                 </div>
               )}

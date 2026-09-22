@@ -115,8 +115,8 @@ router.get('/feedback', authenticate, requireRole('ADMIN'), feedbackController.l
 router.patch('/admin/feedback/:id/status', authenticate, requireRole('ADMIN'), validate(updateFeedbackStatusSchema), feedbackController.updateStatus);
 
 // ─── EMAIL SUITE (v1.1.0) ─────────────────────────────────────────────────────
-router.post('/admin/emails/send', authenticate, requireRole('ADMIN'), emailController.send);
-router.post('/admin/emails/broadcast', authenticate, requireRole('ADMIN'), emailController.broadcast);
+router.post('/admin/emails/send', authenticate, requireRole('ADMIN'), validate(emailSendSchema), emailController.send);
+router.post('/admin/emails/broadcast', authenticate, requireRole('ADMIN'), validate(emailSendSchema), emailController.broadcast);
 router.get('/admin/emails/diagnostics', authenticate, requireRole('ADMIN'), emailController.diagnostics);
 
 // ─── EVENT PARTICIPANTS (v1.1.0) ──────────────────────────────────────────────
@@ -132,22 +132,5 @@ router.post('/admin/cards/:id/replace', authenticate, requireRole('ADMIN'), vali
 router.post('/admin/events', authenticate, requireRole('ADMIN'), validate(createEventSchema), eventController.create);
 router.patch('/admin/events/:id', authenticate, requireRole('ADMIN'), validate(updateEventSchema), eventController.update);
 router.get('/admin/attendance', authenticate, requireRole('ADMIN'), attendanceController.getAll);
-
-
-
-// ─── SAAS PASS v1.1.0 ──────────────────────────────────────────────────────────
-// Platform maintenance (public status + ADMIN toggle)
-router.get('/platform/maintenance-status', platformController.getStatus);
-router.post('/admin/platform/maintenance', authenticate, requireRole('ADMIN'), validate(maintenanceSchema), platformController.setMaintenance);
-
-// Feedback (USER submit, ADMIN triage)
-router.post('/feedback', authenticate, validate(createFeedbackSchema), feedbackController.submit);
-router.get('/feedback', authenticate, requireRole('ADMIN'), feedbackController.list);
-router.patch('/admin/feedback/:id/status', authenticate, requireRole('ADMIN'), validate(updateFeedbackStatusSchema), feedbackController.updateStatus);
-
-// Email suite (ADMIN direct/broadcast)
-router.post('/admin/emails/send', authenticate, requireRole('ADMIN'), validate(emailSendSchema), emailController.send);
-router.post('/admin/emails/broadcast', authenticate, requireRole('ADMIN'), validate(emailSendSchema), emailController.broadcast);
-router.get('/admin/emails/diagnostics', authenticate, requireRole('ADMIN'), emailController.diagnostics);
 
 export default router;

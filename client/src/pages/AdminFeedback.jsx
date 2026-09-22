@@ -4,7 +4,6 @@ import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
 import Alert from '../components/ui/Alert';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../hooks/useAuth';
@@ -30,10 +29,6 @@ export default function AdminFeedback() {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [updating, setUpdating] = useState(false);
 
-  useEffect(() => {
-    fetchFeedback();
-  }, [statusFilter]);
-
   const fetchFeedback = async () => {
     setLoading(true);
     setError(null);
@@ -46,6 +41,10 @@ export default function AdminFeedback() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchFeedback();
+  }, [statusFilter]);
 
   const handleStatusChange = async (id, newStatus) => {
     setUpdating(true);

@@ -12,6 +12,8 @@ import {
   decideTapMode,
   buildUrlCheckInRequest,
   classifyUrlCheckInFailure,
+  shouldConfirmAttendanceSessionSwitch,
+  findContextSession,
 } from '../src/utils/attendanceContext.js';
 
 function createMemoryStorage() {
@@ -172,6 +174,30 @@ describe('iPhone attendanceContext persistence', () => {
 
     clearAttendanceContext();
     delete globalThis.window;
+  });
+
+  test('session switch requires confirmation only when context points at a different session', () => {
+    const context = { sessionId: 10, eventId: 5, expiresAt: '2026-12-01T00:00:00.000Z' };
+
+    assert.equal(shouldConfirmAttendanceSessionSwitch(null, { id: 10 }), false);
+    assert.equal(shouldConfirmAttendanceSessionSwitch(context, null), false);
+    assert.equal(shouldConfirmAttendanceSessionSwitch(context, { id: 10 }), false);
+    assert.equal(shouldConfirmAttendanceSessionSwitch(context, { id: '10' }), false);
+    assert.equal(shouldConfirmAttendanceSessionSwitch(context, { id: 99 }), true);
+    assert.equal(shouldConfirmAttendanceSessionSwitch({ sessionId: null }, { id: 1 }), false);
+  });
+
+  test('findContextSession resolves the bound open session by id', () => {
+    const context = { sessionId: 10, eventId: 5 };
+    const sessions = [
+      { id: 9, eventId: 4 },
+      { id: 10, eventId: 5 },
+    ];
+
+    assert.equal(findContextSession(context, sessions)?.eventId, 5);
+    assert.equal(findContextSession(context, [{ id: 11 }]), null);
+    assert.equal(findContextSession(null, sessions), null);
+    assert.equal(findContextSession(context, null), null);
   });
 
   test('URL check-in failures never map to public resolve fallback', () => {

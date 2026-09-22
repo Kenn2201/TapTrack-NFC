@@ -289,71 +289,36 @@ export default function Landing() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-white">Apple iOS</h3>
-                  <span className="text-xs text-emerald-400 font-medium">Universal URL Fallback</span>
-                </div>
+              <div className="w-10 h-10 rounded-lg bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-black text-sm mb-4">
+                iOS
               </div>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                Native iPhone NFC background reading detects the TapTrack URL without an app.
-                Safari resolves the token fragment safely through the authenticated gateway.
+              <h3 className="font-bold text-white text-lg">NFC URL (iPhone)</h3>
+              <p className="mt-2 text-xs sm:text-sm text-slate-400 leading-relaxed">
+                Tap the physical card to the phone, open the system notification, and Safari loads the secure /t credential link.
               </p>
             </div>
-
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-cyan-600/20 text-cyan-400 flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-white">Android Chrome</h3>
-                  <span className="text-xs text-blue-400 font-medium">Web NFC NDEFReader</span>
-                </div>
+              <div className="w-10 h-10 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-black text-sm mb-4">
+                AND
               </div>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                Direct in-browser hardware scanning via standard Web NFC APIs.
-                Continuous operator check-in with sub-200ms latency and scan debouncing.
+              <h3 className="font-bold text-white text-lg">Web NFC (Android)</h3>
+              <p className="mt-2 text-xs sm:text-sm text-slate-400 leading-relaxed">
+                Scan the card URL in a compatible Chromium browser while signed in as an operator with an open session.
               </p>
             </div>
-
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-purple-600/20 text-purple-400 flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-white">Desktop / Laptop</h3>
-                  <span className="text-xs text-purple-400 font-medium">Operator Manual Fallback</span>
-                </div>
+              <div className="w-10 h-10 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-black text-sm mb-4">
+                M
               </div>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                Full administration, card provisioning, live session monitoring, and searchable manual attendee entry
-                ensure events never stop even if hardware is unavailable.
+              <h3 className="font-bold text-white text-lg">Manual fallback</h3>
+              <p className="mt-2 text-xs sm:text-sm text-slate-400 leading-relaxed">
+                An operator selects the attendee on the Operator Console when scanning is unavailable.
               </p>
             </div>
           </div>
-
-          <div className="mt-8 text-center">
-            <Link
-              to="/compatibility"
-              className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 font-semibold"
-            >
-              <span>View full device compatibility table and diagnostics</span>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
+          <p className="mt-8 text-center text-xs text-slate-500 max-w-3xl mx-auto">
+            Cards store only an opaque random credential inside a TapTrack HTTPS URL. Names, emails, roles, and database IDs are never written to the card.
+          </p>
         </div>
       </section>
 
@@ -429,18 +394,18 @@ export default function Landing() {
               Role-Based Access Control
             </span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Designed for Organizations
+              Designed for Public Demonstrations
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Member */}
+            {/* Attendee */}
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 flex flex-col justify-between">
               <div>
                 <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30">
                   USER
                 </span>
-                <h3 className="mt-3 text-xl font-bold text-white">Member</h3>
+                <h3 className="mt-3 text-xl font-bold text-white">Attendee</h3>
                 <p className="mt-2 text-xs sm:text-sm text-slate-400 leading-relaxed">
                   Attendees carry their physical or digital NFC credential, view personal attendance logs, and track Activity Pulse streaks.
                 </p>
@@ -466,7 +431,7 @@ export default function Landing() {
               <ul className="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-400 space-y-2">
                 <li>• Open & close sessions</li>
                 <li>• Live NFC scanner console</li>
-                <li>• Manual member check-in</li>
+                <li>• Manual attendee check-in</li>
               </ul>
             </div>
 

@@ -19,7 +19,7 @@ const LIFECYCLE_CONFIG = {
     variant: 'warning',
     requiresReason: true,
     reasonLabel: 'Reason',
-    reasonPlaceholder: 'e.g. Card misplaced by member',
+    reasonPlaceholder: 'e.g. Card misplaced by attendee',
     reasonHelper: 'Minimum 3 characters. Recorded in the audit history.',
   },
   REVOKED: {
@@ -242,7 +242,7 @@ export default function AdminCards() {
     if (!lifecycleModal || lifecycleModal.loading) return;
     const { card, status, reason } = lifecycleModal;
     const config = LIFECYCLE_CONFIG[status];
-    const trimmed = reason.trim();
+    const trimmed = (reason || '').trim();
 
     // Client-side validation — errors stay INSIDE the modal, never close it
     if (config.requiresReason && trimmed.length < 3) {
@@ -267,7 +267,7 @@ export default function AdminCards() {
       await fetchData();
     } catch (err) {
       // Error → keep modal open, show safe message inside
-      setLifecycleModal((prev) => (prev ? { ...prev, loading: false, error: err.message || 'Failed to update card status.' } : null));
+      setLifecycleModal((prev) => (prev ? { ...prev, loading: false, error: err.message || 'Failed to update card status.' } : prev));
     }
   };
 
@@ -334,7 +334,7 @@ export default function AdminCards() {
               <span>NFC Card Provisioning</span>
             </h1>
             <p className="text-sm text-slate-400 mt-1">
-              Register physical NTAG215 cards, assign members, generate secure write URLs, and activate cards.
+              Register physical NTAG215 cards, assign users, generate secure write URLs, and activate cards.
             </p>
           </div>
 
@@ -448,7 +448,7 @@ export default function AdminCards() {
           <div className="w-full sm:w-72">
             <input
               type="text"
-              placeholder="Search by label or member..."
+              placeholder="Search by label or user..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -491,7 +491,7 @@ export default function AdminCards() {
                 <thead className="bg-slate-950/70 border-b border-slate-800 text-xs text-slate-400 uppercase tracking-wider font-semibold">
                   <tr>
                     <th className="px-6 py-3.5">Physical Tag Label</th>
-                    <th className="px-6 py-3.5">Assigned Member</th>
+                    <th className="px-6 py-3.5">Assigned User</th>
                     <th className="px-6 py-3.5">Status</th>
                     <th className="px-6 py-3.5">Provisioned Date</th>
                     <th className="px-6 py-3.5">Activated Date</th>
@@ -604,7 +604,7 @@ export default function AdminCards() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Assign to Member (User) <span className="text-rose-400">*</span>
+                      Assign to User <span className="text-rose-400">*</span>
                     </label>
                     <select
                       value={selectedUserId}

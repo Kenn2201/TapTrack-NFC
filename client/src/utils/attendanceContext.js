@@ -2,7 +2,7 @@
  * Operator iPhone Attendance Mode context.
  *
  * Stored on the frontend origin (nfc.kenncode.me) in same-origin localStorage.
- * The server remains authoritative; this never stores NFC tokens or member data.
+ * The server remains authoritative; this never stores NFC tokens or user data.
  */
 
 export const ATTENDANCE_CONTEXT_STORAGE_KEY = 'taptrack.attendanceContext';
@@ -137,6 +137,23 @@ export function hasActiveAttendanceMode(context = readAttendanceContext()) {
 
 export function decideTapMode(context = readAttendanceContext()) {
   return hasActiveAttendanceMode(context) ? 'attendance' : 'resolve';
+}
+
+/**
+ * True when starting iPhone Attendance Mode on a different session than the
+ * one currently bound in context — requires an explicit operator confirmation.
+ */
+export function shouldConfirmAttendanceSessionSwitch(context, session) {
+  if (!context?.sessionId || !session?.id) return false;
+  return Number(context.sessionId) !== Number(session.id);
+}
+
+/**
+ * Resolve the open session (if any) bound to the current attendance context.
+ */
+export function findContextSession(context, sessions) {
+  if (!context?.sessionId || !Array.isArray(sessions)) return null;
+  return sessions.find((s) => Number(s.id) === Number(context.sessionId)) || null;
 }
 
 export function buildUrlCheckInRequest(token, context) {

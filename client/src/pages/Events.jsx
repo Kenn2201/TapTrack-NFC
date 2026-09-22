@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
@@ -57,7 +58,8 @@ export default function Events() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.map((evt) => (
-                <Card key={evt.id} className="flex flex-col justify-between">
+                <Link to={`/events/${evt.id}`} className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl">
+                <Card key={evt.id} className="flex flex-col justify-between h-full transition-all group-hover:border-blue-500/40 group-hover:bg-slate-800/40">
                   <div>
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-bold text-white text-lg">{evt.name}</h3>
@@ -90,6 +92,7 @@ export default function Events() {
                     </div>
                   </div>
                 </Card>
+                </Link>
               ))}
             </div>
           )}

@@ -55,10 +55,11 @@ test('no hardcoded v1.0 RC remains in client source', () => {
   assert.deepEqual(offenders, []);
 });
 
-test('version.js declares CURRENT_VERSION 1.1.0 and matching label', async () => {
+test('version.js declares CURRENT_VERSION 1.1.0 and matching RC label', async () => {
   const mod = await import('../src/constants/version.js');
   assert.equal(mod.CURRENT_VERSION, '1.1.0');
-  assert.equal(mod.CURRENT_VERSION_LABEL, 'v1.1.0');
+  assert.equal(mod.CURRENT_VERSION_LABEL, 'v1.1.0 RC');
+  assert.equal(mod.CURRENT_VERSION_STAGE, 'RC');
 });
 
 test('client package.json version matches CURRENT_VERSION', async () => {
@@ -71,4 +72,10 @@ test('Header imports and uses CURRENT_VERSION_LABEL', () => {
   const source = readFileSync(join(SRC, 'components', 'layout', 'Header.jsx'), 'utf8');
   assert.match(source, /import\s+\{\s*CURRENT_VERSION_LABEL\s*\}\s+from\s+'\.\.\/\.\.\/constants\/version'/);
   assert.match(source, /\{CURRENT_VERSION_LABEL\}/);
+});
+
+test('no page hardcodes version labels instead of the shared constant', () => {
+  const files = walk(SRC);
+  const offenders = files.filter((f) => /v1\.\d+\.\d+(?:\s+RC)?/.test(readFileSync(f, 'utf8')));
+  assert.deepEqual(offenders, []);
 });

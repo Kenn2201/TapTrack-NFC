@@ -52,13 +52,13 @@ export const updateProfileSchema = z.object({
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required').max(100),
   newPassword: z.string().min(8, 'New password must be at least 8 characters long').max(100),
-  confirmPassword: z.string().min(8).max(100),
+  confirmPassword: z.string().min(8, 'Confirmation must be at least 8 characters long').max(100),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: 'New password and confirmation do not match.',
   path: ['confirmPassword'],
 });
 
-// ─── PLATFORM & MAINTENANCE (v1.1.0) ─────────────────────────────────────────
+// ─── PLATFORM & MAINTENANCE (v1.1.0) ─────────────────────────────────
 export const maintenanceSchema = z.object({
   enabled: z.boolean(),
   message: z.string().max(1000).optional().nullable(),
@@ -66,7 +66,7 @@ export const maintenanceSchema = z.object({
   releaseLabel: z.string().max(50).optional().nullable(),
 });
 
-// ─── FEEDBACK (v1.1.0) ────────────────────────────────────────────────────────
+// ─── FEEDBACK (v1.1.0) ────────────────────────────────────────────────
 export const createFeedbackSchema = z.object({
   category: z.enum(['BUG', 'UX', 'FEATURE_REQUEST', 'NFC_ATTENDANCE', 'OTHER']),
   rating: z.number().int().min(1).max(5),
@@ -79,7 +79,7 @@ export const updateFeedbackStatusSchema = z.object({
   status: z.enum(['NEW', 'REVIEWING', 'RESOLVED', 'ARCHIVED']),
 });
 
-// ─── EMAIL SUITE (v1.1.0) ────────────────────────────────────────────────────
+// ─── EMAIL SUITE (v1.1.0) ────────────────────────────────────────────
 export const emailSendSchema = z.object({
   to: z.string().email('A valid recipient email is required').optional(),
   broadcast: z.boolean().optional(),
@@ -92,7 +92,7 @@ export const emailSendSchema = z.object({
   { message: 'Provide either a recipient email or enable broadcast.' }
 );
 
-// ─── EVENT PARTICIPANTS (v1.1.0) ─────────────────────────────────────────────
+// ─── EVENT PARTICIPANTS (v1.1.0) ─────────────────────────────────────
 export const inviteParticipantsSchema = z.object({
   userIds: z.array(z.number().int().positive()).min(1),
 });
@@ -101,11 +101,11 @@ export const rsvpSchema = z.object({
   status: z.enum(['ACCEPTED', 'DECLINED']),
 });
 
-// ─── NFC REISSUE (v1.1.0) ────────────────────────────────────────────────────
+// ─── NFC REISSUE (v1.1.0) ────────────────────────────────────────────
 export const reissueCardSchema = z.object({
   confirmInvalidate: z.boolean(),
   reason: z.preprocess(
-    (value) => (value === '' || value === null ? undefined : value),
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
     z.string().trim()
       .min(3, 'Reason must be at least 3 characters.')
       .max(100, 'Reason cannot exceed 100 characters.')
@@ -113,7 +113,7 @@ export const reissueCardSchema = z.object({
   ),
 });
 
-// ─── NFC CARD PROVISIONING (v0.3.0) ──────────────────────────────────────────
+// ─── NFC CARD PROVISIONING (v0.3.0) ──────────────────────────────────
 export const provisionCardSchema = z.object({
   cardLabel: z.string().min(1, 'Card label is required').max(50, 'Card label cannot exceed 50 characters'),
   userId: z.number().int().positive('User ID must be a positive integer').optional(),
@@ -169,23 +169,19 @@ export const nfcUrlAttendanceSchema = z.object({
 
 export const cardLifecycleSchema = z.object({
   status: z.enum(['LOST', 'REVOKED', 'DISABLED', 'ACTIVE']),
-  // revocation_reason is VARCHAR(100) in PostgreSQL — never allow more than
-  // 100 characters through validation (overflow would surface as a 500).
-  // Empty/null reasons become undefined so the service can return a friendly
-  // REASON_REQUIRED error instead of a raw Zod "min 3 characters" message.
   reason: z.preprocess(
-    (value) => (value === '' || value === null ? undefined : value),
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
     z.string().trim()
       .min(3, 'Reason must be at least 3 characters.')
       .max(100, 'Reason cannot exceed 100 characters.')
       .optional()
-  ),
+  ).optional(),
 });
 
 export const replaceCardSchema = z.object({
   newCardLabel: z.string().trim().min(1).max(50),
   reason: z.preprocess(
-    (value) => (value === '' || value === null ? undefined : value),
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
     z.string().trim()
       .min(3, 'Reason must be at least 3 characters.')
       .max(100, 'Reason cannot exceed 100 characters.')

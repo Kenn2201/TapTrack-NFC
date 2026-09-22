@@ -17,6 +17,21 @@ import { attendanceService } from '../services/attendanceService';
 import { authService } from '../services/authService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import useAttendanceContext from '../hooks/useAttendanceContext';
+import {
+  findContextSession,
+  shouldConfirmAttendanceSessionSwitch,
+} from '../utils/attendanceContext';
+
+function eventLabel(session) {
+  return session.event?.name || `Event #${session.eventId}`;
+}
+
+function eventFirstSort(a, b) {
+  const nameA = eventLabel(a).toLowerCase();
+  const nameB = eventLabel(b).toLowerCase();
+  if (nameA !== nameB) return nameA.localeCompare(nameB);
+  return Number(a.id) - Number(b.id);
+}
 
 export default function Operator() {
   useDocumentTitle('Operator');
@@ -25,11 +40,11 @@ export default function Operator() {
 
   const [sessions, setSessions] = useState([]);
   const [users, setUsers] = useState([]);
-  const [selectedUserIds, setSelectedUserIds] = useState({}); // { [sessionId]: userId }
+  const [selectedUserIds, setSelectedUserIds] = useState({});
   const [loading, setLoading] = useState(true);
   const [submittingSessionId, setSubmittingSessionId] = useState(null);
   const [closingSessionId, setClosingSessionId] = useState(null);
-  const [feedback, setFeedback] = useState(null); // { type, message, record, card }
+  const [feedback, setFeedback] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadData = useCallback(async () => {
@@ -39,7 +54,7 @@ export default function Operator() {
         attendanceService.getOpenSessions(),
         authService.getUsers().catch(() => ({ users: [] })),
       ]);
-      setSessions(sessionsRes.sessions || []);
+      setSessions((sessionsRes.sessions || []).slice().sort(eventFirstSort));
       setUsers((usersRes.users || []).filter((u) => u.status === 'ACTIVE'));
     } catch (err) {
       setFeedback({
@@ -54,6 +69,8 @@ export default function Operator() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const activeSession = findContextSession(attendanceContext, sessions);
 
   const handleManualCheckIn = async (session) => {
     const userId = selectedUserIds[session.id];
@@ -75,7 +92,6 @@ export default function Operator() {
         record: res.record,
       });
 
-      // Clear selection
       setSelectedUserIds((prev) => ({ ...prev, [session.id]: '' }));
     } catch (err) {
       const raw = String(err.message || '');
@@ -100,10 +116,53 @@ export default function Operator() {
     }
   };
 
+  const applyAttendanceStart = (session) => {
+    const saved = start(session);
+    setFeedback({
+      type: 'SWITCHED',
+      message: `iPhone Attendance Mode is now bound to ${eventLabel(session)} (Session #${session.id}).`,
+      record: null,
+      saved,
+    });
+  };
+
+  const handleStartAttendance = (session) => {
+    if (session.status !== 'OPEN') return;
+
+    if (shouldConfirmAttendanceSessionSwitch(attendanceContext, session)) {
+      const currentEventName = activeSession
+        ? eventLabel(activeSession)
+        : `Session #${attendanceContext.sessionId}`;
+
+      setConfirmDialog({
+        title: 'Switch iPhone Attendance Session',
+        message: `iPhone Attendance Mode is currently bound to ${currentEventName}. Switch to ${eventLabel(session)} (Session #${session.id})? Taps for the previous session will stop recording.`,
+        variant: 'warning',
+        confirmText: 'Switch Session',
+        onConfirm: () => {
+          setConfirmDialog(null);
+          applyAttendanceStart(session);
+        },
+      });
+      return;
+    }
+
+    applyAttendanceStart(session);
+  };
+
+  const handleStopAttendance = () => {
+    stop();
+    setFeedback({
+      type: 'STOPPED',
+      message: 'iPhone Attendance Mode stopped.',
+      record: null,
+    });
+  };
+
   const handleCloseSession = (session) => {
     setConfirmDialog({
       title: 'Close Attendance Session',
-      message: `Are you sure you want to close the attendance session for "${session.event?.name}"? Taps will no longer be accepted.`,
+      message: `Are you sure you want to close the attendance session for "${eventLabel(session)}"? Taps will no longer be accepted.`,
       variant: 'danger',
       confirmText: 'Close Session',
       onConfirm: async () => {
@@ -132,6 +191,9 @@ export default function Operator() {
     });
   };
 
+  const resultTypes = ['SUCCESS', 'DUPLICATE', 'INVALID', 'CLOSED'];
+  const infoTypes = ['SWITCHED', 'STOPPED'];
+
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
       <Header />
@@ -139,7 +201,7 @@ export default function Operator() {
       <PageContainer maxWidth="max-w-5xl">
         <PageHeader
           title="Attendance Operations"
-          description="Monitor active event sessions, scan cards with Web NFC, or record manual check-ins."
+          description="Choose an open event session, scan cards with Web NFC, or record manual check-ins."
           actions={
             <Link
               to="/operator/benchmark"
@@ -152,12 +214,18 @@ export default function Operator() {
 
         {feedback && (
           <div className="mb-6">
-            {['SUCCESS', 'DUPLICATE', 'INVALID', 'CLOSED'].includes(feedback.type) ? (
+            {resultTypes.includes(feedback.type) ? (
               <AttendanceResult
                 type={feedback.type}
                 message={feedback.message}
                 record={feedback.record}
                 card={feedback.card}
+              />
+            ) : infoTypes.includes(feedback.type) ? (
+              <Alert
+                type="success"
+                message={feedback.message}
+                onClose={() => setFeedback(null)}
               />
             ) : (
               <Alert
@@ -169,9 +237,85 @@ export default function Operator() {
           </div>
         )}
 
+        {/* Single global iPhone Attendance Mode panel */}
         <Section
-          title="Active Attendance Sessions"
-          subtitle="Sessions currently accepting attendee taps and check-ins"
+          title="iPhone Attendance Mode"
+          subtitle="One active session receives NFC URL taps from attendee cards"
+        >
+          {attendanceContext ? (
+            <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 sm:p-5 space-y-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
+                  </span>
+                  <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">
+                    iPhone Attendance Mode Active
+                  </span>
+                </div>
+                <StatusBadge status={activeSession?.status || 'OPEN'} />
+              </div>
+
+              <div className="bg-slate-950/50 border border-slate-800/80 rounded-lg p-3 space-y-1 text-xs">
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-400">Event</span>
+                  <span className="font-semibold text-slate-200 text-right">
+                    {activeSession ? eventLabel(activeSession) : `Session #${attendanceContext.sessionId}`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Session</span>
+                  <span className="font-mono font-semibold text-slate-200">#{attendanceContext.sessionId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Bound Event ID</span>
+                  <span className="font-mono font-semibold text-slate-200">
+                    {attendanceContext.eventId != null ? `#${attendanceContext.eventId}` : '—'}
+                  </span>
+                </div>
+              </div>
+
+              {!activeSession && (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                  The bound session is no longer in the open list. It may have been closed. Stop iPhone Attendance Mode and start again from an open event.
+                </div>
+              )}
+
+              <ol className="list-decimal list-inside space-y-1 text-[11px] sm:text-xs text-slate-300">
+                <li>Keep Safari signed in to TapTrack.</li>
+                <li>Tap an attendee&apos;s physical NFC card.</li>
+                <li>Open the NFC notification.</li>
+                <li>TapTrack records attendance into this session automatically.</li>
+              </ol>
+
+              <Button
+                variant="danger"
+                size="md"
+                className="w-full"
+                onClick={handleStopAttendance}
+              >
+                Stop iPhone Attendance Mode
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-4 sm:p-5">
+              <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">
+                iPhone Attendance Mode is idle. Select an open event session below and choose{' '}
+                <strong className="text-slate-200">Use iPhone Attendance</strong> to bind taps to that session. Only one session can be bound at a time.
+              </p>
+              {sessions.length > 1 && (
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-2">
+                  Multiple open sessions detected. Switching will require confirmation so taps never land in the wrong event.
+                </p>
+              )}
+            </div>
+          )}
+        </Section>
+
+        <Section
+          title="Open Event Sessions"
+          subtitle="Events currently accepting attendee taps and check-ins"
         >
           {loading ? (
             <LoadingState text="Loading open sessions..." />
@@ -190,167 +334,114 @@ export default function Operator() {
             />
           ) : (
             <div className="space-y-6">
-              {sessions.map((session) => (
-                <Card
-                  key={session.id}
-                  className="border-slate-800 bg-slate-900 overflow-hidden"
-                >
-                  {/* Session Overview Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
-                          Current Event
-                        </span>
-                        <StatusBadge status={session.status} />
-                      </div>
-                      <h3 className="text-xl font-bold text-white">
-                        {session.event?.name || `Event #${session.eventId}`}
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Session #{session.id} • Opened {new Date(session.openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
+              {sessions.map((session) => {
+                const isBound = attendanceContext?.sessionId === session.id;
 
-                    <div className="flex items-center gap-2">
-                      <Link
-                        to="/operator/nfc-reader"
-                        state={{ session }}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-sm transition-colors min-h-[44px]"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                        </svg>
-                        Use NFC Scanner
-                      </Link>
-
-                      <Button
-                        variant="danger"
-                        size="md"
-                        loading={closingSessionId === session.id}
-                        onClick={() => handleCloseSession(session)}
-                      >
-                        Close Session
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Manual Attendance Entry */}
-                  <div className="pt-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
-                      Manual Attendance Check-in
-                    </h4>
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                      <div className="flex-1">
-                        <Select
-                          placeholder="Select attendee by name..."
-                          value={selectedUserIds[session.id] || ''}
-                          onChange={(e) =>
-                            setSelectedUserIds((prev) => ({
-                              ...prev,
-                              [session.id]: e.target.value,
-                            }))
-                          }
-                          options={users.map((u) => ({
-                            value: String(u.id),
-                            label: `${u.firstName} ${u.lastName} (${u.email})`,
-                          }))}
-                        />
-                      </div>
-                      <Button
-                        variant="secondary"
-                        disabled={!selectedUserIds[session.id]}
-                        loading={submittingSessionId === session.id}
-                        onClick={() => handleManualCheckIn(session)}
-                      >
-                        Record Attendance
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* iPhone Attendance Mode */}
-                  <div className="pt-4 mt-4 border-t border-slate-800">
-                    <div className="flex items-center justify-between mb-2.5">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                        iPhone Attendance Mode
-                      </h4>
-                      <StatusBadge status={attendanceContext?.sessionId === session.id ? 'OPEN' : 'IDLE'} />
-                    </div>
-
-                    {attendanceContext?.sessionId === session.id ? (
-                      <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 sm:p-5 space-y-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <span className="relative flex h-2.5 w-2.5">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
-                            </span>
-                            <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">
-                              iPhone Attendance Mode
-                            </span>
-                          </div>
-                          <span className="text-[10px] font-mono text-blue-200/80 bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded">
-                            ACTIVE
+                return (
+                  <Card
+                    key={session.id}
+                    className={`overflow-hidden ${
+                      isBound
+                        ? 'border-blue-500/40 bg-blue-500/5'
+                        : 'border-slate-800 bg-slate-900'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                            Event
                           </span>
-                        </div>
-
-                        <div className="bg-slate-950/50 border border-slate-800/80 rounded-lg p-3 space-y-1 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-slate-400">Event</span>
-                            <span className="font-semibold text-slate-200">
-                              {session.event?.name || `Event #${session.eventId}`}
+                          <StatusBadge status={session.status} />
+                          {isBound && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                              iPhone Mode Bound
                             </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-slate-400">Session</span>
-                            <span className="font-mono font-semibold text-slate-200">#{session.id}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-slate-400">Status</span>
-                            <span className="font-semibold text-emerald-400">OPEN</span>
-                          </div>
+                          )}
                         </div>
+                        <h3 className="text-xl font-bold text-white">
+                          {eventLabel(session)}
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Session #{session.id} • Opened{' '}
+                          {new Date(session.openedAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
 
-                        <ol className="list-decimal list-inside space-y-1 text-[11px] sm:text-xs text-slate-300">
-                          <li>Keep Safari signed in to TapTrack.</li>
-                          <li>Tap a member's physical NFC card.</li>
-                          <li>Open the NFC notification.</li>
-                          <li>TapTrack records attendance automatically.</li>
-                        </ol>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                          to="/operator/nfc-reader"
+                          state={{ session }}
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-sm transition-colors min-h-[44px]"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                          </svg>
+                          NFC Scanner
+                        </Link>
+
+                        <Button
+                          variant={isBound ? 'secondary' : 'primary'}
+                          size="md"
+                          disabled={session.status !== 'OPEN'}
+                          onClick={() => handleStartAttendance(session)}
+                        >
+                          {isBound ? 'Switch to This Session' : 'Use iPhone Attendance'}
+                        </Button>
 
                         <Button
                           variant="danger"
                           size="md"
-                          className="w-full"
-                          onClick={() => stop()}
+                          loading={closingSessionId === session.id}
+                          onClick={() => handleCloseSession(session)}
                         >
-                          Stop iPhone Attendance Mode
+                          Close Session
                         </Button>
                       </div>
-                    ) : (
-                      <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-4 sm:p-5">
-                        <p className="text-[11px] sm:text-xs text-slate-400 mb-3 leading-relaxed">
-                          Let members tap their physical cards to an iPhone. Taps record attendance into this open session automatically, with no Web NFC required.
-                        </p>
+                    </div>
+
+                    <div className="pt-4">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                        Manual Attendance Check-in
+                      </h4>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <div className="flex-1">
+                          <Select
+                            placeholder="Select attendee by name..."
+                            value={selectedUserIds[session.id] || ''}
+                            onChange={(e) =>
+                              setSelectedUserIds((prev) => ({
+                                ...prev,
+                                [session.id]: e.target.value,
+                              }))
+                            }
+                            options={users.map((u) => ({
+                              value: String(u.id),
+                              label: `${u.firstName} ${u.lastName} (${u.email})`,
+                            }))}
+                          />
+                        </div>
                         <Button
-                          variant="primary"
-                          size="md"
-                          disabled={session.status !== 'OPEN'}
-                          onClick={() => start(session)}
+                          variant="secondary"
+                          disabled={!selectedUserIds[session.id]}
+                          loading={submittingSessionId === session.id}
+                          onClick={() => handleManualCheckIn(session)}
                         >
-                          Enable iPhone Attendance
+                          Record Attendance
                         </Button>
                       </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </Section>
       </PageContainer>
 
-      {/* Confirm Dialog */}
       {confirmDialog && (
         <ConfirmDialog
           isOpen={true}

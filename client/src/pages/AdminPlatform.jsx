@@ -17,12 +17,7 @@ export default function AdminPlatform() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
-  const [formMaintenance, setFormMaintenance] = useState(false);
   const [formMessage, setFormMessage] = useState('');
-
-  useEffect(() => {
-    fetchStatus();
-  }, []);
 
   const fetchStatus = async () => {
     setLoading(true);
@@ -30,7 +25,6 @@ export default function AdminPlatform() {
     try {
       const data = await adminPlatformService.getStatus();
       setMaintenance(data);
-      setFormMaintenance(data.maintenanceEnabled);
       setFormMessage(data.maintenanceMessage || '');
     } catch (err) {
       setError(err.message || 'Failed to load maintenance status.');
@@ -38,6 +32,10 @@ export default function AdminPlatform() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchStatus();
+  }, []);
 
   const handleToggle = async () => {
     if (!maintenance) return;

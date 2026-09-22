@@ -310,9 +310,9 @@ export default function TapLanding() {
                 </div>
 
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800/60">
-                  <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Assigned Member</span>
+                  <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Assigned Attendee</span>
                   <span className="text-sm font-semibold text-slate-200">
-                    {resultData.member?.displayName || 'Active Member'}
+                    {resultData.member?.displayName || 'Active Attendee'}
                   </span>
                 </div>
 
@@ -409,22 +409,23 @@ export default function TapLanding() {
                 </div>
               </div>
 
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-xs text-emerald-300 leading-relaxed">
-                Session remains active. Tap the next member's card to keep recording attendance.
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-xs text-emerald-300 leading-relaxed flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+                <span>iPhone Attendance Mode is still active — ready for next card</span>
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-3">
                 <Link
-                  to="/t"
-                  className="flex-1 text-center px-4 py-2.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-500/30 transition-colors"
-                >
-                  Tap Next Card
-                </Link>
-                <Link
                   to="/operator"
-                  className="flex-1 text-center px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-colors"
+                  className="flex-1 text-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-sm shadow-emerald-600/20"
                 >
                   Open Operator Console
+                </Link>
+                <Link
+                  to="/t"
+                  className="flex-1 text-center px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-colors"
+                >
+                  Return to Tap Page
                 </Link>
               </div>
             </div>
@@ -441,26 +442,31 @@ export default function TapLanding() {
                 </div>
                 <h3 className="text-xl font-bold text-white">Already Recorded</h3>
                 <p className="text-xs text-amber-400 font-medium">
-                  {errorMessage || 'This member has already checked into the session.'}
+                  {errorMessage || 'This attendee has already checked into this attendance session.'}
                 </p>
               </div>
 
               <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5 text-xs text-slate-400 text-center">
-                No duplicate record was created. The session stays active for the next card.
+                <strong className="text-slate-300">No duplicate attendance was created.</strong> The session stays active.
+              </div>
+
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-xs text-amber-300 leading-relaxed flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" aria-hidden="true" />
+                <span>iPhone Attendance Mode remains active — ready for next card</span>
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-3">
                 <Link
+                  to="/operator"
+                  className="flex-1 text-center px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-sm shadow-amber-600/20"
+                >
+                  Open Operator Console
+                </Link>
+                <Link
                   to="/t"
                   className="flex-1 text-center px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-colors"
                 >
-                  Tap Next Card
-                </Link>
-                <Link
-                  to="/operator"
-                  className="flex-1 text-center px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-colors"
-                >
-                  Operator Console
+                  Return to Tap Page
                 </Link>
               </div>
             </div>
@@ -486,7 +492,7 @@ export default function TapLanding() {
                   {errorMessage || 'The operator session was not authenticated when this card was tapped.'}
                 </p>
                 <p className="text-slate-500">
-                  Sign in to TapTrack as an operator, select the open session, and tap the member's card again.
+                  Sign in to TapTrack as an operator, select the open session, and tap the attendee&apos;s card again.
                 </p>
               </div>
 
@@ -651,14 +657,14 @@ export default function TapLanding() {
                   {errorCode === 'CARD_REVOKED' && 'This card was revoked by an administrator and is permanently invalidated.'}
                   {errorCode === 'CARD_REPLACED' && 'This card was replaced by a newly issued card. Please use your newest physical card.'}
                   {errorCode === 'CARD_DISABLED' && 'This card is currently disabled by administrative policy.'}
-                  {errorCode === 'MEMBER_INACTIVE' && 'The member account associated with this card is inactive or disabled.'}
-                  {errorCode === 'MEMBER_NOT_ASSIGNED' && 'This card does not have an assigned member.'}
+                  {errorCode === 'MEMBER_INACTIVE' && 'The user account associated with this card is inactive or disabled.'}
+                  {errorCode === 'MEMBER_NOT_ASSIGNED' && 'This card does not have an assigned user.'}
                 </p>
               </div>
 
               {/* No Attendance Notice */}
               <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5 text-xs text-slate-400 text-center">
-                <strong className="text-slate-300">No attendance recorded.</strong> Card resolution did not alter any system logs or member records.
+                  <strong className="text-slate-300">No attendance recorded.</strong> Card resolution did not alter any system logs or user records.
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-3">

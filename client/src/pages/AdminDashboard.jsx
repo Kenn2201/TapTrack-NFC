@@ -65,7 +65,7 @@ export default function AdminDashboard() {
         )}
 
         {/* 1. Quick Operations Navigation */}
-        <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="mb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <Link
             to="/admin/users"
             className="p-3.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-purple-500/40 hover:bg-slate-850 transition-all flex flex-col justify-between min-h-[72px]"
@@ -103,8 +103,40 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
+        {/* 1b. Secondary Admin Tools */}
+        <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Link
+            to="/admin/feedback"
+            className="p-3.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-emerald-500/40 hover:bg-slate-850 transition-all flex flex-col justify-between min-h-[72px]"
+          >
+            <span className="text-xs font-semibold text-emerald-400">Feedback &rarr;</span>
+            <span className="text-xs text-slate-400">Triage Submissions</span>
+          </Link>
+          <Link
+            to="/admin/email"
+            className="p-3.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-rose-500/40 hover:bg-slate-850 transition-all flex flex-col justify-between min-h-[72px]"
+          >
+            <span className="text-xs font-semibold text-rose-400">Email Suite &rarr;</span>
+            <span className="text-xs text-slate-400">Direct & Broadcast</span>
+          </Link>
+          <Link
+            to="/admin/platform"
+            className="p-3.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-amber-500/40 hover:bg-slate-850 transition-all flex flex-col justify-between min-h-[72px]"
+          >
+            <span className="text-xs font-semibold text-amber-400">Platform &rarr;</span>
+            <span className="text-xs text-slate-400">Maintenance Mode</span>
+          </Link>
+          <Link
+            to="/feedback"
+            className="p-3.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-blue-500/40 hover:bg-slate-850 transition-all flex flex-col justify-between min-h-[72px]"
+          >
+            <span className="text-xs font-semibold text-blue-400">My Feedback &rarr;</span>
+            <span className="text-xs text-slate-400">Submit Feedback</span>
+          </Link>
+        </div>
+
         {/* 2. User Operational Stats */}
-        <Section title="User Accounts" subtitle="Member registrations and active account statuses">
+        <Section title="User Accounts" subtitle="Registrations and active account statuses">
           <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
             <StatCard
               label="Total Users"
@@ -134,7 +166,7 @@ export default function AdminDashboard() {
               label="Unassigned Cards"
               value={metrics?.unassignedCards ?? 0}
               color="amber"
-              description="Provisioned, awaiting member write"
+              description="Provisioned, awaiting user assignment"
             />
             <StatCard
               label="Lost Cards"
