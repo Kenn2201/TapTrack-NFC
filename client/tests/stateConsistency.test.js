@@ -19,11 +19,28 @@ function setStatePairing(source) {
   const setCalls = new Set(
     [...source.matchAll(/\bset[A-Z]\w*\s*\(/g)]
       .map(m => m[0].replace(/\s*\($/, ''))
-      .filter(n => n !== 'setTimeout' && n !== 'setInterval'),
+      .filter(n => !['setTimeout', 'setInterval', 'setItem'].includes(n)),
   );
   const declared = new Set(
     [...source.matchAll(/\bconst\s+\[\s*\w+\s*,\s*(set[A-Z]\w*)\s*\]/g)].map(m => m[1]),
   );
+
+  // Setters can also come from a custom hook object destructure, for example:
+  // const { setPreference: setThemePreference } = useTheme();
+  for (const match of source.matchAll(/\bconst\s+\{([^}]+)\}\s*=\s*\w+\s*\(/g)) {
+    for (const token of match[1].split(',')) {
+      const local = token.split(':').pop()?.trim();
+      if (/^set[A-Z]\w*$/.test(local || '')) declared.add(local);
+    }
+  }
+
+  // Helper functions may receive a setter as an explicit parameter.
+  for (const match of source.matchAll(/\(([^)]*)\)\s*=>/g)) {
+    for (const param of match[1].split(',').map((value) => value.trim())) {
+      if (/^set[A-Z]\w*$/.test(param)) declared.add(param);
+    }
+  }
+
   return { setCalls, declared };
 }
 
