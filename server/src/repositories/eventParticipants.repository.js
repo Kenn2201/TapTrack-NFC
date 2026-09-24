@@ -1,4 +1,4 @@
-﻿import pool from './db.js';
+import pool from './db.js';
 import { eventRepository } from './event.repository.js';
 
 const mapParticipant = (row) => row && ({
@@ -35,6 +35,14 @@ export const eventParticipantsRepository = {
     return mapParticipant(result.rows[0]);
   },
 
+  async isInvited(eventId, userId) {
+    const result = await pool.query(
+      'SELECT 1 FROM event_participants WHERE event_id = $1 AND user_id = $2 LIMIT 1;',
+      [eventId, userId]
+    );
+    return result.rowCount > 0;
+  },
+
   async invite({ eventId, userIds, invitedBy }) {
     const values = [];
     const params = [];
@@ -54,13 +62,29 @@ export const eventParticipantsRepository = {
     return result.rows.map(mapParticipant);
   },
 
-  async rsvp(eventId, userId, status) {
+  async getRequiredAttendanceStats(userId) {
+    if (!(await eventRepository.supportsVisibility())) {
+      return { eligibleEvents: 0, attendedEvents: 0 };
+    }
+
     const result = await pool.query(`
-      UPDATE event_participants SET status = $3, updated_at = NOW()
-      WHERE event_id = $1 AND user_id = $2
-      RETURNING *;
-    `, [eventId, userId, status]);
-    return mapParticipant(result.rows[0]);
+      SELECT
+        COUNT(DISTINCT ep.event_id)::int AS eligible_events,
+        COUNT(DISTINCT CASE WHEN ar.id IS NOT NULL THEN ep.event_id END)::int AS attended_events
+      FROM event_participants ep
+      JOIN events e ON e.id = ep.event_id
+      LEFT JOIN attendance_records ar
+        ON ar.event_id = ep.event_id
+       AND ar.user_id = ep.user_id
+      WHERE ep.user_id = $1
+        AND e.visibility = 'INVITE_ONLY'
+        AND e.status = 'CLOSED';
+    `, [userId]);
+
+    return {
+      eligibleEvents: Number(result.rows[0]?.eligible_events || 0),
+      attendedEvents: Number(result.rows[0]?.attended_events || 0),
+    };
   },
 };
 
