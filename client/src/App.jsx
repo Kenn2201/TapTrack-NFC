@@ -6,6 +6,7 @@ import RequireAuth from "./components/layout/RequireAuth";
 import RequireRole from "./components/layout/RequireRole";
 import AuthenticatedShell from "./components/layout/AuthenticatedShell";
 import AuthShell from "./components/layout/AuthShell";
+import AdminShell from "./components/layout/AdminShell";
 
 // Auth Initialization
 import AuthInitializer from "./components/AuthInitializer";
@@ -100,16 +101,18 @@ function App() {
               </Route>
 
               <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/cards" element={<AdminCards />} />
-                <Route path="/admin/nfc-cards" element={<AdminCards />} />
-                <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/events" element={<AdminEvents />} />
-                <Route path="/admin/audit" element={<AuditLogs />} />
-                <Route path="/admin/audits" element={<AuditLogs />} />
-                <Route path="/admin/feedback" element={<AdminFeedback />} />
-                <Route path="/admin/email" element={<AdminEmail />} />
-                <Route path="/admin/platform" element={<AdminPlatform />} />
+                <Route element={<AdminShell />}>
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/cards" element={<AdminCards />} />
+                  <Route path="/admin/nfc-cards" element={<AdminCards />} />
+                  <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/admin/events" element={<AdminEvents />} />
+                  <Route path="/admin/audit" element={<AuditLogs />} />
+                  <Route path="/admin/audits" element={<AuditLogs />} />
+                  <Route path="/admin/feedback" element={<AdminFeedback />} />
+                  <Route path="/admin/email" element={<AdminEmail />} />
+                  <Route path="/admin/platform" element={<AdminPlatform />} />
+                </Route>
               </Route>
             </Route>
           </Route>
