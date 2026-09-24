@@ -52,7 +52,7 @@ export default function Operator() {
       setLoading(true);
       const [sessionsRes, usersRes] = await Promise.all([
         attendanceService.getOpenSessions(),
-        authService.getUsers().catch(() => ({ users: [] })),
+        authService.getStaffUsers().catch(() => ({ users: [] })),
       ]);
       setSessions((sessionsRes.sessions || []).slice().sort(eventFirstSort));
       setUsers((usersRes.users || []).filter((u) => u.status === 'ACTIVE'));

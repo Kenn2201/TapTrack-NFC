@@ -5,11 +5,13 @@ const repos = vi.hoisted(() => ({
   attendance: { findOpenSessionByEvent: vi.fn(), openSession: vi.fn(), findSessionById: vi.fn(), closeSession: vi.fn(), createRecord: vi.fn(), findOpenSessions: vi.fn(), listBySession: vi.fn(), listByUser: vi.fn(), listAll: vi.fn() },
   user: { findById: vi.fn() },
   card: { findById: vi.fn() },
+  participants: { isInvited: vi.fn() },
 }));
 vi.mock('../src/repositories/event.repository.js', () => ({ eventRepository: repos.event }));
 vi.mock('../src/repositories/attendance.repository.js', () => ({ attendanceRepository: repos.attendance }));
 vi.mock('../src/repositories/user.repository.js', () => ({ userRepository: repos.user }));
 vi.mock('../src/repositories/nfcCard.repository.js', () => ({ nfcCardRepository: repos.card }));
+vi.mock('../src/repositories/eventParticipants.repository.js', () => ({ eventParticipantsRepository: repos.participants }));
 vi.mock('../src/services/audit.service.js', () => ({ auditService: { log: vi.fn().mockResolvedValue({}) } }));
 
 const { attendanceService } = await import('../src/services/attendance.service.js');
@@ -29,6 +31,7 @@ describe('v0.6 shared attendance engine', () => {
     repos.attendance.findSessionById.mockResolvedValue(session);
     repos.user.findById.mockResolvedValue(user);
     repos.card.findById.mockResolvedValue(card);
+    repos.participants.isInvited.mockResolvedValue(true);
     repos.attendance.createRecord.mockImplementation(async (data) => ({ id: 50, ...data }));
   });
 
@@ -52,6 +55,25 @@ describe('v0.6 shared attendance engine', () => {
   }
   it('maps the database uniqueness constraint to ALREADY_RECORDED', async () => { repos.attendance.createRecord.mockRejectedValue(Object.assign(new Error(), { code: '23505' })); await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, method: 'MANUAL', actor: operator })).rejects.toMatchObject({ code: 'ALREADY_RECORDED', status: 409 }); });
   it('rejects an inactive user', async () => { repos.user.findById.mockResolvedValue({ ...user, status: 'DISABLED' }); await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, method: 'MANUAL', actor: operator })).rejects.toMatchObject({ code: 'USER_NOT_ACTIVE' }); });
+  it('allows any active user at a PUBLIC event', async () => {
+    repos.event.findById.mockResolvedValue({ ...event, visibility: 'PUBLIC' });
+    repos.participants.isInvited.mockResolvedValue(false);
+    await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, method: 'MANUAL', actor: operator })).resolves.toMatchObject({ userId: 30 });
+    expect(repos.participants.isInvited).not.toHaveBeenCalled();
+  });
+
+  it('rejects a non-invited user at an INVITE_ONLY event', async () => {
+    repos.event.findById.mockResolvedValue({ ...event, visibility: 'INVITE_ONLY' });
+    repos.participants.isInvited.mockResolvedValue(false);
+    await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, method: 'MANUAL', actor: operator })).rejects.toMatchObject({ code: 'USER_NOT_INVITED', status: 409 });
+  });
+
+  it('allows an invited user at an INVITE_ONLY event', async () => {
+    repos.event.findById.mockResolvedValue({ ...event, visibility: 'INVITE_ONLY' });
+    repos.participants.isInvited.mockResolvedValue(true);
+    await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, method: 'MANUAL', actor: operator })).resolves.toMatchObject({ userId: 30 });
+  });
+
   it('rejects an inactive card', async () => { repos.card.findById.mockResolvedValue({ ...card, status: 'LOST' }); await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, cardId: 40, method: 'NFC_WEB', actor: operator })).rejects.toMatchObject({ code: 'CARD_NOT_ACTIVE' }); });
   it('rejects a card/user mismatch', async () => { repos.card.findById.mockResolvedValue({ ...card, userId: 99 }); await expect(attendanceService.recordAttendance({ eventId: 10, sessionId: 20, userId: 30, cardId: 40, method: 'NFC_URL', actor: operator })).rejects.toMatchObject({ code: 'CARD_USER_MISMATCH' }); });
   it('rejects an invalid event', async () => { repos.event.findById.mockResolvedValue(null); await expect(attendanceService.recordAttendance({ eventId: 99, sessionId: 20, userId: 30, method: 'MANUAL', actor: operator })).rejects.toMatchObject({ code: 'EVENT_NOT_FOUND' }); });

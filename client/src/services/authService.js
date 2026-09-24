@@ -20,6 +20,9 @@ export const authService = {
   updateProfile: (data) => api.patch('/users/me', data),
   changePassword: (data) => api.post('/users/me/password', data),
 
+  // Staff operational directory (ADMIN / OPERATOR)
+  getStaffUsers: (search = '') => api.get('/staff/users', { params: { search } }),
+
   // Admin User Management
   getUsers: () => api.get('/admin/users'),
   getUserById: (id) => api.get(`/admin/users/${id}`),

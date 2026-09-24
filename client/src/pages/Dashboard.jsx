@@ -150,7 +150,14 @@ export default function Dashboard() {
                           <h3 className="font-bold text-white text-base truncate">
                             {evt.name}
                           </h3>
-                          <StatusBadge status={evt.status} />
+                          <div className="flex items-center gap-1.5">
+                            {evt.visibility === 'INVITE_ONLY' && (
+                              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300">
+                                Required
+                              </span>
+                            )}
+                            <StatusBadge status={evt.status} />
+                          </div>
                         </div>
                         <p className="mt-2 text-xs text-slate-400 line-clamp-2 leading-relaxed">
                           {evt.description || 'No description provided.'}
