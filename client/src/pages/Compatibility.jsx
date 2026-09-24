@@ -87,6 +87,31 @@ export default function Compatibility() {
         </Section>
 
         <Section
+          title="iPhone NFC attendance"
+          subtitle="Physically validated Safari NFC URL workflow"
+        >
+          <Card className="p-5">
+            <ol className="space-y-3 text-sm text-slate-300">
+              <li><strong className="text-white">1. Public tap:</strong> Tap the physical card and open the iPhone NFC notification. Safari opens the secure <code className="font-mono text-xs text-blue-300">/t#credential</code> URL, removes the credential from the visible address, and verifies the card. <strong>No attendance is recorded.</strong></li>
+              <li><strong className="text-white">2. Attendance mode:</strong> An ADMIN or OPERATOR signs in to Safari, selects an OPEN attendance session, and enables <strong>iPhone Attendance Mode</strong>.</li>
+              <li><strong className="text-white">3. Tap to attend:</strong> The next physical card tap uses that exact selected session. The server derives the event from the session and records method <strong>NFC URL</strong>.</li>
+              <li><strong className="text-white">4. Duplicate protection:</strong> A second tap for the same user/session reports <strong>Already Recorded</strong> instead of creating a duplicate.</li>
+            </ol>
+            <p className="mt-4 text-xs text-slate-500">The selected attendance context stays on that browser/device until it is stopped, expires, becomes invalid, or the operator signs out.</p>
+          </Card>
+        </Section>
+
+        <Section
+          title="Android direct Web NFC"
+          subtitle="Supported by the code path; physical NDEFReader acceptance remains pending"
+        >
+          <Card className="p-5 space-y-3 text-sm text-slate-300">
+            <p>On a compatible Android Chromium browser, TapTrack feature-detects <code className="font-mono text-xs text-blue-300">NDEFReader</code>. When available, an authenticated ADMIN or OPERATOR can use the NFC Reader during an open attendance session.</p>
+            <p className="text-amber-300"><strong>QA status:</strong> Android physical NDEFReader validation has not been confirmed yet. The Universal NFC URL fallback remains available when direct Web NFC is unavailable.</p>
+          </Card>
+        </Section>
+
+        <Section
           title="This device"
           subtitle="Live capability check for the browser you are using now"
         >
@@ -107,9 +132,22 @@ export default function Compatibility() {
                 <h3 className="font-semibold text-white">Safe diagnostics</h3>
                 <span className="text-xs font-mono text-slate-400">{CURRENT_VERSION_LABEL}</span>
               </div>
-              <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-slate-400 leading-relaxed">
-                {JSON.stringify(diagnostics, null, 2)}
-              </pre>
+              <div className="grid gap-2 sm:grid-cols-2 text-xs">
+                <div className="rounded-lg border border-slate-800 bg-slate-900 p-3">
+                  <span className="text-slate-500">Direct Web NFC</span>
+                  <p className="mt-1 font-semibold text-slate-200">{webNfcSupported ? 'Available in this browser' : 'Unavailable in this browser'}</p>
+                </div>
+                <div className="rounded-lg border border-slate-800 bg-slate-900 p-3">
+                  <span className="text-slate-500">Universal URL fallback</span>
+                  <p className="mt-1 font-semibold text-slate-200">Use physical card notification → TapTrack /t</p>
+                </div>
+              </div>
+              <details>
+                <summary className="cursor-pointer text-xs font-semibold text-slate-300">Show credential-free JSON diagnostics</summary>
+                <pre className="mt-3 overflow-x-auto whitespace-pre-wrap text-xs text-slate-400 leading-relaxed">
+                  {JSON.stringify(diagnostics, null, 2)}
+                </pre>
+              </details>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button onClick={copy} variant="primary" size="md" className="sm:w-auto">
                   {copied ? 'Copied' : 'Copy diagnostics'}
