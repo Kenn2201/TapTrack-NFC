@@ -437,20 +437,17 @@ Current v1.2 work includes the public/invite-only event model, required-event At
 
 ## Release Checklist
 
-- [ ] `node --check server/src/routes/index.js` → success
-- [ ] `cd server && npm test` → 153/153 passed, exit 0
-- [ ] `cd client && npm test` → 59/59 passed, exit 0
-- [ ] `cd client && npm run build` → pass
-- [ ] `cd client && npm run lint` → 0 errors
-- [ ] `npm audit` (both) → 0 vulnerabilities
-- [ ] `git diff --check` → clean
-- [ ] Secret scan → no secrets in tracked files
-- [ ] `node generate-vault.cjs` → pass
-- [ ] Commit on `kenn/develop`
-- [ ] Push `origin/kenn/develop`
-- [ ] **Wait for production migration 007 confirmation**
-- [ ] Merge `kenn/develop` → `master` (fast-forward only)
-- [ ] **Do not tag, do not create GitHub Release, do not mark LIVE**
+- [x] Server test suite → 14/14 files, 181/181 tests passed in GitHub Actions
+- [x] Client test suite → 82/82 tests passed in GitHub Actions
+- [x] Client production build → passed
+- [x] Client lint → 0 errors (24 warnings remain for later cleanup)
+- [x] npm audit (server/client) → 0 vulnerabilities
+- [ ] Apply migration 008 to production Neon before invite-only QA
+- [ ] Apply migration 009 to production Neon before card-request/one-active-card QA
+- [ ] Human QA for v1.2.0 RC
+- [ ] Android physical NDEFReader acceptance
+- [ ] Merge `kenn/develop` → `master` only after QA approval
+- [ ] **Do not tag, do not create GitHub Release, do not mark LIVE before acceptance**
 
 ---
 
@@ -467,7 +464,7 @@ Current v1.2 work includes the public/invite-only event model, required-event At
 | **Session version** | Counter incremented when user changes password/role; invalidates old sessions |
 | **HttpOnly cookie** | Cookie inaccessible to JavaScript; prevents XSS theft |
 | **SHA-256** | Cryptographic hash function; one-way, collision-resistant |
-| **Audit log** | Immutable record of who did what, when, with what metadata |
+| **Audit log** | Sanitized administrative activity history showing who did what and when |
 | **Rate limiting** | Max requests per time window per IP/user |
 | **Migration** | Versioned SQL script to evolve database schema |
 | **NTAG215** | NFC Forum Type 2 tag, 504 bytes user memory, 7-byte UID |
@@ -476,14 +473,15 @@ Current v1.2 work includes the public/invite-only event model, required-event At
 
 ## Physical Validation Status
 
-| Test | Device | Method | Status |
-|------|--------|--------|--------|
-| NFC-001 | Android 13 / Chrome 119 | Web NFC | **PENDING** |
-| NFC-001 | iPhone 15 / iOS 17 | NFC URL (`/t#`) | PENDING |
-| NFC-001 | Android 13 / Chrome 119 | NDEFReader (native) | PENDING |
-| Manual | Operator console | Manual dropdown | VERIFIED |
+| Test | Method | Status |
+|------|--------|--------|
+| NFC-001 public tap | iPhone Safari NFC URL verification | **PASSED** — safe resolve only, no attendance |
+| NFC-001 authenticated tap | iPhone Safari NFC URL attendance | **PASSED** |
+| NFC-001 duplicate tap | Same session duplicate protection | **PASSED** — Already Recorded, no duplicate row |
+| Android physical scan | Web NFC / NDEFReader | **PENDING** |
+| Manual attendance | Operator console | Verified by automated workflow tests; human v1.2 QA still pending |
 
-**Do not claim** physical NDEFReader or iPhone NFC_URL as passed until verified.
+Do not claim physical Android NDEFReader/Web NFC as passed until that acceptance test is completed.
 
 ---
 
