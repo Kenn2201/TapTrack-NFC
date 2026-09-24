@@ -11,7 +11,6 @@ import LoadingState from '../components/ui/LoadingState';
 import Alert from '../components/ui/Alert';
 import NFCCard from '../components/cards/NFCCard';
 import { cardService } from '../services/cardService';
-import { feedbackService } from '../services/feedbackService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function MyCard() {
@@ -25,18 +24,26 @@ export default function MyCard() {
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestError, setRequestError] = useState(null);
   const [requestToast, setRequestToast] = useState(null);
+  const [requests, setRequests] = useState([]);
 
   useEffect(() => {
-    cardService
-      .getMyCard()
-      .then((r) => {
-        setCard(r.card || null);
-        setLoading(false);
+    let active = true;
+    Promise.all([
+      cardService.getMyCard(),
+      cardService.getMyRequests().catch(() => ({ requests: [] })),
+    ])
+      .then(([cardResult, requestResult]) => {
+        if (!active) return;
+        setCard(cardResult.card || null);
+        setRequests(requestResult.requests || []);
       })
       .catch((e) => {
-        setError(e.message || 'Failed to load card information.');
-        setLoading(false);
+        if (active) setError(e.message || 'Failed to load card information.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
+    return () => { active = false; };
   }, []);
 
   const handleRequestSubmit = async (e) => {
@@ -44,16 +51,15 @@ export default function MyCard() {
     setRequestError(null);
     setRequestLoading(true);
     try {
-      await feedbackService.submit({
-        category: 'NFC_ATTENDANCE',
-        rating: 3,
-        message: requestNote.trim() || 'Requesting a new NFC setup / replacement link from an administrator.',
-        page: '/my-card',
-        reproduction: 'Request type: NFC setup / replacement link requested by the card holder.',
+      const requestType = card ? 'REPLACEMENT' : 'SETUP';
+      const result = await cardService.createRequest({
+        requestType,
+        note: requestNote.trim() || undefined,
       });
+      setRequests((prev) => [result.request, ...prev]);
       setRequestModal(false);
       setRequestNote('');
-      setRequestToast('Your NFC setup / replacement request has been submitted to an administrator.');
+      setRequestToast(`Your NFC ${requestType === 'SETUP' ? 'setup' : 'replacement'} request is now in the admin queue.`);
     } catch (err) {
       setRequestError(err.message || 'Failed to submit your request. Please try again.');
     } finally {
@@ -147,7 +153,25 @@ export default function MyCard() {
         )}
 
         {/* Setup / Replacement Request */}
-        <div className="mt-8">
+        <div className="mt-8 space-y-4">
+          {requests.length > 0 && (
+            <Card className="p-5 sm:p-6">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">Request History</h3>
+              <div className="space-y-2">
+                {requests.slice(0, 5).map((request) => (
+                  <div key={request.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-white">{request.requestType === 'SETUP' ? 'NFC Setup' : 'NFC Replacement'}</p>
+                      <p className="text-xs text-slate-500">{new Date(request.createdAt).toLocaleString()}</p>
+                    </div>
+                    <span className="self-start sm:self-auto rounded-full border border-slate-700 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                      {request.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
           <Card className="p-5 sm:p-6 space-y-3">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">
               Need a new NFC setup link?
@@ -156,8 +180,15 @@ export default function MyCard() {
               For security, the original NFC credential cannot be recovered. You can request a
               replacement/setup link from an administrator.
             </p>
-            <Button variant="outline" onClick={() => setRequestModal(true)} className="w-full sm:w-auto">
-              Request NFC Setup / Replacement
+            <Button
+              variant="outline"
+              onClick={() => setRequestModal(true)}
+              className="w-full sm:w-auto"
+              disabled={requests.some((request) => ['PENDING', 'IN_REVIEW'].includes(request.status))}
+            >
+              {requests.some((request) => ['PENDING', 'IN_REVIEW'].includes(request.status))
+                ? 'Request Already In Review'
+                : card ? 'Request NFC Replacement' : 'Request NFC Setup'}
             </Button>
           </Card>
         </div>
@@ -175,8 +206,7 @@ export default function MyCard() {
             <Alert type="error" message={requestError} onClose={() => setRequestError(null)} />
           )}
           <p className="text-xs text-slate-400 leading-relaxed">
-            Your request is sent to TapTrack administrators through the existing feedback workflow.
-            The original credential cannot be recovered or re-shown — a new setup/replacement is issued safely.
+            This creates a dedicated admin work item. The original credential cannot be recovered or re-shown — a new setup or replacement is issued safely.
           </p>
           <Textarea
             label="Note for the admin (optional)"
