@@ -20,6 +20,25 @@ function mapDbError(err) {
   if (err?.code === '22001') {
     return fail(400, 'REASON_TOO_LONG', 'Reason cannot exceed 100 characters.');
   }
+
+  // A lifecycle write can only use statuses supported by the deployed database
+  // schema. Older/partially migrated databases surface these PostgreSQL errors
+  // as generic 500s unless we translate them explicitly.
+  if (err?.code === '22P02' || err?.code === '23514') {
+    return fail(
+      503,
+      'CARD_LIFECYCLE_SCHEMA_MISMATCH',
+      'Card lifecycle storage is not compatible with this status yet. Verify the deployed database migrations before retrying.'
+    );
+  }
+  if (err?.code === '42703' || err?.code === '42P01') {
+    return fail(
+      503,
+      'CARD_LIFECYCLE_SCHEMA_INCOMPLETE',
+      'Card lifecycle storage is incomplete on this deployment. Verify the deployed database migrations before retrying.'
+    );
+  }
+
   return err;
 }
 
@@ -50,7 +69,12 @@ export const cardLifecycleService = {
     }
     if (!updated) throw fail(404, 'CARD_NOT_FOUND', 'NFC card not found.');
     await auditService.log({ actorId: actor.id, action: `CARD_${targetStatus}`, entityType: 'NFC_CARD', entityId: cardId, metadata: { from: card.status, to: targetStatus, reason: trimmedReason } });
-    return nfcCredentialService.formatSafeCard(updated);
+
+    // UPDATE ... RETURNING * does not include joined user/issuer fields.
+    // Re-fetch the canonical record so lifecycle responses use the same safe
+    // shape as card list/detail responses.
+    const canonical = await nfcCardRepository.findById(cardId);
+    return nfcCredentialService.formatSafeCard(canonical || updated);
   },
 
   async replace({ cardId, newCardLabel, actor, reason }) {
