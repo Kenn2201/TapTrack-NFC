@@ -99,7 +99,12 @@ export default function EventDetail({ eventId }) {
     }
   };
 
-  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString(undefined, { dateStyle: 'full', timeStyle: 'short' });
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Not available';
+    const value = new Date(dateStr);
+    if (Number.isNaN(value.getTime())) return 'Not available';
+    return value.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' });
+  };
 
   if (loading) {
     return (

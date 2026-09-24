@@ -31,8 +31,8 @@ vi.mock('../src/repositories/db.js', () => {
           return { rows };
         }
 
-        // findById
-        if (q.includes('FROM events') && q.includes('WHERE id = $1')) {
+        // findById — repository joins creator metadata and uses the e alias.
+        if (q.includes('FROM events e') && q.includes('WHERE e.id = $1')) {
           const event = eventsTable.find((e) => e.id === params[0]);
           return { rows: event ? [{ ...event }] : [] };
         }
@@ -53,7 +53,9 @@ vi.mock('../src/repositories/db.js', () => {
             updated_at: new Date().toISOString(),
           };
           eventsTable = eventsTable.map((e) => (e.id === id ? updated : e));
-          return { rows: [updated] };
+          // eventRepository.update() now returns the id then re-fetches the
+          // normalized event so creator/count/session fields are consistent.
+          return { rows: [{ id }] };
         }
 
         // Inserts into attendance_sessions must NOT happen during reconciliation.

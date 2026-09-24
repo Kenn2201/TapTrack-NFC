@@ -15,6 +15,15 @@ export default function Modal({
   className = '',
 }) {
   const modalRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+
+  // Keep the latest close callback without making the focus-management effect
+  // re-run on every parent render. Inline onClose callbacks are common across
+  // TapTrack forms; depending on onClose directly caused the modal surface to
+  // refocus after each keystroke and steal focus from the active input.
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -31,7 +40,7 @@ export default function Modal({
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current?.();
       }
     };
 
@@ -41,7 +50,7 @@ export default function Modal({
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

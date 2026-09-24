@@ -101,3 +101,45 @@ test('Operator page has session switch confirmation', () => {
   const source = readFileSync(join(SRC, 'pages', 'Operator.jsx'), 'utf8');
   assert.match(source, /Switch.*Session|Switch iPhone/i);
 });
+
+
+test('Modal focus management does not re-focus on every onClose identity change', () => {
+  const source = readFileSync(join(SRC, 'components', 'ui', 'Modal.jsx'), 'utf8');
+  assert.match(source, /onCloseRef\s*=\s*useRef\(onClose\)/);
+  assert.match(source, /onCloseRef\.current\s*=\s*onClose/);
+  assert.match(source, /\},\s*\[isOpen\]\);/);
+  assert.doesNotMatch(source, /\[isOpen,\s*onClose\]/);
+});
+
+test('API GET supports query params without changing callers', () => {
+  const source = readFileSync(join(SRC, 'services', 'api.js'), 'utf8');
+  assert.match(source, /URLSearchParams/);
+  assert.match(source, /get:\s*\(url,\s*options\s*=\s*\{\}\)/);
+  assert.match(source, /withQuery\(url,\s*options\.params\)/);
+});
+
+test('Admin feedback service unwraps the feedback array', () => {
+  const source = readFileSync(join(SRC, 'services', 'adminFeedbackService.js'), 'utf8');
+  assert.match(source, /Array\.isArray\(data\?\.feedback\)/);
+  assert.match(source, /data\.feedback/);
+});
+
+test('Event detail service unwraps the event response wrapper', () => {
+  const source = readFileSync(join(SRC, 'services', 'eventService.js'), 'utf8');
+  assert.match(source, /data\?\.event\s*\|\|\s*null/);
+});
+
+test('Maintenance UI sends validator-compatible enabled/message fields', () => {
+  const source = readFileSync(join(SRC, 'pages', 'AdminPlatform.jsx'), 'utf8');
+  assert.match(source, /enabled:\s*newState/);
+  assert.match(source, /message:\s*newState\s*\?\s*formMessage/);
+  assert.doesNotMatch(source, /setMaintenance\(\{[\s\S]{0,200}maintenanceEnabled:\s*newState/);
+});
+
+test('Admin email diagnostics uses the real server configuration fields', () => {
+  const source = readFileSync(join(SRC, 'pages', 'AdminEmail.jsx'), 'utf8');
+  assert.match(source, /diagnostics\.configured/);
+  assert.match(source, /diagnostics\.provider/);
+  assert.doesNotMatch(source, /diagnostics\.apiKeyValid/);
+  assert.doesNotMatch(source, /diagnostics\.domainVerified/);
+});

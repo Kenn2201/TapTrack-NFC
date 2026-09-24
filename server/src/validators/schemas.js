@@ -80,17 +80,32 @@ export const updateFeedbackStatusSchema = z.object({
 });
 
 // ─── EMAIL SUITE (v1.1.0) ────────────────────────────────────────────
-export const emailSendSchema = z.object({
-  to: z.string().email('A valid recipient email is required').optional(),
-  broadcast: z.boolean().optional(),
+const emailBodyShape = {
   subject: z.string().min(1, 'Subject is required').max(200),
-  message: z.string().min(1, 'Message body is required').max(5000),
-  confirmBroadcast: z.boolean().optional(),
+  html: z.string().max(10000).optional().nullable(),
+  text: z.string().max(10000).optional().nullable(),
   template: z.enum(['VERIFICATION', 'PASSWORD_RESET', 'ROLE_CHANGE', 'STATUS_CHANGE', 'GENERIC']).optional(),
-}).refine(
-  (data) => Boolean(data.to) || data.broadcast === true,
-  { message: 'Provide either a recipient email or enable broadcast.' }
-);
+};
+
+const hasEmailBody = (data) => Boolean(data.html?.trim() || data.text?.trim());
+
+export const emailSendSchema = z.object({
+  to: z.string().email('A valid recipient email is required'),
+  ...emailBodyShape,
+}).refine(hasEmailBody, {
+  message: 'Provide an HTML or plain-text message body.',
+  path: ['html'],
+});
+
+export const emailBroadcastSchema = z.object({
+  ...emailBodyShape,
+  confirmBroadcast: z.literal(true, {
+    errorMap: () => ({ message: 'You must confirm the broadcast before sending.' }),
+  }),
+}).refine(hasEmailBody, {
+  message: 'Provide an HTML or plain-text message body.',
+  path: ['html'],
+});
 
 // ─── EVENT PARTICIPANTS (v1.1.0) ─────────────────────────────────────
 export const inviteParticipantsSchema = z.object({
@@ -138,6 +153,7 @@ export const verifyCardTokenSchema = z.object({
 export const createEventSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),
+  location: z.string().max(255).optional().nullable(),
   startAt: z.string().datetime(),
   endAt: z.string().datetime(),
   status: z.enum(['DRAFT', 'OPEN']).optional(),

@@ -11,7 +11,9 @@ export function errorHandler(err, req, res, next) {
   if (status >= 500) {
     console.error(`[${correlationId || 'no-id'}] ${err.message}`, err);
     return res.status(status).json({
-      error: 'Something went wrong while processing this action.',
+      error: err.expose === true
+        ? (err.message || 'Service temporarily unavailable.')
+        : 'Something went wrong while processing this action.',
       ...payload,
     });
   }
