@@ -81,9 +81,13 @@ test('maintenance enable action requires an in-app confirmation modal', () => {
   assert.match(source, /Confirm Maintenance Mode/);
 });
 
-test('all admin surfaces share the administration workspace navigation', () => {
+test('all admin surfaces are routed through the shared AdminShell', () => {
+  const app = read('App.jsx');
+  const shell = read('components', 'layout', 'AdminShell.jsx');
+  assert.match(app, /AdminShell/);
+  assert.match(shell, /AdminWorkspaceNav/);
   for (const page of ['AdminDashboard.jsx', 'AdminUsers.jsx', 'AdminCards.jsx', 'AdminEvents.jsx', 'AuditLogs.jsx', 'AdminFeedback.jsx', 'AdminEmail.jsx', 'AdminPlatform.jsx']) {
-    assert.match(read('pages', page), /AdminWorkspaceNav/, `${page} missing AdminWorkspaceNav`);
+    assert.doesNotMatch(read('pages', page), /AdminWorkspaceNav/, `${page} should inherit AdminWorkspaceNav from AdminShell`);
   }
 });
 
