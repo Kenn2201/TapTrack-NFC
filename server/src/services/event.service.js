@@ -57,9 +57,9 @@ export const eventService = {
     const visible = [];
 
     for (const event of events) {
-      const reconciled = await reconcileEventStatus(event, now);
-      const accessible = await addViewerAccess(reconciled, actor);
-      if (accessible) visible.push(accessible);
+      const accessible = await addViewerAccess(event, actor);
+      if (!accessible) continue;
+      visible.push(await reconcileEventStatus(accessible, now));
     }
 
     return visible;
@@ -70,10 +70,9 @@ export const eventService = {
     const event = await eventRepository.findById(id);
     if (!event) throw fail(404, 'EVENT_NOT_FOUND', 'Event not found.');
 
-    const reconciled = await reconcileEventStatus(event, now);
-    const accessible = await addViewerAccess(reconciled, actor);
+    const accessible = await addViewerAccess(event, actor);
     if (!accessible) throw fail(404, 'EVENT_NOT_FOUND', 'Event not found.');
-    return accessible;
+    return reconcileEventStatus(accessible, now);
   },
 
   async createEvent(data, actor) {
