@@ -5,6 +5,27 @@ import { auditService } from '../services/audit.service.js';
 
 export const adminUserController = {
   /**
+   * GET /api/staff/users?search=
+   * Minimal active-user directory for attendance and invite selection.
+   */
+  async searchStaffUsers(req, res, next) {
+    try {
+      const users = await userRepository.searchActiveUsers(req.query.search || '');
+      return res.json({
+        users: users.map((user) => ({
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          role: user.role,
+          status: user.status,
+        })),
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+  /**
    * GET /api/admin/users
    * List all users
    */
