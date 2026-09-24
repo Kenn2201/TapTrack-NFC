@@ -6,6 +6,7 @@ import Section from '../components/ui/Section';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import Textarea from '../components/ui/Textarea';
 import Alert from '../components/ui/Alert';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../hooks/useAuth';
@@ -137,8 +138,8 @@ export default function AdminEmail() {
             <form onSubmit={sendDirect} className="space-y-4">
               <Input label="To (Email)" required value={directForm.to} onChange={(e) => setDirectForm({ ...directForm, to: e.target.value })} type="email" placeholder="user@example.com" />
               <Input label="Subject" required value={directForm.subject} onChange={(e) => setDirectForm({ ...directForm, subject: e.target.value })} placeholder="Email subject" />
-              <Input label="HTML Body" multiline rows={6} value={directForm.html} onChange={(e) => setDirectForm({ ...directForm, html: e.target.value })} placeholder="<p>HTML content...</p>" helperText="Optional if text body provided" />
-              <Input label="Text Body" multiline rows={4} value={directForm.text} onChange={(e) => setDirectForm({ ...directForm, text: e.target.value })} placeholder="Plain text content..." helperText="Optional if HTML body provided" />
+              <Textarea label="HTML Body" rows={6} value={directForm.html} onChange={(e) => setDirectForm({ ...directForm, html: e.target.value })} placeholder="<p>HTML content...</p>" helperText="Optional if plain-text body is provided" />
+              <Textarea label="Plain-text Body" rows={4} value={directForm.text} onChange={(e) => setDirectForm({ ...directForm, text: e.target.value })} placeholder="Plain text content..." helperText="Optional if HTML body is provided" />
               <div className="flex justify-end">
                 <Button type="submit" loading={directLoading} disabled={directLoading}>Send Direct Email</Button>
               </div>
@@ -154,8 +155,8 @@ export default function AdminEmail() {
             </div>
             <form onSubmit={sendBroadcast} className="space-y-4">
               <Input label="Subject" required value={broadcastForm.subject} onChange={(e) => setBroadcastForm({ ...broadcastForm, subject: e.target.value })} placeholder="Broadcast subject" />
-              <Input label="HTML Body" multiline rows={6} value={broadcastForm.html} onChange={(e) => setBroadcastForm({ ...broadcastForm, html: e.target.value })} placeholder="<p>HTML content for all users...</p>" helperText="Optional if text body provided" />
-              <Input label="Text Body" multiline rows={4} value={broadcastForm.text} onChange={(e) => setBroadcastForm({ ...broadcastForm, text: e.target.value })} placeholder="Plain text content for all users..." helperText="Optional if HTML body provided" />
+              <Textarea label="HTML Body" rows={6} value={broadcastForm.html} onChange={(e) => setBroadcastForm({ ...broadcastForm, html: e.target.value })} placeholder="<p>HTML content for all users...</p>" helperText="Optional if plain-text body is provided" />
+              <Textarea label="Plain-text Body" rows={4} value={broadcastForm.text} onChange={(e) => setBroadcastForm({ ...broadcastForm, text: e.target.value })} placeholder="Plain text content for all users..." helperText="Optional if HTML body is provided" />
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
