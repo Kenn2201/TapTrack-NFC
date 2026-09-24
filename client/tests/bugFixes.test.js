@@ -171,3 +171,25 @@ test('Participant invitation client sends userIds, not email payloads', () => {
   assert.match(source, /\{\s*userIds\s*\}/);
   assert.doesNotMatch(source, /\{\s*emails\s*\}/);
 });
+
+
+test('Milestone C My Card uses dedicated request queue instead of feedback workaround', () => {
+  const source = readFileSync(join(SRC, 'pages', 'MyCard.jsx'), 'utf8');
+  assert.match(source, /cardService\.createRequest/);
+  assert.match(source, /getMyRequests/);
+  assert.doesNotMatch(source, /feedbackService\.submit/);
+});
+
+test('Milestone C Admin Cards exposes setup and replacement request queue', () => {
+  const source = readFileSync(join(SRC, 'pages', 'AdminCards.jsx'), 'utf8');
+  assert.match(source, /NFC Setup & Replacement Requests/);
+  assert.match(source, /getAdminRequests/);
+  assert.match(source, /updateRequestStatus/);
+  assert.match(source, /Provision for User/);
+});
+
+test('Milestone C card client does not expose any credential recovery endpoint', () => {
+  const source = readFileSync(join(SRC, 'services', 'cardService.js'), 'utf8');
+  assert.match(source, /createRequest/);
+  assert.doesNotMatch(source, /recoverToken|recoverCredential|getRawToken/);
+});
