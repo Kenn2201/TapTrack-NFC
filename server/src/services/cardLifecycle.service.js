@@ -10,7 +10,7 @@ export const CARD_TRANSITIONS = Object.freeze({
   UNASSIGNED: [],
   REPLACED: [],
 });
-const fail = (status, code, message) => Object.assign(new Error(message), { status, code });
+const fail = (status, code, message, options = {}) => Object.assign(new Error(message), { status, code, ...options });
 
 /**
  * Map known database errors to safe, human-readable client errors.
@@ -28,14 +28,16 @@ function mapDbError(err) {
     return fail(
       503,
       'CARD_LIFECYCLE_SCHEMA_MISMATCH',
-      'Card lifecycle storage is not compatible with this status yet. Verify the deployed database migrations before retrying.'
+      'Card lifecycle storage is not compatible with this status yet. Verify the deployed database migrations before retrying.',
+      { expose: true }
     );
   }
   if (err?.code === '42703' || err?.code === '42P01') {
     return fail(
       503,
       'CARD_LIFECYCLE_SCHEMA_INCOMPLETE',
-      'Card lifecycle storage is incomplete on this deployment. Verify the deployed database migrations before retrying.'
+      'Card lifecycle storage is incomplete on this deployment. Verify the deployed database migrations before retrying.',
+      { expose: true }
     );
   }
 
