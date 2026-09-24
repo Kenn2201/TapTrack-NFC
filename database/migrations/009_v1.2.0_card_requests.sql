@@ -28,3 +28,24 @@ CREATE INDEX IF NOT EXISTS idx_card_requests_status_created
 CREATE UNIQUE INDEX IF NOT EXISTS uq_card_requests_open_per_user
   ON card_requests(user_id)
   WHERE status IN ('PENDING', 'IN_REVIEW');
+
+
+-- One current ACTIVE card per user.
+-- Do not silently alter existing lifecycle history. If legacy duplicate ACTIVE
+-- cards exist, stop the migration and resolve them explicitly before retrying.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT user_id
+    FROM nfc_cards
+    WHERE user_id IS NOT NULL AND status = 'ACTIVE'
+    GROUP BY user_id
+    HAVING COUNT(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Cannot enforce one active NFC card per user: duplicate ACTIVE cards exist. Resolve lifecycle state manually before retrying migration 009.';
+  END IF;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_nfc_cards_one_active_per_user
+  ON nfc_cards(user_id)
+  WHERE user_id IS NOT NULL AND status = 'ACTIVE';
