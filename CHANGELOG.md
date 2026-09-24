@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrations 008 and 009 must be applied before full production QA of their dependent features.
 
 ### Validation status
-- Automated CI validation is required before this RC is merged into `kenn/develop`.
+- GitHub Actions passed: server 14/14 test files and 181/181 tests; client 82/82 tests; production build; lint with 0 errors; server/client audits with 0 vulnerabilities.
 - Physical iPhone public verification, authenticated NFC URL attendance, and duplicate-tap handling were previously validated.
 - Physical Android NDEFReader/Web NFC validation remains pending.
 - No `v1.2.0` tag or GitHub Release should be created before human QA passes.
