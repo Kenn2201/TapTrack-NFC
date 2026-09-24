@@ -62,10 +62,9 @@ export default function AdminFeedback() {
   const getStatusBadge = (status) => {
     const colors = {
       NEW: 'bg-blue-400/20 text-blue-400',
-      IN_REVIEW: 'bg-amber-400/20 text-amber-400',
-      ACCEPTED: 'bg-emerald-400/20 text-emerald-400',
-      REJECTED: 'bg-slate-400/20 text-slate-400',
-      IMPLEMENTED: 'bg-purple-400/20 text-purple-400',
+      REVIEWING: 'bg-amber-400/20 text-amber-400',
+      RESOLVED: 'bg-emerald-400/20 text-emerald-400',
+      ARCHIVED: 'bg-slate-400/20 text-slate-400',
     };
     return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] || 'bg-slate-700 text-slate-300'}`}>{status}</span>;
   };
@@ -73,8 +72,9 @@ export default function AdminFeedback() {
   const getCategoryBadge = (category) => {
     const colors = {
       BUG: 'bg-red-400/20 text-red-400',
-      FEATURE: 'bg-blue-400/20 text-blue-400',
-      IMPROVEMENT: 'bg-emerald-400/20 text-emerald-400',
+      UX: 'bg-purple-400/20 text-purple-400',
+      FEATURE_REQUEST: 'bg-blue-400/20 text-blue-400',
+      NFC_ATTENDANCE: 'bg-emerald-400/20 text-emerald-400',
       OTHER: 'bg-slate-400/20 text-slate-400',
     };
     return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[category] || 'bg-slate-700 text-slate-300'}`}>{CATEGORY_LABELS[category] || category}</span>;
