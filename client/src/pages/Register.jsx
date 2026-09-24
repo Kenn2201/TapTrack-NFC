@@ -12,6 +12,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [website, setWebsite] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -34,7 +35,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await register({ firstName, lastName, email, password });
+      await register({ firstName, lastName, email, password, website });
       setSuccess(true);
     } catch (err) {
       setError(err.message || 'Registration failed. Please check your information.');
@@ -91,6 +92,18 @@ export default function Register() {
               )}
 
               <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+                <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                  <label htmlFor="register-website">Website</label>
+                  <input
+                    id="register-website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                  />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="firstName" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
