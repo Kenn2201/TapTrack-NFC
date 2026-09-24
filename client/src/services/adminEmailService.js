@@ -4,7 +4,10 @@ import api from './api';
 export const adminEmailService = {
   sendDirect: (data) => api.post('/admin/emails/send', data),
   sendBroadcast: (data) => api.post('/admin/emails/broadcast', data),
-  diagnostics: () => api.get('/admin/emails/diagnostics'),
+  async diagnostics() {
+    const data = await api.get('/admin/emails/diagnostics');
+    return data?.diagnostics || { configured: false, provider: 'RESEND' };
+  },
 };
 
 export default adminEmailService;
