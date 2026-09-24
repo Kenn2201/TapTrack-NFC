@@ -4,6 +4,8 @@ import { AuthProvider } from "./hooks/useAuth";
 // Layout Guards
 import RequireAuth from "./components/layout/RequireAuth";
 import RequireRole from "./components/layout/RequireRole";
+import AuthenticatedShell from "./components/layout/AuthenticatedShell";
+import AuthShell from "./components/layout/AuthShell";
 
 // Auth Initialization
 import AuthInitializer from "./components/AuthInitializer";
@@ -64,11 +66,13 @@ function App() {
           <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route element={<AuthShell />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+          </Route>
           <Route path="/auth/verify" element={<VerifyEmail />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/t" element={<TapLanding />} />
           <Route path="/compatibility" element={<Compatibility />} />
           <Route path="/changelog" element={<Changelog />} />
@@ -76,36 +80,36 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
 
-          {/* Authenticated User Routes */}
+          {/* Authenticated / Staff Routes */}
           <Route element={<RequireAuth />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/my-card" element={<MyCard />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/events/:id" element={<EventDetailRoute />} />
-            <Route path="/attendance" element={<AttendanceHistory />} />
-            <Route path="/feedback" element={<FeedbackCenter />} />
-          </Route>
+            <Route element={<AuthenticatedShell />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/my-card" element={<MyCard />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/events/:id" element={<EventDetailRoute />} />
+              <Route path="/attendance" element={<AttendanceHistory />} />
+              <Route path="/feedback" element={<FeedbackCenter />} />
 
-          {/* Operator Protected Routes */}
-          <Route element={<RequireRole allowedRoles={['OPERATOR', 'ADMIN']} />}>
-            <Route path="/operator" element={<Operator />} />
-            <Route path="/operator/nfc-reader" element={<NfcReaderPage />} />
-            <Route path="/operator/benchmark" element={<Benchmark />} />
-          </Route>
+              <Route element={<RequireRole allowedRoles={['OPERATOR', 'ADMIN']} />}>
+                <Route path="/operator" element={<Operator />} />
+                <Route path="/operator/nfc-reader" element={<NfcReaderPage />} />
+                <Route path="/operator/benchmark" element={<Benchmark />} />
+              </Route>
 
-          {/* Admin Protected Routes */}
-          <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/cards" element={<AdminCards />} />
-            <Route path="/admin/nfc-cards" element={<AdminCards />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/events" element={<AdminEvents />} />
-            <Route path="/admin/audit" element={<AuditLogs />} />
-            <Route path="/admin/audits" element={<AuditLogs />} />
-            <Route path="/admin/feedback" element={<AdminFeedback />} />
-            <Route path="/admin/email" element={<AdminEmail />} />
-            <Route path="/admin/platform" element={<AdminPlatform />} />
+              <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/cards" element={<AdminCards />} />
+                <Route path="/admin/nfc-cards" element={<AdminCards />} />
+                <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/events" element={<AdminEvents />} />
+                <Route path="/admin/audit" element={<AuditLogs />} />
+                <Route path="/admin/audits" element={<AuditLogs />} />
+                <Route path="/admin/feedback" element={<AdminFeedback />} />
+                <Route path="/admin/email" element={<AdminEmail />} />
+                <Route path="/admin/platform" element={<AdminPlatform />} />
+              </Route>
+            </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
