@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Header from '../components/layout/Header';
+import { useNavigate } from 'react-router-dom';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
 import Section from '../components/ui/Section';
@@ -44,6 +44,7 @@ function formatBirthday(value) {
 export default function Profile() {
   useDocumentTitle('Profile');
   const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
 
   const [editingProfile, setEditingProfile] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -62,6 +63,10 @@ export default function Profile() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState(null);
+  const [archiveModal, setArchiveModal] = useState(false);
+  const [archiveConfirmation, setArchiveConfirmation] = useState('');
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [archiveError, setArchiveError] = useState(null);
 
   const openEditProfile = () => {
     setFirstName(user?.firstName || '');
@@ -122,6 +127,27 @@ export default function Profile() {
     }
   };
 
+  const handleArchiveAccount = async (e) => {
+    e.preventDefault();
+    if (archiveConfirmation !== 'ARCHIVE') {
+      setArchiveError('Type ARCHIVE exactly to confirm.');
+      return;
+    }
+    setArchiveLoading(true);
+    setArchiveError(null);
+    try {
+      await authService.archiveAccount();
+      navigate('/login', {
+        replace: true,
+        state: { archived: true },
+      });
+    } catch (err) {
+      setArchiveError(err.message || 'Failed to archive account.');
+    } finally {
+      setArchiveLoading(false);
+    }
+  };
+
   const isVerified = !!user?.emailVerifiedAt;
   const avatarSrc = isValidAvatarUrl(user?.avatarUrl) ? user.avatarUrl : null;
   const friendlyBirthday = formatBirthday(user?.birthday);
@@ -129,7 +155,6 @@ export default function Profile() {
   return (
     <>
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-        <Header />
 
         <PageContainer maxWidth="max-w-4xl">
           <PageHeader
@@ -353,9 +378,64 @@ export default function Profile() {
                 </div>
               </Card>
             </Section>
+
+            {/* 6. ACCOUNT ARCHIVE */}
+            <Section title="Account Archive" subtitle="Disable sign-in while preserving historical records">
+              <Card className="p-5 sm:p-6 border-rose-500/20">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold text-white">Archive this account</h4>
+                    <p className="mt-1 max-w-2xl text-xs sm:text-sm text-slate-400">
+                      Archiving disables sign-in and invalidates active sessions. Attendance history, event participation,
+                      NFC card history, and audit records are preserved. This is not permanent deletion.
+                    </p>
+                    {user?.role === 'ADMIN' && (
+                      <p className="mt-2 text-xs text-amber-300">
+                        Administrator accounts cannot archive themselves to avoid administrative lockout.
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    variant="danger"
+                    onClick={() => { setArchiveConfirmation(''); setArchiveError(null); setArchiveModal(true); }}
+                    disabled={user?.role === 'ADMIN'}
+                    className="w-full sm:w-auto"
+                  >
+                    Archive Account
+                  </Button>
+                </div>
+              </Card>
+            </Section>
           </div>
         </PageContainer>
       </div>
+
+      <Modal
+        isOpen={archiveModal}
+        onClose={() => !archiveLoading && setArchiveModal(false)}
+        title="Archive Account?"
+        description="This disables sign-in but preserves historical records."
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={handleArchiveAccount} className="space-y-4">
+          {archiveError && <Alert type="error" message={archiveError} onClose={() => setArchiveError(null)} />}
+          <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+            Your sessions will be revoked and you will be signed out. An administrator can reactivate the account later.
+          </div>
+          <Input
+            label="Type ARCHIVE to confirm"
+            value={archiveConfirmation}
+            onChange={(e) => setArchiveConfirmation(e.target.value)}
+            autoComplete="off"
+          />
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => setArchiveModal(false)} disabled={archiveLoading}>Cancel</Button>
+            <Button type="submit" variant="danger" loading={archiveLoading} disabled={archiveLoading || archiveConfirmation !== 'ARCHIVE'}>
+              Archive Account
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* CHANGE PASSWORD MODAL */}
       <Modal

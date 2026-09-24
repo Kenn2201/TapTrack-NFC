@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import Header from '../components/layout/Header';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function Register() {
@@ -13,6 +12,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [website, setWebsite] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -35,7 +35,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await register({ firstName, lastName, email, password });
+      await register({ firstName, lastName, email, password, website });
       setSuccess(true);
     } catch (err) {
       setError(err.message || 'Registration failed. Please check your information.');
@@ -45,8 +45,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Header />
+    <div className="min-h-[calc(100vh-8rem)] bg-slate-950 text-slate-100 flex flex-col">
       <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8 bg-slate-900/90 border border-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl backdrop-blur-sm">
           {success ? (
@@ -93,6 +92,18 @@ export default function Register() {
               )}
 
               <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+                <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                  <label htmlFor="register-website">Website</label>
+                  <input
+                    id="register-website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                  />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="firstName" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">

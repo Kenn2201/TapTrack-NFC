@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/layout/Header';
-import AdminWorkspaceNav from '../components/layout/AdminWorkspaceNav';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -27,6 +25,8 @@ export default function AdminFeedback() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [updating, setUpdating] = useState(false);
 
@@ -59,6 +59,21 @@ export default function AdminFeedback() {
       setUpdating(false);
     }
   };
+
+  const visibleFeedback = feedbackList.filter((item) => {
+    if (categoryFilter !== 'ALL' && item.category !== categoryFilter) return false;
+    const query = search.trim().toLowerCase();
+    if (!query) return true;
+    const haystack = [
+      item.message,
+      item.page,
+      item.reproduction,
+      item.userEmail,
+      item.userFirstName,
+      item.userLastName,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(query);
+  });
 
   const getStatusBadge = (status) => {
     const colors = {
@@ -96,8 +111,6 @@ export default function AdminFeedback() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Header />
-      <AdminWorkspaceNav />
 
       <PageContainer>
         <PageHeader
@@ -112,7 +125,24 @@ export default function AdminFeedback() {
         <Card className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4">
             <h3 className="text-lg font-semibold text-white">Filters</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search feedback..."
+                className="min-h-[42px] rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white placeholder-slate-500"
+              />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="min-h-[42px] rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white"
+              >
+                <option value="ALL">All Categories</option>
+                {Object.keys(CATEGORY_LABELS).map((category) => (
+                  <option key={category} value={category}>{CATEGORY_LABELS[category].replace(/^[^ ]+ /, '')}</option>
+                ))}
+              </select>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -147,7 +177,7 @@ export default function AdminFeedback() {
           </Card>
         ) : (
           <Card className="divide-y divide-slate-800/50">
-            {feedbackList.map((f) => (
+            {visibleFeedback.map((f) => (
               <div key={f.id} className="p-4 hover:bg-slate-800/50 transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2">
@@ -160,7 +190,12 @@ export default function AdminFeedback() {
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-slate-500 whitespace-nowrap">{formatDate(f.createdAt)}</span>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-400">
+                      {f.userEmail ? [f.userFirstName, f.userLastName].filter(Boolean).join(' ') || f.userEmail : 'Anonymous public feedback'}
+                    </p>
+                    <span className="text-xs text-slate-500 whitespace-nowrap">{formatDate(f.createdAt)}</span>
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -199,6 +234,19 @@ export default function AdminFeedback() {
           <div className="space-y-4">
             <p className="text-sm text-slate-300">Current status: <span className="font-medium">{selectedFeedback?.status}</span></p>
             <p className="text-sm text-slate-300">Category: <span className="font-medium">{selectedFeedback?.category}</span></p>
+            <p className="text-sm text-slate-300">Submitted by: <span className="font-medium">{selectedFeedback?.userEmail || 'Anonymous public visitor'}</span></p>
+            {selectedFeedback?.message && (
+              <div className="rounded-lg border border-slate-800 bg-slate-950 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Message</p>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{selectedFeedback.message}</p>
+              </div>
+            )}
+            {selectedFeedback?.reproduction && (
+              <div className="rounded-lg border border-slate-800 bg-slate-950 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Reproduction</p>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{selectedFeedback.reproduction}</p>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1">New Status</label>
               <select

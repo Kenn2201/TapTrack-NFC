@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authService } from '../services/authService';
-import Header from '../components/layout/Header';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function ForgotPassword() {
@@ -9,13 +8,14 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [website, setWebsite] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await authService.forgotPassword(email);
+      await authService.forgotPassword(email, website);
     } catch {
       // Regardless of error, show generic completion to prevent account enumeration
     } finally {
@@ -25,8 +25,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Header />
+    <div className="min-h-[calc(100vh-8rem)] bg-slate-950 text-slate-100 flex flex-col">
       <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl backdrop-blur-sm">
           {submitted ? (
@@ -64,6 +63,18 @@ export default function ForgotPassword() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                  <label htmlFor="forgot-website">Website</label>
+                  <input
+                    id="forgot-website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                  />
+                </div>
                 <div>
                   <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                     Email Address

@@ -13,12 +13,13 @@ export const authService = {
   resendVerification: (email) => api.post('/auth/resend-verification', { email }),
 
   // Password Reset
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  forgotPassword: (email, website = '') => api.post('/auth/forgot-password', { email, website }),
   resetPassword: (token, password) => api.post('/auth/reset-password', { token, password }),
 
   // Profile
   updateProfile: (data) => api.patch('/users/me', data),
   changePassword: (data) => api.post('/users/me/password', data),
+  archiveAccount: () => api.post('/users/me/archive', { confirmation: 'ARCHIVE' }),
 
   // Staff operational directory (ADMIN / OPERATOR)
   getStaffUsers: (search = '') => api.get('/staff/users', { params: { search } }),

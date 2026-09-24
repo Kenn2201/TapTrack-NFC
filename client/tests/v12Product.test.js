@@ -81,8 +81,80 @@ test('maintenance enable action requires an in-app confirmation modal', () => {
   assert.match(source, /Confirm Maintenance Mode/);
 });
 
-test('all admin surfaces share the administration workspace navigation', () => {
+test('all admin surfaces are routed through the shared AdminShell', () => {
+  const app = read('App.jsx');
+  const shell = read('components', 'layout', 'AdminShell.jsx');
+  assert.match(app, /AdminShell/);
+  assert.match(shell, /AdminWorkspaceNav/);
   for (const page of ['AdminDashboard.jsx', 'AdminUsers.jsx', 'AdminCards.jsx', 'AdminEvents.jsx', 'AuditLogs.jsx', 'AdminFeedback.jsx', 'AdminEmail.jsx', 'AdminPlatform.jsx']) {
-    assert.match(read('pages', page), /AdminWorkspaceNav/, `${page} missing AdminWorkspaceNav`);
+    assert.doesNotMatch(read('pages', page), /AdminWorkspaceNav/, `${page} should inherit AdminWorkspaceNav from AdminShell`);
   }
+});
+
+
+test('authenticated routes use a shared workspace shell with desktop and mobile navigation', () => {
+  const app = read('App.jsx');
+  const shell = read('components', 'layout', 'AuthenticatedShell.jsx');
+  assert.match(app, /AuthenticatedShell/);
+  assert.match(shell, /TapTrack workspace/);
+  assert.match(shell, /TapTrack mobile workspace/);
+  assert.match(shell, /\/dashboard/);
+  assert.match(shell, /\/events/);
+  assert.match(shell, /\/attendance/);
+  assert.match(shell, /\/my-card/);
+});
+
+test('auth routes use one AuthShell with sign-in and register segments', () => {
+  const app = read('App.jsx');
+  const shell = read('components', 'layout', 'AuthShell.jsx');
+  assert.match(app, /AuthShell/);
+  assert.match(shell, /Sign In/);
+  assert.match(shell, /Register/);
+  assert.match(shell, /Secure account recovery/);
+});
+
+test('registration and forgot-password forms include non-focusable honeypot fields', () => {
+  for (const page of ['Register.jsx', 'ForgotPassword.jsx']) {
+    const source = read('pages', page);
+    assert.match(source, /name="website"/);
+    assert.match(source, /tabIndex=\{-1\}/);
+    assert.match(source, /autoComplete="off"/);
+  }
+});
+
+test('profile exposes archive, not hard-delete, and requires explicit ARCHIVE confirmation', () => {
+  const source = read('pages', 'Profile.jsx');
+  assert.match(source, /Account Archive/);
+  assert.match(source, /Type ARCHIVE to confirm/);
+  assert.match(source, /authService\.archiveAccount/);
+  assert.match(source, /This is not permanent deletion/);
+  assert.doesNotMatch(source, /Delete Account/);
+});
+
+test('public feedback has its own public route and stricter endpoint', () => {
+  const app = read('App.jsx');
+  const page = read('pages', 'PublicFeedback.jsx');
+  const service = read('services', 'feedbackService.js');
+  assert.match(app, /path="\/feedback\/public"/);
+  assert.match(page, /Public Feedback/);
+  assert.match(page, /rate-limited/i);
+  assert.match(service, /\/feedback\/public/);
+});
+
+test('landing links terminology instead of embedding the old large glossary and avoids immutable-audit claims', () => {
+  const source = read('pages', 'Landing.jsx');
+  assert.match(source, /Open Terminology/);
+  assert.match(source, /to="\/terminology"/);
+  assert.doesNotMatch(source, /TerminologyCard/);
+  assert.doesNotMatch(source, /immutable audit/i);
+  assert.match(source, /Android Web NFC is implemented/);
+  assert.match(source, /physical NDEFReader acceptance still pending/);
+});
+
+test('admin feedback supports category/search triage and anonymous public submissions', () => {
+  const source = read('pages', 'AdminFeedback.jsx');
+  assert.match(source, /categoryFilter/);
+  assert.match(source, /Search feedback/);
+  assert.match(source, /Anonymous public feedback/);
+  assert.match(source, /Anonymous public visitor/);
 });

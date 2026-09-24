@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { config } from '../config/index.js';
 
 /**
@@ -49,6 +49,25 @@ export const resolveLimiter = rateLimit({
   validate: { trustProxy: true },
 });
 
+export const publicFeedbackLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: config.nodeEnv === 'test' ? 100 : 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitHandler,
+  validate: { trustProxy: true },
+});
+
+export const authenticatedFeedbackLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: config.nodeEnv === 'test' ? 200 : 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitHandler,
+  keyGenerator: (req) => req.user?.id ? `user:${req.user.id}` : ipKeyGenerator(req.ip),
+  validate: { trustProxy: true },
+});
+
 export const attendanceLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: config.nodeEnv === 'test' ? 500 : 120,
@@ -63,4 +82,6 @@ export default {
   resetLimiter,
   resolveLimiter,
   attendanceLimiter,
+  publicFeedbackLimiter,
+  authenticatedFeedbackLimiter,
 };

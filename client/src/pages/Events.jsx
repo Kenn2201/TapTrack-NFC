@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Header from '../components/layout/Header';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
 import Section from '../components/ui/Section';
@@ -33,7 +32,6 @@ export default function Events() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      <Header />
 
       <PageContainer maxWidth="max-w-7xl">
         <PageHeader
