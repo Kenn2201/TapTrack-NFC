@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import Header from '../components/layout/Header';
-import AdminWorkspaceNav from '../components/layout/AdminWorkspaceNav';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
 import Section from '../components/ui/Section';
@@ -32,9 +30,11 @@ const ACTION_LABELS = {
   ATTENDANCE_RECORDED: 'Attendance recorded',
   USER_ROLE_CHANGED: 'User role changed',
   PARTICIPANTS_INVITED: 'Participants invited',
-  PARTICIPANT_RSVP: 'Invitation response updated',
   FEEDBACK_SUBMITTED: 'Feedback submitted',
   FEEDBACK_STATUS_UPDATED: 'Feedback status updated',
+  ACCOUNT_ARCHIVED: 'Account archived',
+  CARD_REQUEST_CREATED: 'NFC card request created',
+  CARD_REQUEST_STATUS_CHANGED: 'NFC card request status changed',
   EMAIL_SENT: 'Email sent',
   EMAIL_BROADCAST: 'Email broadcast sent',
 };
@@ -187,8 +187,6 @@ export default function AuditLogs() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      <Header />
-      <AdminWorkspaceNav />
 
       <PageContainer maxWidth="max-w-6xl">
         <PageHeader

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Header from '../components/layout/Header';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -69,7 +68,6 @@ export default function MyCard() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      <Header />
 
       <PageContainer maxWidth="max-w-3xl">
         <PageHeader

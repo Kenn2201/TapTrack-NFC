@@ -19,7 +19,14 @@ import { cardRequestController } from '../controllers/cardRequest.controller.js'
 import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roles.js';
 import { validate } from '../middleware/validate.js';
-import { authLimiter, resetLimiter, resolveLimiter, attendanceLimiter } from '../middleware/rateLimiter.js';
+import {
+  authLimiter,
+  resetLimiter,
+  resolveLimiter,
+  attendanceLimiter,
+  publicFeedbackLimiter,
+  authenticatedFeedbackLimiter,
+} from '../middleware/rateLimiter.js';
 import {
 registerSchema,
 loginSchema,
@@ -31,6 +38,7 @@ updateRoleSchema,
 updateStatusSchema,
 updateProfileSchema,
 changePasswordSchema,
+archiveAccountSchema,
 provisionCardSchema,
 activateCardSchema,
 assignCardSchema,
@@ -69,6 +77,7 @@ router.post('/auth/reset-password', resetLimiter, validate(resetPasswordSchema),
 // ─── USER PROFILE (v0.2.0) ───────────────────────────────────────────────────
 router.patch('/users/me', authenticate, validate(updateProfileSchema), authController.updateProfile);
 router.post('/users/me/password', authLimiter, authenticate, validate(changePasswordSchema), authController.changePassword);
+router.post('/users/me/archive', authenticate, validate(archiveAccountSchema), authController.archiveAccount);
 router.get('/users/me/attendance', authenticate, attendanceController.getUserHistory);
 router.get('/users/me/activity-pulse', authenticate, activityPulseController.get);
 router.get('/users/me/card', authenticate, cardController.getMine);
@@ -118,7 +127,8 @@ router.get('/platform/maintenance-status', platformController.getStatus);
 router.post('/admin/platform/maintenance', authenticate, requireRole('ADMIN'), validate(maintenanceSchema), platformController.setMaintenance);
 
 // ─── FEEDBACK (v1.1.0) ────────────────────────────────────────────────────────
-router.post('/feedback', authenticate, validate(createFeedbackSchema), feedbackController.submit);
+router.post('/feedback/public', publicFeedbackLimiter, validate(createFeedbackSchema), feedbackController.submitPublic);
+router.post('/feedback', authenticate, authenticatedFeedbackLimiter, validate(createFeedbackSchema), feedbackController.submit);
 router.get('/feedback', authenticate, requireRole('ADMIN'), feedbackController.list);
 router.patch('/admin/feedback/:id/status', authenticate, requireRole('ADMIN'), validate(updateFeedbackStatusSchema), feedbackController.updateStatus);
 

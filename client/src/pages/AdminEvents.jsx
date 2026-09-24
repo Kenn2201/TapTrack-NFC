@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import Header from '../components/layout/Header';
-import AdminWorkspaceNav from '../components/layout/AdminWorkspaceNav';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
 import Section from '../components/ui/Section';
@@ -195,8 +193,6 @@ export default function AdminEvents() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Header />
-      <AdminWorkspaceNav />
 
       <PageContainer maxWidth="max-w-7xl">
         <PageHeader

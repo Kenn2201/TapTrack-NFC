@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { config, getJwtSecret } from '../config/index.js';
 import { authService, toSafeUser } from '../services/auth.service.js';
 import { userRepository } from '../repositories/user.repository.js';
+import { auditService } from '../services/audit.service.js';
 
 export const authController = {
   /**
@@ -9,7 +10,13 @@ export const authController = {
    */
   async register(req, res, next) {
     try {
-      const { email, password, firstName, lastName } = req.body;
+      const { email, password, firstName, lastName, website } = req.validated || req.body;
+      if (website?.trim()) {
+        return res.status(201).json({
+          message: 'Registration submitted. Please check your email if an account was created.',
+          user: null,
+        });
+      }
       const user = await authService.register({ email, password, firstName, lastName });
       return res.status(201).json({
         message: 'Registration successful. Please check your email to verify your account.',
@@ -110,7 +117,10 @@ export const authController = {
    */
   async forgotPassword(req, res, next) {
     try {
-      const { email } = req.body;
+      const { email, website } = req.validated || req.body;
+      if (website?.trim()) {
+        return res.json({ message: 'If an account exists for that email, a password reset link has been sent.' });
+      }
       const result = await authService.forgotPassword(email);
       return res.json(result);
     } catch (err) {
@@ -141,6 +151,45 @@ export const authController = {
       const updated = await userRepository.updateProfile(req.user.id, { firstName, lastName, nickname, birthday, avatarUrl });
       return res.json({
         message: 'Profile updated successfully.',
+        user: toSafeUser(updated),
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * POST /api/users/me/archive
+   * Self-archive by disabling the account while preserving attendance, card,
+   * event, and audit history. Administrator accounts cannot self-archive.
+   */
+  async archiveAccount(req, res, next) {
+    try {
+      if (req.user?.role === 'ADMIN') {
+        const err = new Error('Administrator accounts cannot archive themselves. Use another administrator to change account status.');
+        err.status = 409;
+        err.code = 'ADMIN_SELF_ARCHIVE_BLOCKED';
+        throw err;
+      }
+
+      const updated = await userRepository.updateStatus(req.user.id, 'DISABLED');
+      await auditService.log({
+        actorId: req.user.id,
+        action: 'ACCOUNT_ARCHIVED',
+        entityType: 'USER',
+        entityId: req.user.id,
+        metadata: { preservedHistory: true },
+      });
+
+      res.clearCookie(config.cookieName, {
+        httpOnly: true,
+        secure: config.nodeEnv === 'production',
+        sameSite: 'lax',
+        path: '/',
+      });
+
+      return res.json({
+        message: 'Account archived. Sign-in access is disabled while historical attendance and audit records are preserved.',
         user: toSafeUser(updated),
       });
     } catch (err) {

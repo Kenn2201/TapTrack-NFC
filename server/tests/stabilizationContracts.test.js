@@ -7,6 +7,9 @@ import {
   maintenanceSchema,
   createCardRequestSchema,
   updateCardRequestStatusSchema,
+  archiveAccountSchema,
+  registerSchema,
+  forgotPasswordSchema,
 } from '../src/validators/schemas.js';
 
 describe('v1.2 stabilization request contracts', () => {
@@ -94,6 +97,26 @@ describe('v1.2 stabilization request contracts', () => {
     expect(updateCardRequestStatusSchema.parse({ status: 'IN_REVIEW' }).status).toBe('IN_REVIEW');
     expect(updateCardRequestStatusSchema.parse({ status: 'FULFILLED', adminNote: 'Card issued' }).status).toBe('FULFILLED');
     expect(updateCardRequestStatusSchema.safeParse({ status: 'DELETED' }).success).toBe(false);
+  });
+
+  it('requires explicit ARCHIVE confirmation for self-archive', () => {
+    expect(archiveAccountSchema.parse({ confirmation: 'ARCHIVE' }).confirmation).toBe('ARCHIVE');
+    expect(archiveAccountSchema.safeParse({ confirmation: 'DELETE' }).success).toBe(false);
+  });
+
+  it('accepts hidden honeypot fields in registration and recovery contracts', () => {
+    expect(registerSchema.parse({
+      email: 'user@example.com',
+      password: 'Password123!',
+      firstName: 'Alex',
+      lastName: 'Rivera',
+      website: '',
+    }).website).toBe('');
+
+    expect(forgotPasswordSchema.parse({
+      email: 'user@example.com',
+      website: '',
+    }).website).toBe('');
   });
 
   it('requires matching password confirmation', () => {

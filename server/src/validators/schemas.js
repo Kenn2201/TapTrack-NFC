@@ -5,6 +5,7 @@ export const registerSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters long').max(100),
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
+  website: z.string().max(200).optional(),
 });
 
 export const loginSchema = z.object({
@@ -22,6 +23,7 @@ export const resendVerificationSchema = z.object({
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Please provide a valid email address'),
+  website: z.string().max(200).optional(),
 });
 
 export const resetPasswordSchema = z.object({
@@ -47,6 +49,12 @@ export const updateProfileSchema = z.object({
   nickname: z.string().max(100).optional().nullable(),
   birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Birthday must be a valid date (YYYY-MM-DD)').optional().nullable(),
   avatarUrl: z.string().url('Avatar URL must be a valid URL').max(500).optional().nullable(),
+});
+
+export const archiveAccountSchema = z.object({
+  confirmation: z.literal('ARCHIVE', {
+    errorMap: () => ({ message: 'Type ARCHIVE to confirm account archiving.' }),
+  }),
 });
 
 export const changePasswordSchema = z.object({

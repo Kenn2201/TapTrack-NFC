@@ -4,10 +4,25 @@ import { auditService } from './audit.service.js';
 const fail = (status, code, message) => Object.assign(new Error(message), { status, code });
 
 export const feedbackService = {
-  async submit({ actor, category, rating, message, page, reproduction }) {
-    if (!actor) throw fail(401, 'UNAUTHENTICATED', 'Please log in to submit feedback.');
-    const feedback = await feedbackRepository.create({ userId: actor.id, category, rating, message, page, reproduction });
-    await auditService.log({ actorId: actor.id, action: 'FEEDBACK_SUBMITTED', entityType: 'FEEDBACK', entityId: feedback.id, metadata: { category, rating } });
+  async submit({ actor, category, rating, message, page, reproduction, allowAnonymous = false }) {
+    if (!actor && !allowAnonymous) throw fail(401, 'UNAUTHENTICATED', 'Please log in to submit feedback.');
+    const feedback = await feedbackRepository.create({
+      userId: actor?.id || null,
+      category,
+      rating,
+      message,
+      page,
+      reproduction,
+    });
+    if (actor) {
+      await auditService.log({
+        actorId: actor.id,
+        action: 'FEEDBACK_SUBMITTED',
+        entityType: 'FEEDBACK',
+        entityId: feedback.id,
+        metadata: { category, rating },
+      });
+    }
     return feedback;
   },
 

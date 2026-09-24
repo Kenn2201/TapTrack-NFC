@@ -17,7 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - One-current-active-card safety checks for activation, assignment, and reactivation.
 - Light, dark, and system theme preference.
 - Clickable version badge with What's New, public release notes, terminology, privacy, and terms pages.
-- Shared administration workspace navigation.
+- Shared authenticated workspace shell with desktop navigation and a mobile bottom navigation.
+- Shared AuthShell for sign-in, registration, and account recovery.
+- Shared AdminShell for consistent administration navigation.
+- Self-service account archive that disables sign-in while preserving historical attendance, card, event, and audit records.
+- Rate-limited public feedback plus more generous authenticated feedback handling.
 - Editable email message presets with preview before direct send.
 - Maintenance-message presets with explicit confirmation before enabling maintenance mode.
 
@@ -33,7 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migration 007 was already applied to production and must not be rerun.
 - Migration 008 adds event visibility (`PUBLIC` / `INVITE_ONLY`).
 - Migration 009 adds card requests and a database-level one-ACTIVE-card-per-user guard. It stops safely if legacy duplicate ACTIVE cards exist instead of modifying them automatically.
-- Migrations 008 and 009 must be applied before full production QA of their dependent features.
+- Migration 010 allows anonymous public feedback by making feedback ownership optional.
+- Migrations 008, 009, and 010 must be applied before full production QA of their dependent features.
 
 ### Validation status
 - GitHub Actions passed: server 14/14 test files and 181/181 tests; client 82/82 tests; production build; lint with 0 errors; server/client audits with 0 vulnerabilities.
