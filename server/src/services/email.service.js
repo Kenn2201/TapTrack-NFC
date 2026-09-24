@@ -115,7 +115,7 @@ export const emailService = {
   /**
    * Low-level dispatch via Resend
    */
-  async sendEmail({ to, subject, html }) {
+  async sendEmail({ to, subject, html, text }) {
     const client = getResendClient();
 
     if (!client) {
@@ -128,12 +128,15 @@ export const emailService = {
     }
 
     try {
-      const response = await client.emails.send({
+      const payload = {
         from: config.resendFromEmail,
         to: [to],
         subject,
-        html,
-      });
+      };
+      if (html?.trim()) payload.html = html;
+      if (text?.trim()) payload.text = text;
+
+      const response = await client.emails.send(payload);
 
       if (response.error) {
         console.error('[EmailService] Resend API error:', response.error);
