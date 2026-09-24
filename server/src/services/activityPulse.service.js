@@ -9,7 +9,13 @@ const weekStart = (date) => {
   return d;
 };
 
-export function calculateActivityPulse(records, requiredStats = { eligibleEvents: 0, attendedEvents: 0 }, now = new Date()) {
+export function calculateActivityPulse(records, requiredStatsOrNow = { eligibleEvents: 0, attendedEvents: 0 }, maybeNow = new Date()) {
+  const legacyNowCall = requiredStatsOrNow instanceof Date || typeof requiredStatsOrNow === 'number';
+  const requiredStats = legacyNowCall
+    ? { eligibleEvents: 0, attendedEvents: 0 }
+    : (requiredStatsOrNow || { eligibleEvents: 0, attendedEvents: 0 });
+  const now = legacyNowCall ? requiredStatsOrNow : maybeNow;
+
   const weeks = new Set(records.map((r) => weekStart(r.recordedAt).toISOString()));
   let cursor = weekStart(now);
   if (!weeks.has(cursor.toISOString())) cursor.setUTCDate(cursor.getUTCDate() - 7);
