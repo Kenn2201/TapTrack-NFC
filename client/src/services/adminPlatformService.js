@@ -2,8 +2,19 @@
 import api from './api';
 
 export const adminPlatformService = {
-  getStatus: () => api.get('/platform/maintenance-status'),
-  setMaintenance: (data) => api.post('/admin/platform/maintenance', data),
+  async getStatus() {
+    const data = await api.get('/platform/maintenance-status');
+    return data?.maintenance || { maintenanceEnabled: false };
+  },
+  async setMaintenance({ enabled, message, estimatedReturn = null, releaseLabel = null }) {
+    const data = await api.post('/admin/platform/maintenance', {
+      enabled,
+      message,
+      estimatedReturn,
+      releaseLabel,
+    });
+    return data;
+  },
 };
 
 export default adminPlatformService;
