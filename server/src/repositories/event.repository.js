@@ -20,6 +20,13 @@ const mapEvent = (row) => row && ({
   attendanceCount: row.attendance_count,
   participantCount: row.participant_count,
   hasOpenSession: !!row.has_open_session,
+  attendanceSession: row.session_id ? {
+    id: row.session_id,
+    status: row.session_status,
+    openedAt: row.session_opened_at,
+    closedAt: row.session_closed_at,
+    checkInCount: Number(row.session_check_in_count || 0),
+  } : null,
 });
 
 export const eventRepository = {
@@ -53,6 +60,11 @@ export const eventRepository = {
         creator.email AS creator_email,
         creator.first_name AS creator_first_name,
         creator.last_name AS creator_last_name,
+        session_info.session_id,
+        session_info.session_status,
+        session_info.session_opened_at,
+        session_info.session_closed_at,
+        session_info.session_check_in_count,
         (
           SELECT COUNT(*)::int FROM attendance_records ar
           WHERE ar.event_id = e.id
@@ -67,6 +79,22 @@ export const eventRepository = {
         ) AS has_open_session
       FROM events e
       LEFT JOIN users creator ON creator.id = e.created_by
+      LEFT JOIN LATERAL (
+        SELECT
+          s.id AS session_id,
+          s.status AS session_status,
+          s.opened_at AS session_opened_at,
+          s.closed_at AS session_closed_at,
+          (
+            SELECT COUNT(*)::int
+            FROM attendance_records session_ar
+            WHERE session_ar.session_id = s.id
+          ) AS session_check_in_count
+        FROM attendance_sessions s
+        WHERE s.event_id = e.id
+        ORDER BY (s.status = 'OPEN') DESC, s.opened_at DESC
+        LIMIT 1
+      ) session_info ON TRUE
       WHERE e.id = $1
       LIMIT 1;
     `, [id]);
