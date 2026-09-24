@@ -3,6 +3,7 @@ import { eventRepository } from '../repositories/event.repository.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { nfcCardRepository } from '../repositories/nfcCard.repository.js';
 import { auditService } from './audit.service.js';
+import { eventParticipantsRepository } from '../repositories/eventParticipants.repository.js';
 
 export const ATTENDANCE_METHODS = Object.freeze(['NFC_WEB', 'NFC_URL', 'MANUAL']);
 const fail = (status, code, message) => Object.assign(new Error(message), { status, code });
@@ -65,6 +66,14 @@ export const attendanceService = {
     const user = await userRepository.findById(userId);
     if (!user) throw fail(404, 'USER_NOT_FOUND', 'User not found.');
     if (user.status !== 'ACTIVE') throw fail(409, 'USER_NOT_ACTIVE', 'User is not active.');
+
+    if (event.visibility === 'INVITE_ONLY') {
+      const invited = await eventParticipantsRepository.isInvited(eventId, userId);
+      if (!invited) {
+        throw fail(409, 'USER_NOT_INVITED', 'This user is not on the required participant list for this event.');
+      }
+    }
+
     if (method !== 'MANUAL') {
       if (!cardId) throw fail(400, 'CARD_REQUIRED', 'An NFC card is required for this method.');
       const card = await nfcCardRepository.findById(cardId);

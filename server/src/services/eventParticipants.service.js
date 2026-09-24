@@ -1,4 +1,4 @@
-﻿import { eventParticipantsRepository } from '../repositories/eventParticipants.repository.js';
+import { eventParticipantsRepository } from '../repositories/eventParticipants.repository.js';
 import { eventRepository } from '../repositories/event.repository.js';
 import { auditService } from './audit.service.js';
 
@@ -9,9 +9,19 @@ export const eventParticipantsService = {
     if (actor?.role !== 'ADMIN') throw fail(403, 'FORBIDDEN', 'Only administrators can invite participants.');
     const event = await eventRepository.findById(eventId);
     if (!event) throw fail(404, 'EVENT_NOT_FOUND', 'Event not found.');
+    if (event.visibility !== 'INVITE_ONLY') {
+      throw fail(409, 'EVENT_IS_PUBLIC', 'Public events do not use required participant invitations.');
+    }
+
     const uniqueIds = [...new Set(userIds)];
     const participants = await eventParticipantsRepository.invite({ eventId, userIds: uniqueIds, invitedBy: actor.id });
-    await auditService.log({ actorId: actor.id, action: 'PARTICIPANTS_INVITED', entityType: 'EVENT', entityId: eventId, metadata: { count: uniqueIds.length } });
+    await auditService.log({
+      actorId: actor.id,
+      action: 'PARTICIPANTS_INVITED',
+      entityType: 'EVENT',
+      entityId: eventId,
+      metadata: { count: uniqueIds.length },
+    });
     return participants;
   },
 
@@ -20,14 +30,6 @@ export const eventParticipantsService = {
     const event = await eventRepository.findById(eventId);
     if (!event) throw fail(404, 'EVENT_NOT_FOUND', 'Event not found.');
     return eventParticipantsRepository.findByEvent(eventId);
-  },
-
-  async rsvp({ eventId, userId, status, actor }) {
-    const participant = await eventParticipantsRepository.findByEventAndUser(eventId, userId);
-    if (!participant) throw fail(404, 'NOT_INVITED', 'Only invited users may RSVP to an event.');
-    const updated = await eventParticipantsRepository.rsvp(eventId, userId, status);
-    await auditService.log({ actorId: actor.id, action: 'PARTICIPANT_RSVP', entityType: 'EVENT', entityId: eventId, metadata: { status } });
-    return updated;
   },
 };
 

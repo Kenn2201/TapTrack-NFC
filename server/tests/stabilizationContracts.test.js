@@ -71,6 +71,19 @@ describe('v1.2 stabilization request contracts', () => {
     expect(parsed.location).toBe('Main Hall');
   });
 
+  it('accepts PUBLIC and INVITE_ONLY event visibility values', () => {
+    const base = {
+      name: 'Visibility Test',
+      startAt: '2026-09-25T01:00:00.000Z',
+      endAt: '2026-09-25T02:00:00.000Z',
+      status: 'DRAFT',
+    };
+
+    expect(createEventSchema.parse({ ...base, visibility: 'PUBLIC' }).visibility).toBe('PUBLIC');
+    expect(createEventSchema.parse({ ...base, visibility: 'INVITE_ONLY' }).visibility).toBe('INVITE_ONLY');
+    expect(createEventSchema.safeParse({ ...base, visibility: 'PRIVATE' }).success).toBe(false);
+  });
+
   it('requires matching password confirmation', () => {
     const rejected = changePasswordSchema.safeParse({
       currentPassword: 'current-password',

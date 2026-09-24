@@ -143,3 +143,31 @@ test('Admin email diagnostics uses the real server configuration fields', () => 
   assert.doesNotMatch(source, /diagnostics\.apiKeyValid/);
   assert.doesNotMatch(source, /diagnostics\.domainVerified/);
 });
+
+
+test('Milestone B removes RSVP actions from EventDetail', () => {
+  const source = readFileSync(join(SRC, 'pages', 'EventDetail.jsx'), 'utf8');
+  assert.doesNotMatch(source, /handleRsvp|I'll Attend|Can't Make It|Your RSVP/);
+  assert.match(source, /Attendance Requirement/);
+  assert.match(source, /Invite Only|inviteOnly/);
+});
+
+test('Admin event creation supports PUBLIC and INVITE_ONLY with selected user IDs', () => {
+  const source = readFileSync(join(SRC, 'pages', 'AdminEvents.jsx'), 'utf8');
+  assert.match(source, /visibility:\s*'PUBLIC'/);
+  assert.match(source, /INVITE_ONLY/);
+  assert.match(source, /selectedUserIds/);
+  assert.match(source, /adminEventParticipantsService\.invite/);
+});
+
+test('Operator uses least-privilege staff user directory instead of admin users endpoint', () => {
+  const source = readFileSync(join(SRC, 'pages', 'Operator.jsx'), 'utf8');
+  assert.match(source, /authService\.getStaffUsers/);
+  assert.doesNotMatch(source, /authService\.getUsers\(\)/);
+});
+
+test('Participant invitation client sends userIds, not email payloads', () => {
+  const source = readFileSync(join(SRC, 'services', 'adminEventParticipantsService.js'), 'utf8');
+  assert.match(source, /\{\s*userIds\s*\}/);
+  assert.doesNotMatch(source, /\{\s*emails\s*\}/);
+});

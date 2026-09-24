@@ -13,6 +13,8 @@ import EmptyState from '../components/ui/EmptyState';
 import LoadingState from '../components/ui/LoadingState';
 import Modal from '../components/ui/Modal';
 import { eventService } from '../services/eventService';
+import { authService } from '../services/authService';
+import { adminEventParticipantsService } from '../services/adminEventParticipantsService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const initialForm = {
@@ -21,6 +23,7 @@ const initialForm = {
   location: '',
   startAt: '',
   endAt: '',
+  visibility: 'PUBLIC',
 };
 
 function formatSchedule(evt) {
@@ -42,6 +45,10 @@ export default function AdminEvents() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [openingId, setOpeningId] = useState(null);
+  const [inviteUsers, setInviteUsers] = useState([]);
+  const [inviteSearch, setInviteSearch] = useState('');
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [loadingInviteUsers, setLoadingInviteUsers] = useState(false);
   const [alert, setAlert] = useState(null); // { type, message }
 
   const loadEvents = useCallback(async () => {
@@ -62,6 +69,23 @@ export default function AdminEvents() {
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  useEffect(() => {
+    if (!createModal || form.visibility !== 'INVITE_ONLY') return;
+    let active = true;
+    setLoadingInviteUsers(true);
+    authService.getStaffUsers(inviteSearch)
+      .then((res) => {
+        if (active) setInviteUsers(res.users || []);
+      })
+      .catch(() => {
+        if (active) setInviteUsers([]);
+      })
+      .finally(() => {
+        if (active) setLoadingInviteUsers(false);
+      });
+    return () => { active = false; };
+  }, [createModal, form.visibility, inviteSearch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,16 +112,24 @@ export default function AdminEvents() {
 
     setCreating(true);
     try {
-      await eventService.create({
+      const created = await eventService.create({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
         location: form.location.trim() || undefined,
+        visibility: form.visibility,
         startAt: startDate.toISOString(),
         endAt: endDate.toISOString(),
         status: 'DRAFT',
       });
 
+      if (form.visibility === 'INVITE_ONLY' && selectedUserIds.length > 0) {
+        await adminEventParticipantsService.invite(created.event.id, selectedUserIds);
+      }
+
       setForm(initialForm);
+      setSelectedUserIds([]);
+      setInviteSearch('');
+      setInviteUsers([]);
       setCreateModal(false);
       setAlert({
         type: 'success',
@@ -210,7 +242,16 @@ export default function AdminEvents() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-bold text-white text-base leading-snug">{evt.name}</h3>
-                      <StatusBadge status={evt.status} />
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${
+                          evt.visibility === 'INVITE_ONLY'
+                            ? 'border-purple-500/30 bg-purple-500/10 text-purple-300'
+                            : 'border-blue-500/30 bg-blue-500/10 text-blue-300'
+                        }`}>
+                          {evt.visibility === 'INVITE_ONLY' ? 'Invite Only' : 'Public'}
+                        </span>
+                        <StatusBadge status={evt.status} />
+                      </div>
                     </div>
                     {evt.description && (
                       <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{evt.description}</p>
@@ -280,6 +321,59 @@ export default function AdminEvents() {
           <p className="text-[11px] text-slate-500">
             Times are shown in <strong className="text-slate-400">{timezoneLabel}</strong> and stored in UTC internally.
           </p>
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Access</label>
+            <select
+              value={form.visibility}
+              onChange={(e) => {
+                const visibility = e.target.value;
+                setForm({ ...form, visibility });
+                if (visibility === 'PUBLIC') setSelectedUserIds([]);
+              }}
+              className="w-full px-3 py-2.5 rounded-lg border border-slate-700 bg-slate-900 text-white text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="PUBLIC">Public — any active user may attend</option>
+              <option value="INVITE_ONLY">Invite Only — selected users are expected</option>
+            </select>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Public events never count as missed attendance. Invite-only events become required attendance for selected users after the event closes.
+            </p>
+          </div>
+          {form.visibility === 'INVITE_ONLY' && (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 space-y-3">
+              <Input
+                label="Search participants"
+                placeholder="Search by name or email..."
+                value={inviteSearch}
+                onChange={(e) => setInviteSearch(e.target.value)}
+              />
+              <div className="max-h-44 overflow-y-auto space-y-1">
+                {loadingInviteUsers ? (
+                  <p className="text-xs text-slate-500 py-2">Searching active users...</p>
+                ) : inviteUsers.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-2">No active users found.</p>
+                ) : (
+                  inviteUsers.map((u) => {
+                    const checked = selectedUserIds.includes(u.id);
+                    return (
+                      <label key={u.id} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-slate-800/70 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setSelectedUserIds((prev) => checked ? prev.filter((id) => id !== u.id) : [...prev, u.id])}
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm text-slate-200 truncate">{u.firstName} {u.lastName}</span>
+                          <span className="block text-xs text-slate-500 truncate">{u.email}</span>
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+              <p className="text-xs text-purple-300">{selectedUserIds.length} selected participant{selectedUserIds.length === 1 ? '' : 's'}</p>
+            </div>
+          )}
           <Input
             label="Location (optional)"
             placeholder="e.g. Makati City, Philippines"
@@ -345,12 +439,16 @@ export default function AdminEvents() {
                     <div className="py-2.5 flex justify-between gap-2">
                       <span className="text-xs text-slate-400">Creator</span>
                       <span className="text-sm text-slate-200">
-                        {detailEvent.createdBy ? `User #${detailEvent.createdBy}` : 'System'}
+                        {detailEvent.creator?.email || (detailEvent.createdBy ? `User #${detailEvent.createdBy}` : 'System')}
                       </span>
                     </div>
                     <div className="py-2.5 flex justify-between gap-2">
-                      <span className="text-xs text-slate-400">Participants</span>
-                      <span className="text-sm text-slate-200">{detailEvent.participantCount ?? 0}</span>
+                      <span className="text-xs text-slate-400">Access</span>
+                      <span className="text-sm text-slate-200">{detailEvent.visibility === 'INVITE_ONLY' ? 'Invite Only' : 'Public'}</span>
+                    </div>
+                    <div className="py-2.5 flex justify-between gap-2">
+                      <span className="text-xs text-slate-400">Required Participants</span>
+                      <span className="text-sm text-slate-200">{detailEvent.visibility === 'INVITE_ONLY' ? (detailEvent.participantCount ?? 0) : 'Not required'}</span>
                     </div>
                     <div className="py-2.5 flex justify-between gap-2">
                       <span className="text-xs text-slate-400">Attendance Records</span>

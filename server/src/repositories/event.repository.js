@@ -1,10 +1,13 @@
 import pool from './db.js';
 
+let visibilitySupportCache = null;
+
 const mapEvent = (row) => row && ({
   id: row.id,
   name: row.name,
   description: row.description,
   location: row.location,
+  visibility: row.visibility || 'PUBLIC',
   startAt: row.start_at,
   endAt: row.end_at,
   status: row.status,
@@ -29,7 +32,27 @@ const mapEvent = (row) => row && ({
   } : null,
 });
 
+async function supportsVisibility(client = pool) {
+  // Cache only a confirmed supported schema. A false result is rechecked so
+  // migration 008 can be applied after deployment without requiring a restart.
+  if (visibilitySupportCache === true && client === pool) return true;
+  const result = await client.query(`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = current_schema()
+        AND table_name = 'events'
+        AND column_name = 'visibility'
+    ) AS supported;
+  `);
+  const supported = Boolean(result.rows[0]?.supported);
+  if (client === pool && supported) visibilitySupportCache = true;
+  return supported;
+}
+
 export const eventRepository = {
+  supportsVisibility,
+
   async findAll() {
     const result = await pool.query(`
       SELECT e.*,
@@ -101,21 +124,54 @@ export const eventRepository = {
     return mapEvent(result.rows[0]);
   },
 
-  async create({ name, description, location, startAt, endAt, status, createdBy }) {
-    const result = await pool.query(`
-      INSERT INTO events (name, description, location, start_at, end_at, status, created_by)
-      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;
-    `, [name, description || null, location || null, startAt, endAt, status, createdBy]);
+  async create({ name, description, location, visibility = 'PUBLIC', startAt, endAt, status, createdBy }) {
+    if (visibility === 'INVITE_ONLY' && !(await supportsVisibility())) {
+      const error = new Error('Invite-only events require database migration 008 before they can be created.');
+      error.status = 503;
+      error.code = 'EVENT_VISIBILITY_SCHEMA_REQUIRED';
+      error.expose = true;
+      throw error;
+    }
+
+    const visibilitySupported = await supportsVisibility();
+    const result = visibilitySupported
+      ? await pool.query(`
+          INSERT INTO events (name, description, location, visibility, start_at, end_at, status, created_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id;
+        `, [name, description || null, location || null, visibility, startAt, endAt, status, createdBy])
+      : await pool.query(`
+          INSERT INTO events (name, description, location, start_at, end_at, status, created_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;
+        `, [name, description || null, location || null, startAt, endAt, status, createdBy]);
+
     return result.rows[0] ? this.findById(result.rows[0].id) : null;
   },
 
   async update(id, fields) {
-    const result = await pool.query(`
-      UPDATE events SET name = COALESCE($1, name), description = COALESCE($2, description),
-        location = COALESCE($3, location), start_at = COALESCE($4, start_at),
-        end_at = COALESCE($5, end_at), status = COALESCE($6, status), updated_at = NOW()
-      WHERE id = $7 RETURNING id;
-    `, [fields.name, fields.description, fields.location, fields.startAt, fields.endAt, fields.status, id]);
+    const visibilitySupported = await supportsVisibility();
+    if (fields.visibility === 'INVITE_ONLY' && !visibilitySupported) {
+      const error = new Error('Invite-only events require database migration 008 before they can be enabled.');
+      error.status = 503;
+      error.code = 'EVENT_VISIBILITY_SCHEMA_REQUIRED';
+      error.expose = true;
+      throw error;
+    }
+
+    const result = visibilitySupported
+      ? await pool.query(`
+          UPDATE events SET name = COALESCE($1, name), description = COALESCE($2, description),
+            location = COALESCE($3, location), start_at = COALESCE($4, start_at),
+            end_at = COALESCE($5, end_at), status = COALESCE($6, status),
+            visibility = COALESCE($7, visibility), updated_at = NOW()
+          WHERE id = $8 RETURNING id;
+        `, [fields.name, fields.description, fields.location, fields.startAt, fields.endAt, fields.status, fields.visibility, id])
+      : await pool.query(`
+          UPDATE events SET name = COALESCE($1, name), description = COALESCE($2, description),
+            location = COALESCE($3, location), start_at = COALESCE($4, start_at),
+            end_at = COALESCE($5, end_at), status = COALESCE($6, status), updated_at = NOW()
+          WHERE id = $7 RETURNING id;
+        `, [fields.name, fields.description, fields.location, fields.startAt, fields.endAt, fields.status, id]);
+
     return result.rows[0] ? this.findById(result.rows[0].id) : null;
   },
 };
