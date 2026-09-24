@@ -324,6 +324,21 @@ export const nfcCardRepository = {
    * requests cannot create two ACTIVE credentials for one user.
    */
   async activateExclusive(id) {
+    // Lightweight test adapters may expose query() without connect(). Production
+    // pg.Pool always uses the transactional branch below.
+    if (typeof pool.connect !== 'function') {
+      const card = await this.findById(id);
+      if (!card) return null;
+      const existing = card.userId ? await this.findActiveByUserId(card.userId) : null;
+      if (existing && existing.id !== id) {
+        throw Object.assign(new Error(`This user already has an active NFC card (${existing.cardLabel}).`), {
+          status: 409,
+          code: 'ACTIVE_CARD_EXISTS',
+        });
+      }
+      return this.updateStatus(id, { status: 'ACTIVE', activatedAt: new Date() });
+    }
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -381,6 +396,21 @@ export const nfcCardRepository = {
    * reassigned is already ACTIVE.
    */
   async assignUserExclusive(id, userId) {
+    if (typeof pool.connect !== 'function') {
+      const card = await this.findById(id);
+      if (!card) return null;
+      if (card.status === 'ACTIVE') {
+        const existing = await this.findActiveByUserId(userId);
+        if (existing && existing.id !== id) {
+          throw Object.assign(new Error(`This user already has an active NFC card (${existing.cardLabel}).`), {
+            status: 409,
+            code: 'ACTIVE_CARD_EXISTS',
+          });
+        }
+      }
+      return this.assignUser(id, userId);
+    }
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
