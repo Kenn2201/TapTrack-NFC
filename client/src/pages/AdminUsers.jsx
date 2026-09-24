@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/authService';
-import Header from '../components/layout/Header';
 import AdminWorkspaceNav from '../components/layout/AdminWorkspaceNav';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
@@ -175,7 +174,6 @@ export default function AdminUsers() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Header />
       <AdminWorkspaceNav />
 
       <PageContainer maxWidth="max-w-7xl">
