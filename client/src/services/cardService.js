@@ -4,6 +4,10 @@ import { buildUrlCheckInRequest } from '../utils/attendanceContext';
 
 export const cardService = {
   getMyCard: () => api.get('/users/me/card'),
+  getMyRequests: () => api.get('/users/me/card-requests'),
+  createRequest: (data) => api.post('/users/me/card-requests', data),
+  getAdminRequests: (status = '') => api.get('/admin/card-requests', { params: status ? { status } : {} }),
+  updateRequestStatus: (id, data) => api.patch(`/admin/card-requests/${id}/status`, data),
   getAll: (params = '') => api.get(`/admin/cards${params ? `?${params}` : ''}`),
   getById: (id) => api.get(`/admin/cards/${id}`),
   provision: (data) => api.post('/admin/cards/provision', data),

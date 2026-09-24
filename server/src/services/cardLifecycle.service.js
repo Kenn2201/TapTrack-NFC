@@ -61,11 +61,13 @@ export const cardLifecycleService = {
     }
     let updated;
     try {
-      updated = await nfcCardRepository.updateLifecycle(cardId, {
-        status: targetStatus,
-        actorId: actor.id,
-        reason: trimmedReason,
-      });
+      updated = targetStatus === 'ACTIVE'
+        ? await nfcCardRepository.activateExclusive(cardId)
+        : await nfcCardRepository.updateLifecycle(cardId, {
+            status: targetStatus,
+            actorId: actor.id,
+            reason: trimmedReason,
+          });
     } catch (dbErr) {
       throw mapDbError(dbErr);
     }

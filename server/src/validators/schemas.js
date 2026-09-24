@@ -112,8 +112,15 @@ export const inviteParticipantsSchema = z.object({
   userIds: z.array(z.number().int().positive()).min(1),
 });
 
-export const rsvpSchema = z.object({
-  status: z.enum(['ACCEPTED', 'DECLINED']),
+// ─── NFC CARD REQUESTS (v1.2.0) ───────────────────────────────────────
+export const createCardRequestSchema = z.object({
+  requestType: z.enum(['SETUP', 'REPLACEMENT']),
+  note: z.string().trim().max(1000).optional().nullable(),
+});
+
+export const updateCardRequestStatusSchema = z.object({
+  status: z.enum(['PENDING', 'IN_REVIEW', 'FULFILLED', 'REJECTED']),
+  adminNote: z.string().trim().max(1000).optional().nullable(),
 });
 
 // ─── NFC REISSUE (v1.1.0) ────────────────────────────────────────────

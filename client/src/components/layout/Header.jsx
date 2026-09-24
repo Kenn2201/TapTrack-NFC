@@ -2,11 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { CURRENT_VERSION_LABEL } from '../../constants/version';
+import { useTheme } from '../../hooks/useTheme';
+import ReleaseNotesModal from '../ReleaseNotesModal';
 
 export default function Header() {
   const { user, authenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { preference: themePreference, setPreference: setThemePreference } = useTheme();
+  const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
 
   // Desktop dropdown state: null | 'operator' | 'admin' | 'user'
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -127,9 +131,14 @@ export default function Header() {
               </span>
             </Link>
 
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/30 tracking-tight">
+            <button
+              type="button"
+              onClick={() => setReleaseNotesOpen(true)}
+              className="inline-flex min-h-[32px] items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/30 tracking-tight hover:bg-blue-500/20"
+              aria-label={`Open What's New for ${CURRENT_VERSION_LABEL}`}
+            >
               {CURRENT_VERSION_LABEL}
-            </span>
+            </button>
           </div>
 
           {/* Desktop Navigation */}
@@ -300,6 +309,39 @@ export default function Header() {
                           Audit Logs
                         </Link>
                         <Link
+                          to="/admin/feedback"
+                          role="menuitem"
+                          className={`flex items-center px-4 py-2.5 text-sm transition-colors ${
+                            isActive('/admin/feedback')
+                              ? 'text-cyan-400 font-semibold bg-slate-800/80'
+                              : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                          }`}
+                        >
+                          Feedback
+                        </Link>
+                        <Link
+                          to="/admin/email"
+                          role="menuitem"
+                          className={`flex items-center px-4 py-2.5 text-sm transition-colors ${
+                            isActive('/admin/email')
+                              ? 'text-cyan-400 font-semibold bg-slate-800/80'
+                              : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                          }`}
+                        >
+                          Email Suite
+                        </Link>
+                        <Link
+                          to="/admin/platform"
+                          role="menuitem"
+                          className={`flex items-center px-4 py-2.5 text-sm transition-colors ${
+                            isActive('/admin/platform')
+                              ? 'text-cyan-400 font-semibold bg-slate-800/80'
+                              : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                          }`}
+                        >
+                          Platform Settings
+                        </Link>
+                        <Link
                           to="/operator/benchmark"
                           role="menuitem"
                           className={`flex items-center px-4 py-2.5 text-sm transition-colors ${
@@ -320,6 +362,18 @@ export default function Header() {
 
           {/* Right Section: Desktop User Dropdown OR Auth buttons */}
           <div className="hidden md:flex items-center space-x-3">
+            <label className="sr-only" htmlFor="taptrack-theme">Theme</label>
+            <select
+              id="taptrack-theme"
+              value={themePreference}
+              onChange={(e) => setThemePreference(e.target.value)}
+              className="min-h-[40px] rounded-lg border border-slate-700 bg-slate-800 px-2 text-xs font-semibold text-slate-200"
+              title="Theme"
+            >
+              <option value="system">System</option>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
             {authenticated ? (
               <div className="relative">
                 <button
@@ -387,6 +441,23 @@ export default function Header() {
                     >
                       Attendance History / Activity Pulse
                     </Link>
+
+                    <Link
+                      to="/feedback"
+                      role="menuitem"
+                      className="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors"
+                    >
+                      Help & Feedback
+                    </Link>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => { setActiveDropdown(null); setReleaseNotesOpen(true); }}
+                      className="w-full flex items-center px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors text-left"
+                    >
+                      What's New
+                    </button>
 
                     <div className="my-1 border-t border-slate-800" />
 
@@ -594,10 +665,28 @@ export default function Header() {
                           Audit Logs
                         </Link>
                         <Link
+                          to="/admin/feedback"
+                          className={getNavLinkClass('/admin/feedback')}
+                        >
+                          Feedback
+                        </Link>
+                        <Link
+                          to="/admin/email"
+                          className={getNavLinkClass('/admin/email')}
+                        >
+                          Email Suite
+                        </Link>
+                        <Link
+                          to="/admin/platform"
+                          className={getNavLinkClass('/admin/platform')}
+                        >
+                          Platform Settings
+                        </Link>
+                        <Link
                           to="/operator/benchmark"
                           className={getNavLinkClass('/operator/benchmark')}
                         >
-                          Benchmark
+                          Timing Tool
                         </Link>
                       </div>
                     </div>
@@ -615,6 +704,31 @@ export default function Header() {
                       >
                         Profile
                       </Link>
+                      <Link
+                        to="/feedback"
+                        className={getNavLinkClass('/feedback', true)}
+                      >
+                        Help & Feedback
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => { setMobileDrawerOpen(false); setReleaseNotesOpen(true); }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 min-h-[44px]"
+                      >
+                        What's New
+                      </button>
+                      <label className="block px-3 pt-2 text-xs text-slate-400">
+                        Theme
+                        <select
+                          value={themePreference}
+                          onChange={(e) => setThemePreference(e.target.value)}
+                          className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-200"
+                        >
+                          <option value="system">System</option>
+                          <option value="dark">Dark</option>
+                          <option value="light">Light</option>
+                        </select>
+                      </label>
                       <button
                         type="button"
                         onClick={handleLogout}
@@ -651,6 +765,11 @@ export default function Header() {
           </aside>
         </div>
       )}
+      <ReleaseNotesModal
+        open={releaseNotesOpen}
+        onClose={() => setReleaseNotesOpen(false)}
+        auto={authenticated}
+      />
     </header>
   );
 }

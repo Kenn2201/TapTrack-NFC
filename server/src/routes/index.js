@@ -12,6 +12,7 @@ import { platformController } from '../controllers/platform.controller.js';
 import { feedbackController } from '../controllers/feedback.controller.js';
 import { emailController } from '../controllers/email.controller.js';
 import { eventParticipantsController } from '../controllers/eventParticipants.controller.js';
+import { cardRequestController } from '../controllers/cardRequest.controller.js';
 
 
 
@@ -48,6 +49,8 @@ emailSendSchema,
 emailBroadcastSchema,
 inviteParticipantsSchema,
 reissueCardSchema,
+createCardRequestSchema,
+updateCardRequestStatusSchema,
 } from '../validators/schemas.js';
 
 const router = Router();
@@ -69,6 +72,8 @@ router.post('/users/me/password', authLimiter, authenticate, validate(changePass
 router.get('/users/me/attendance', authenticate, attendanceController.getUserHistory);
 router.get('/users/me/activity-pulse', authenticate, activityPulseController.get);
 router.get('/users/me/card', authenticate, cardController.getMine);
+router.get('/users/me/card-requests', authenticate, cardRequestController.listMine);
+router.post('/users/me/card-requests', authenticate, validate(createCardRequestSchema), cardRequestController.createMine);
 
 // ─── ADMIN — USERS & ROLES (v0.2.0) ───────────────────────────────────────────
 router.get('/staff/users', authenticate, requireRole('ADMIN', 'OPERATOR'), adminUserController.searchStaffUsers);
@@ -105,6 +110,8 @@ router.patch('/admin/cards/:id/activate', authenticate, requireRole('ADMIN'), va
 router.patch('/admin/cards/:id/assign', authenticate, requireRole('ADMIN'), validate(assignCardSchema), cardController.assign);
 router.post('/admin/cards/:id/assign', authenticate, requireRole('ADMIN'), validate(assignCardSchema), cardController.assign);
 router.patch('/admin/cards/:id/lifecycle', authenticate, requireRole('ADMIN'), validate(cardLifecycleSchema), cardController.lifecycle);
+router.get('/admin/card-requests', authenticate, requireRole('ADMIN'), cardRequestController.listAdmin);
+router.patch('/admin/card-requests/:id/status', authenticate, requireRole('ADMIN'), validate(updateCardRequestStatusSchema), cardRequestController.updateStatus);
 
 // ─── PLATFORM — MAINTENANCE STATUS (public) & CONTROL (v1.1.0) ───────────────
 router.get('/platform/maintenance-status', platformController.getStatus);

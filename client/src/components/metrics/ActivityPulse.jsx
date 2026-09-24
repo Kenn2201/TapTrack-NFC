@@ -30,11 +30,11 @@ export default function ActivityPulse({ metrics, loading = false }) {
       ? `${metrics.attendanceRate}%`
       : metrics?.attendanceRateLabel && metrics.attendanceRateLabel !== 'N/A'
       ? metrics.attendanceRateLabel
-      : 'Pending';
+      : 'No required events yet';
 
   const attendanceRateExplanation =
     metrics?.attendanceRateReason ||
-    'Not enough eligible events yet. Attendance rate appears once TapTrack has events where your attendance eligibility is known.';
+    'Attendance rate starts after you have at least one closed invite-only event where you were invited. Public events do not count as missed attendance.';
 
   const safeCurrentStreak = typeof metrics?.currentStreak === 'number' && !isNaN(metrics.currentStreak)
     ? `${metrics.currentStreak} ${metrics.currentStreak === 1 ? 'week' : 'weeks'}`

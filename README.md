@@ -2,7 +2,7 @@
 
 > **A mobile-first NFC attendance technology proof-of-concept exploring reusable physical NFC credentials as an extension/alternative to parts of traditional QR-code and manual attendance workflows.**
 
-[![Version](https://img.shields.io/badge/version-1.1.0%20RC-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.2.0%20RC-blue)](CHANGELOG.md)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-green)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
@@ -40,7 +40,7 @@ Traditional attendance workflows rely on:
 │                    ATTENDANCE ACQUISITION                        │
 ├──────────────────┬────────────────────┬────────────────────────┤
 │   NFC WEB        │   NFC URL          │   MANUAL                 │
-│   (Android)      │   (iPhone / All)   │   (Operator)             │
+│   (Android*)     │   (iPhone / All)   │   (Operator)             │
 ├──────────────────┼────────────────────┼────────────────────────┤
 │ Web NFC API      │ Universal Link     │ Operator selects         │
 │ Chrome 89+       │ `/t#<token>`       │ user from dropdown       │
@@ -48,6 +48,8 @@ Traditional attendance workflows rely on:
 │ Requires HTTPS   │ No app install     │ Requires OPERATOR/ADMIN  │
 └──────────────────┴────────────────────┴────────────────────────┘
 ```
+
+*Android Web NFC is implemented for compatible Chromium browsers; physical NDEFReader acceptance remains pending.*
 
 All three methods converge on the **same shared attendance engine** (`AttendanceService.record`):
 - Resolves user/card identity
@@ -98,9 +100,17 @@ Event (OPEN/CLOSED/CANCELLED)
 
 | Role | Capabilities |
 |------|--------------|
-| **USER** | View profile, submit feedback, RSVP to events, view own card/history |
+| **USER** | View profile, submit feedback, view public/invited events, own card/requests, and attendance history |
 | **OPERATOR** | Open/close sessions, manual attendance, NFC scanner, iPhone mode |
 | **ADMIN** | All operator + user management, card provisioning, events, audit logs, platform maintenance, email suite, feedback triage |
+
+### Event Visibility & Attendance Expectations
+
+- **PUBLIC:** visible to active users; no RSVP; attendance is optional check-in. Not attending does not lower Attendance Rate.
+- **INVITE_ONLY:** administrators select required participants. Invited users are expected to attend; attendance is evaluated after the event closes.
+- **Attendance Rate:** attended closed invite-only required events ÷ closed invite-only events the user was invited to.
+- If there are no eligible required events, the UI shows **No required events yet**.
+
 
 ---
 
@@ -136,11 +146,11 @@ Event (OPEN/CLOSED/CANCELLED)
 ### Tested Cards
 | Card | Standard | Memory | Test Status |
 |------|----------|--------|-------------|
-| **NTAG215** | NFC Forum Type 2, ISO 14443-3A | 504 bytes | **NFC-001 PENDING (Android Web NFC)** |
+| **NTAG215** | NFC Forum Type 2, ISO 14443-3A | 504 bytes | iPhone NFC URL PASSED; Android Web NFC physical validation PENDING |
 | NTAG213 | NFC Forum Type 2 | 144 bytes | Compatible |
 | NTAG216 | NFC Forum Type 2 | 888 bytes | Compatible |
 
-**NFC-001** — First production test card, verified on Android Chrome Web NFC.
+**NFC-001** — Primary physical validation card. iPhone public verification, authenticated NFC URL attendance, and duplicate-tap handling have passed. Physical Android NDEFReader/Web NFC validation remains pending. NFC-001 must not be automatically rotated, reissued, replaced, rewritten, or lifecycle-modified.
 
 ### Infrastructure
 - **Server**: Node.js 20+, Express 5, PostgreSQL (pg)
@@ -171,7 +181,7 @@ project-6-nfc/
 │   │   │   ├── AdminEmail.jsx       # Email suite (direct/broadcast/diagnostics)
 │   │   │   ├── AdminEvents.jsx      # Event management
 │   │   │   ├── AdminCards.jsx       # Card provisioning, lifecycle, reissue
-│   │   │   ├── EventDetail.jsx      # Event info, participants, RSVP
+│   │   │   ├── EventDetail.jsx      # Event info and required participants
 │   │   │   ├── Operator.jsx         # Operator console
 │   │   │   ├── NfcReaderPage.jsx    # Web NFC scanner
 │   │   │   ├── MaintenanceScreen.jsx # Maintenance mode UX
@@ -385,67 +395,59 @@ cd client && npm run build
 ### Event Participants
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/admin/events/:id/participants/invite` | ADMIN | Invite participants |
-| GET | `/api/admin/events/:id/participants` | ADMIN | List participants |
-| POST | `/api/events/:id/participants/rsvp` | User | RSVP (Accept/Decline) |
+| POST | `/api/admin/events/:id/participants/invite` | ADMIN | Add required participants to an invite-only event |
+| GET | `/api/admin/events/:id/participants` | ADMIN/OPERATOR | List required participants |
+| GET | `/api/users/me/card-requests` | User | View own NFC setup/replacement requests |
+| POST | `/api/users/me/card-requests` | User | Create NFC setup/replacement request |
+| GET | `/api/admin/card-requests` | ADMIN | Review NFC card request queue |
 
 ---
 
 ## Database Migrations
 
-Migrations are in `server/database/migrations/` and must be applied in order.
+Migrations are stored in `database/migrations/` and are production-controlled.
 
-**Critical: Migration 007** (`007_v1.1.0_saas_pass.sql`) adds tables for:
-- `feedback` — user feedback submissions
-- `event_participants` — event invitations and RSVPs
-- `platform_settings` — maintenance mode and message
-- Email audit columns
+- **007 — v1.1.0 SaaS pass:** already applied to production Neon. **Do not rerun it.**
+- **008 — event visibility:** adds `PUBLIC` / `INVITE_ONLY` events. Existing events default to `PUBLIC`.
+- **009 — card requests / one-active-card guard:** adds the dedicated setup/replacement queue and a unique database guard for one ACTIVE NFC card per user.
 
-**⚠️ PRODUCTION MIGRATION 007 REQUIRED BEFORE MASTER DEPLOYMENT**
+Migrations 008 and 009 must be applied before full production QA of their dependent v1.2 features. Migration 009 deliberately stops if legacy duplicate ACTIVE cards exist; resolve those lifecycle states manually rather than auto-modifying card history.
 
-The new master code depends on these tables. Do not deploy master until migration 007 is confirmed applied in production Neon.
-
-```bash
-# Apply migrations
-cd server && npm run migrate
-```
+No test, CI job, or client flow should auto-apply production migrations.
 
 ---
 
 ## Version Synchronization
 
-Release `v1.1.0` requires synchronized versions across:
+Release `v1.2.0 RC` is synchronized across:
 
 | File | Version |
 |------|---------|
-| `client/src/constants/version.js` | `1.1.0` |
-| `client/package.json` | `1.1.0` |
-| `server/package.json` | `1.1.0` |
-| `CHANGELOG.md` | `[1.1.0]` entry |
-| `README.md` | Updated |
+| `client/src/constants/version.js` | `1.2.0` |
+| `client/package.json` | `1.2.0` |
+| `server/package.json` | `1.2.0` |
+| `CHANGELOG.md` | `[1.2.0]` entry |
+| `VERSIONING.md` | `v1.2.0 RC` |
 
-**Release State:** `Release Candidate — pending human acceptance`
+**Release State:** Release Candidate — manual QA pending.
 
-**v1.1.0 RC — Production Repair + UX Pass** (see [CHANGELOG](CHANGELOG.md)): landing terminology glossary, branded login, auth-initialization screen, route reveal transitions, Profile redesign (avatar/edit modal/birthday/Member ID), My Card terminology + setup/replacement request workflow, friendly attendance-rate state, Admin Events redesign (create modal, event cards, detail modal, lifecycle-gated actions), Admin Users detail modal, Audit Logs redesign (humanized actions, filters, exports), deterministic event lifecycle reconciliation, responsive safe-area hardening, and a benchmark route-guard regression test. No new database migration was introduced by this pass.
+Current v1.2 work includes the public/invite-only event model, required-event Attendance Rate, NFC setup/replacement request queue, one-active-card safety guard, theme/What's New/legal surfaces, profile and compatibility improvements, and expanded administration workflows.
 
 ---
 
 ## Release Checklist
 
-- [ ] `node --check server/src/routes/index.js` → success
-- [ ] `cd server && npm test` → 153/153 passed, exit 0
-- [ ] `cd client && npm test` → 59/59 passed, exit 0
-- [ ] `cd client && npm run build` → pass
-- [ ] `cd client && npm run lint` → 0 errors
-- [ ] `npm audit` (both) → 0 vulnerabilities
-- [ ] `git diff --check` → clean
-- [ ] Secret scan → no secrets in tracked files
-- [ ] `node generate-vault.cjs` → pass
-- [ ] Commit on `kenn/develop`
-- [ ] Push `origin/kenn/develop`
-- [ ] **Wait for production migration 007 confirmation**
-- [ ] Merge `kenn/develop` → `master` (fast-forward only)
-- [ ] **Do not tag, do not create GitHub Release, do not mark LIVE**
+- [x] Server test suite → 14/14 files, 181/181 tests passed in GitHub Actions
+- [x] Client test suite → 82/82 tests passed in GitHub Actions
+- [x] Client production build → passed
+- [x] Client lint → 0 errors (24 warnings remain for later cleanup)
+- [x] npm audit (server/client) → 0 vulnerabilities
+- [ ] Apply migration 008 to production Neon before invite-only QA
+- [ ] Apply migration 009 to production Neon before card-request/one-active-card QA
+- [ ] Human QA for v1.2.0 RC
+- [ ] Android physical NDEFReader acceptance
+- [ ] Merge `kenn/develop` → `master` only after QA approval
+- [ ] **Do not tag, do not create GitHub Release, do not mark LIVE before acceptance**
 
 ---
 
@@ -462,7 +464,7 @@ Release `v1.1.0` requires synchronized versions across:
 | **Session version** | Counter incremented when user changes password/role; invalidates old sessions |
 | **HttpOnly cookie** | Cookie inaccessible to JavaScript; prevents XSS theft |
 | **SHA-256** | Cryptographic hash function; one-way, collision-resistant |
-| **Audit log** | Immutable record of who did what, when, with what metadata |
+| **Audit log** | Sanitized administrative activity history showing who did what and when |
 | **Rate limiting** | Max requests per time window per IP/user |
 | **Migration** | Versioned SQL script to evolve database schema |
 | **NTAG215** | NFC Forum Type 2 tag, 504 bytes user memory, 7-byte UID |
@@ -471,14 +473,15 @@ Release `v1.1.0` requires synchronized versions across:
 
 ## Physical Validation Status
 
-| Test | Device | Method | Status |
-|------|--------|--------|--------|
-| NFC-001 | Android 13 / Chrome 119 | Web NFC | **PENDING** |
-| NFC-001 | iPhone 15 / iOS 17 | NFC URL (`/t#`) | PENDING |
-| NFC-001 | Android 13 / Chrome 119 | NDEFReader (native) | PENDING |
-| Manual | Operator console | Manual dropdown | VERIFIED |
+| Test | Method | Status |
+|------|--------|--------|
+| NFC-001 public tap | iPhone Safari NFC URL verification | **PASSED** — safe resolve only, no attendance |
+| NFC-001 authenticated tap | iPhone Safari NFC URL attendance | **PASSED** |
+| NFC-001 duplicate tap | Same session duplicate protection | **PASSED** — Already Recorded, no duplicate row |
+| Android physical scan | Web NFC / NDEFReader | **PENDING** |
+| Manual attendance | Operator console | Verified by automated workflow tests; human v1.2 QA still pending |
 
-**Do not claim** physical NDEFReader or iPhone NFC_URL as passed until verified.
+Do not claim physical Android NDEFReader/Web NFC as passed until that acceptance test is completed.
 
 ---
 

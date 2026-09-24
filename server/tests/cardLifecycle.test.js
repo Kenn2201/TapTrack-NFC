@@ -2,7 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 process.env.CARD_TOKEN_PEPPER = 'test-card-pepper-at-least-32-characters-long';
 process.env.NFC_DOMAIN = 'https://nfc.kenncode.me';
 
-const repo = vi.hoisted(() => ({ findById: vi.fn(), updateLifecycle: vi.fn(), findByCardLabel: vi.fn(), replaceCard: vi.fn() }));
+const repo = vi.hoisted(() => ({
+  findById: vi.fn(),
+  updateLifecycle: vi.fn(),
+  activateExclusive: vi.fn(),
+  findByCardLabel: vi.fn(),
+  replaceCard: vi.fn(),
+}));
 vi.mock('../src/repositories/nfcCard.repository.js', () => ({ nfcCardRepository: repo }));
 vi.mock('../src/services/audit.service.js', () => ({ auditService: { log: vi.fn().mockResolvedValue({}) } }));
 const { cardLifecycleService, CARD_TRANSITIONS } = await import('../src/services/cardLifecycle.service.js');
@@ -16,6 +22,10 @@ describe('v0.7 centralized card lifecycle', () => {
     repo.findById.mockImplementation(async () => ({ ...currentCard }));
     repo.updateLifecycle.mockImplementation(async (id, data) => {
       currentCard = { ...currentCard, id, ...data };
+      return { ...currentCard };
+    });
+    repo.activateExclusive.mockImplementation(async (id) => {
+      currentCard = { ...currentCard, id, status: 'ACTIVE' };
       return { ...currentCard };
     });
     repo.findByCardLabel.mockResolvedValue(null);

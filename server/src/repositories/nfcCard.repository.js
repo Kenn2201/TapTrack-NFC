@@ -320,6 +320,143 @@ export const nfcCardRepository = {
   },
 
   /**
+   * Activate/reactivate a card while serializing by user so two concurrent
+   * requests cannot create two ACTIVE credentials for one user.
+   */
+  async activateExclusive(id) {
+    // Lightweight test adapters may expose query() without connect(). Production
+    // pg.Pool always uses the transactional branch below.
+    if (typeof pool.connect !== 'function') {
+      const card = await this.findById(id);
+      if (!card) return null;
+      const existing = card.userId ? await this.findActiveByUserId(card.userId) : null;
+      if (existing && existing.id !== id) {
+        throw Object.assign(new Error(`This user already has an active NFC card (${existing.cardLabel}).`), {
+          status: 409,
+          code: 'ACTIVE_CARD_EXISTS',
+        });
+      }
+      return this.updateStatus(id, { status: 'ACTIVE', activatedAt: new Date() });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const cardResult = await client.query(
+        'SELECT * FROM nfc_cards WHERE id = $1 FOR UPDATE;',
+        [id]
+      );
+      const card = cardResult.rows[0];
+      if (!card) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+      if (!card.user_id) {
+        const error = Object.assign(new Error('Card must be assigned before activation.'), {
+          status: 409,
+          code: 'CARD_UNASSIGNED',
+        });
+        throw error;
+      }
+
+      await client.query('SELECT pg_advisory_xact_lock($1::bigint);', [card.user_id]);
+      const existing = await client.query(
+        `SELECT id, card_label FROM nfc_cards
+         WHERE user_id = $1 AND status = 'ACTIVE' AND id <> $2
+         LIMIT 1;`,
+        [card.user_id, id]
+      );
+      if (existing.rows[0]) {
+        throw Object.assign(
+          new Error(`This user already has an active NFC card (${existing.rows[0].card_label}). Disable, revoke, report lost, or replace it before activating another.`),
+          { status: 409, code: 'ACTIVE_CARD_EXISTS' }
+        );
+      }
+
+      const updated = await client.query(`
+        UPDATE nfc_cards
+        SET status = 'ACTIVE',
+            activated_at = COALESCE(activated_at, NOW()),
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *;
+      `, [id]);
+      await client.query('COMMIT');
+      return updated.rows[0] ? this._mapRow(updated.rows[0]) : null;
+    } catch (error) {
+      try { await client.query('ROLLBACK'); } catch {}
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  /**
+   * Assign a card with the same one-ACTIVE-card guard when the card being
+   * reassigned is already ACTIVE.
+   */
+  async assignUserExclusive(id, userId) {
+    if (typeof pool.connect !== 'function') {
+      const card = await this.findById(id);
+      if (!card) return null;
+      if (card.status === 'ACTIVE') {
+        const existing = await this.findActiveByUserId(userId);
+        if (existing && existing.id !== id) {
+          throw Object.assign(new Error(`This user already has an active NFC card (${existing.cardLabel}).`), {
+            status: 409,
+            code: 'ACTIVE_CARD_EXISTS',
+          });
+        }
+      }
+      return this.assignUser(id, userId);
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const cardResult = await client.query(
+        'SELECT * FROM nfc_cards WHERE id = $1 FOR UPDATE;',
+        [id]
+      );
+      const card = cardResult.rows[0];
+      if (!card) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      await client.query('SELECT pg_advisory_xact_lock($1::bigint);', [userId]);
+      if (card.status === 'ACTIVE') {
+        const existing = await client.query(
+          `SELECT id, card_label FROM nfc_cards
+           WHERE user_id = $1 AND status = 'ACTIVE' AND id <> $2
+           LIMIT 1;`,
+          [userId, id]
+        );
+        if (existing.rows[0]) {
+          throw Object.assign(
+            new Error(`This user already has an active NFC card (${existing.rows[0].card_label}).`),
+            { status: 409, code: 'ACTIVE_CARD_EXISTS' }
+          );
+        }
+      }
+
+      const updated = await client.query(`
+        UPDATE nfc_cards
+        SET user_id = $1, updated_at = NOW()
+        WHERE id = $2
+        RETURNING *;
+      `, [userId, id]);
+      await client.query('COMMIT');
+      return updated.rows[0] ? this._mapRow(updated.rows[0]) : null;
+    } catch (error) {
+      try { await client.query('ROLLBACK'); } catch {}
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  /**
    * Helper to normalize database rows into a structured object
    */
   _mapRow(row) {
