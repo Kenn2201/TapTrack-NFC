@@ -484,6 +484,19 @@ export default function AdminCards() {
                             Provision for User
                           </button>
                         )}
+                        {request.requestType === 'REPLACEMENT' && request.card?.cardLabel && ['PENDING', 'IN_REVIEW'].includes(request.status) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSearch(request.card.cardLabel);
+                              setStatusFilter('ALL');
+                            }}
+                            disabled={busy}
+                            className="min-h-[44px] rounded-lg bg-blue-600 px-3 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+                          >
+                            Find Current Card
+                          </button>
+                        )}
                         {['PENDING', 'IN_REVIEW'].includes(request.status) && (
                           <>
                             <button
