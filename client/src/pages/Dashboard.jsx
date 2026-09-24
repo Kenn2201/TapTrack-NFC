@@ -109,9 +109,13 @@ export default function Dashboard() {
         />
 
         {/* 1. Activity Pulse */}
-        <div className="mb-10">
+        <Link
+          to="/attendance"
+          className="mb-10 block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          aria-label="Open attendance history and Activity Pulse details"
+        >
           <ActivityPulse metrics={activityPulse} loading={loading} />
-        </div>
+        </Link>
 
         {/* 2. Grid: Events, Recent Attendance & My NFC Card */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
