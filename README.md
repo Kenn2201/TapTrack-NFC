@@ -410,8 +410,9 @@ Migrations are stored in `database/migrations/` and are production-controlled.
 - **007 — v1.1.0 SaaS pass:** already applied to production Neon. **Do not rerun it.**
 - **008 — event visibility:** adds `PUBLIC` / `INVITE_ONLY` events. Existing events default to `PUBLIC`.
 - **009 — card requests / one-active-card guard:** adds the dedicated setup/replacement queue and a unique database guard for one ACTIVE NFC card per user.
+- **010 — public feedback:** permits anonymous feedback rows while authenticated feedback remains associated with the submitting account.
 
-Migrations 008 and 009 must be applied before full production QA of their dependent v1.2 features. Migration 009 deliberately stops if legacy duplicate ACTIVE cards exist; resolve those lifecycle states manually rather than auto-modifying card history.
+Migrations 008, 009, and 010 must be applied before full production QA of their dependent v1.2 features. Migration 009 deliberately stops if legacy duplicate ACTIVE cards exist; resolve those lifecycle states manually rather than auto-modifying card history.
 
 No test, CI job, or client flow should auto-apply production migrations.
 
@@ -431,7 +432,7 @@ Release `v1.2.0 RC` is synchronized across:
 
 **Release State:** Release Candidate — manual QA pending.
 
-Current v1.2 work includes the public/invite-only event model, required-event Attendance Rate, NFC setup/replacement request queue, one-active-card safety guard, theme/What's New/legal surfaces, profile and compatibility improvements, and expanded administration workflows.
+Current v1.2 work includes the public/invite-only event model, required-event Attendance Rate, NFC setup/replacement request queue, one-active-card safety guard, shared authenticated/admin/auth shells, theme/What's New/legal surfaces, profile account archiving, public feedback, compatibility improvements, and expanded administration workflows.
 
 ---
 
@@ -444,6 +445,7 @@ Current v1.2 work includes the public/invite-only event model, required-event At
 - [x] npm audit (server/client) → 0 vulnerabilities
 - [ ] Apply migration 008 to production Neon before invite-only QA
 - [ ] Apply migration 009 to production Neon before card-request/one-active-card QA
+- [ ] Apply migration 010 to production Neon before anonymous public-feedback QA
 - [ ] Human QA for v1.2.0 RC
 - [ ] Android physical NDEFReader acceptance
 - [ ] Merge `kenn/develop` → `master` only after QA approval
