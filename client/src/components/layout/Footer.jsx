@@ -32,6 +32,7 @@ export default function Footer() {
               <Link to="/compatibility" className="hover:text-white transition-colors">Compatibility</Link>
               <Link to="/terminology" className="hover:text-white transition-colors">Terminology</Link>
               <Link to="/changelog" className="hover:text-white transition-colors">Release Notes</Link>
+              <Link to="/feedback/public" className="hover:text-white transition-colors">Public Feedback</Link>
               <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link to="/terms" className="hover:text-white transition-colors">Terms of Use</Link>
             </nav>
