@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Header from '../components/layout/Header';
 import { buildBenchmarkResult } from '../utils/testingTools';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 export default function Benchmark() {
