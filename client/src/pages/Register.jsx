@@ -45,7 +45,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-[calc(100vh-8rem)] bg-slate-950 text-slate-100 flex flex-col">
       <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8 bg-slate-900/90 border border-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl backdrop-blur-sm">
           {success ? (
