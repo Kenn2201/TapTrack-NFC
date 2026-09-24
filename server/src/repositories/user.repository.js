@@ -200,6 +200,30 @@ export const userRepository = {
   },
 
   /**
+   * Minimal active-user search for operational attendance/invitations.
+   * Available to ADMIN/OPERATOR through the staff route; never returns secrets.
+   */
+  async searchActiveUsers(search = '', limit = 50) {
+    const normalized = String(search || '').trim();
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+    const result = await pool.query(`
+      SELECT id, email, first_name, last_name, role, status
+      FROM users
+      WHERE status = 'ACTIVE'
+        AND (
+          $1 = '' OR
+          LOWER(email) LIKE LOWER('%' || $1 || '%') OR
+          LOWER(first_name) LIKE LOWER('%' || $1 || '%') OR
+          LOWER(last_name) LIKE LOWER('%' || $1 || '%') OR
+          LOWER(first_name || ' ' || last_name) LIKE LOWER('%' || $1 || '%')
+        )
+      ORDER BY first_name ASC, last_name ASC, id ASC
+      LIMIT $2;
+    `, [normalized, safeLimit]);
+    return result.rows;
+  },
+
+  /**
    * Full admin user detail (never exposes password_hash)
    */
   async findByIdSafe(id) {
