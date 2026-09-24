@@ -120,7 +120,10 @@ export const emailService = {
 
     if (!client) {
       if (config.nodeEnv === 'production') {
-        throw new Error('Email service misconfigured: RESEND_API_KEY is missing in production environment.');
+        throw Object.assign(
+          new Error('Email service is not configured on this deployment.'),
+          { status: 503, code: 'EMAIL_NOT_CONFIGURED' }
+        );
       }
       // Safe local development fallback: Log clearly without crashing
       console.log(`[EmailService:DEV_LOCAL] Simulated send to: ${to} | Subject: "${subject}"`);
