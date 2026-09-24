@@ -64,6 +64,9 @@ export default function AdminCards() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [replacement, setReplacement] = useState(null);
+  const [cardRequests, setCardRequests] = useState([]);
+  const [requestFilter, setRequestFilter] = useState('OPEN');
+  const [requestUpdatingId, setRequestUpdatingId] = useState(null);
 
   // Provisioning Modal State
   const [isProvisionModalOpen, setIsProvisionModalOpen] = useState(false);
@@ -87,11 +90,13 @@ export default function AdminCards() {
     try {
       setLoading(true);
       setError(null);
-      const [cardsRes, usersRes] = await Promise.all([
+      const [cardsRes, usersRes, requestsRes] = await Promise.all([
         cardService.getAll(),
         authService.getUsers().catch(() => ({ users: [] })),
+        cardService.getAdminRequests().catch(() => ({ requests: [] })),
       ]);
       setCards(cardsRes.cards || []);
+      setCardRequests(requestsRes.requests || []);
       // Only active users eligible for card assignment
       setUsers((usersRes.users || []).filter((u) => u.status === 'ACTIVE'));
     } catch (err) {
@@ -104,6 +109,35 @@ export default function AdminCards() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleRequestStatus = async (requestId, status) => {
+    try {
+      setRequestUpdatingId(requestId);
+      setError(null);
+      const result = await cardService.updateRequestStatus(requestId, { status });
+      setCardRequests((prev) => prev.map((request) => (
+        request.id === requestId ? result.request : request
+      )));
+      setSuccessMsg(`Card request marked ${status.replace('_', ' ').toLowerCase()}.`);
+    } catch (err) {
+      setError(err.message || 'Failed to update card request.');
+    } finally {
+      setRequestUpdatingId(null);
+    }
+  };
+
+  const openProvisionForRequest = (request) => {
+    setLabelInput(suggestNextLabel());
+    setSelectedUserId(String(request.userId));
+    setProvisionStep(1);
+    setProvisionResult(null);
+    setCopied(false);
+    setConfirmWrittenChecked(false);
+    setActivatingLoading(false);
+    setError(null);
+    setSuccessMsg(null);
+    setIsProvisionModalOpen(true);
+  };
 
   // Compute next suggested card label (e.g. NFC-001, NFC-002...)
   const suggestNextLabel = () => {
@@ -312,6 +346,12 @@ export default function AdminCards() {
       (c.assignedUser?.lastName && c.assignedUser.lastName.toLowerCase().includes(term));
     return matchesStatus && matchesSearch;
   });
+  const visibleCardRequests = cardRequests.filter((request) => {
+    if (requestFilter === 'ALL') return true;
+    if (requestFilter === 'OPEN') return ['PENDING', 'IN_REVIEW'].includes(request.status);
+    return request.status === requestFilter;
+  });
+
   const inventorySlots = Array.from({ length: 20 }, (_, index) => {
     const label = `NFC-${String(index + 1).padStart(3, '0')}`;
     return { label, card: cards.find((item) => item.cardLabel.toUpperCase() === label) || null };
@@ -372,6 +412,106 @@ export default function AdminCards() {
           </div>
         )}
         {replacement?.writeUrl && <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm"><strong>One-time replacement write URL</strong><p className="mt-2 break-all font-mono text-xs">{replacement.writeUrl}</p><button onClick={() => navigator.clipboard?.writeText(replacement.writeUrl)} className="mt-3 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold">Copy URL</button><button onClick={() => setReplacement(null)} className="ml-2 px-3 py-2 text-xs">Dismiss permanently</button></div>}
+
+        <section aria-labelledby="request-queue-title" className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden">
+          <div className="flex flex-col gap-3 border-b border-slate-800 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="request-queue-title" className="text-base font-bold text-white">NFC Setup & Replacement Requests</h2>
+              <p className="mt-1 text-xs text-slate-400">Dedicated card-holder requests. No raw credential is stored or recoverable from this queue.</p>
+            </div>
+            <select
+              value={requestFilter}
+              onChange={(e) => setRequestFilter(e.target.value)}
+              className="min-h-[44px] rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-white"
+              aria-label="Filter card requests"
+            >
+              <option value="OPEN">Open requests</option>
+              <option value="ALL">All requests</option>
+              <option value="PENDING">Pending</option>
+              <option value="IN_REVIEW">In review</option>
+              <option value="FULFILLED">Fulfilled</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+
+          {visibleCardRequests.length === 0 ? (
+            <div className="p-6 text-sm text-slate-500">No card requests match this filter.</div>
+          ) : (
+            <div className="divide-y divide-slate-800/70">
+              {visibleCardRequests.map((request) => {
+                const busy = requestUpdatingId === request.id;
+                const userName = request.user
+                  ? `${request.user.firstName || ''} ${request.user.lastName || ''}`.trim()
+                  : `User #${request.userId}`;
+                return (
+                  <div key={request.id} className="p-4 sm:p-5">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-300">
+                            {request.requestType === 'SETUP' ? 'Setup' : 'Replacement'}
+                          </span>
+                          <span className="rounded-full border border-slate-700 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                            {request.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <p className="mt-2 font-semibold text-white">{userName}</p>
+                        <p className="text-xs text-slate-500">{request.user?.email || `User ID ${request.userId}`}</p>
+                        {request.card?.cardLabel && (
+                          <p className="mt-1 text-xs text-slate-400">Current card: <span className="font-mono text-slate-300">{request.card.cardLabel}</span> · {request.card.status}</p>
+                        )}
+                        {request.note && <p className="mt-2 text-sm text-slate-300">{request.note}</p>}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {request.status === 'PENDING' && (
+                          <button
+                            type="button"
+                            onClick={() => handleRequestStatus(request.id, 'IN_REVIEW')}
+                            disabled={busy}
+                            className="min-h-[44px] rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 text-xs font-semibold text-amber-300 disabled:opacity-50"
+                          >
+                            Start Review
+                          </button>
+                        )}
+                        {request.requestType === 'SETUP' && ['PENDING', 'IN_REVIEW'].includes(request.status) && (
+                          <button
+                            type="button"
+                            onClick={() => openProvisionForRequest(request)}
+                            disabled={busy}
+                            className="min-h-[44px] rounded-lg bg-blue-600 px-3 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+                          >
+                            Provision for User
+                          </button>
+                        )}
+                        {['PENDING', 'IN_REVIEW'].includes(request.status) && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleRequestStatus(request.id, 'FULFILLED')}
+                              disabled={busy}
+                              className="min-h-[44px] rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                            >
+                              Mark Fulfilled
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRequestStatus(request.id, 'REJECTED')}
+                              disabled={busy}
+                              className="min-h-[44px] rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 text-xs font-semibold text-rose-300 disabled:opacity-50"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
         {/* Security & Hardware Specifications Banner */}
         <div className="mb-8 p-5 bg-slate-900/70 border border-slate-800 rounded-2xl">
