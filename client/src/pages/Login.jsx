@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import Header from '../components/layout/Header';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function Login() {
@@ -34,7 +33,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Header />
       <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8 bg-slate-900/90 border border-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl backdrop-blur-sm">
           {/* Brand Header */}
