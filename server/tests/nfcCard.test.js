@@ -116,6 +116,13 @@ vi.mock('../src/repositories/db.js', () => {
         // ─── LIFECYCLE UPDATE (PATCH .../lifecycle) ─────────────────────────
         if (q.includes('UPDATE nfc_cards') && q.includes('CASE WHEN $1 IN')) {
           const [status, actorId, reason, id] = params;
+          // Emulate an older/partially migrated PostgreSQL enum/check schema.
+          if (reason === 'simulate lifecycle schema mismatch') {
+            const err = new Error('invalid input value for enum card_status');
+            err.code = '22P02';
+            throw err;
+          }
+
           // Emulate PostgreSQL VARCHAR(100) overflow on revocation_reason
           if (typeof reason === 'string' && reason.length > 100) {
             const err = new Error('value too long for type character varying(100)');
@@ -655,7 +662,19 @@ describe('TapTrack NFC v0.3.0 ALPHA — NFC Provisioning Test Suite', () => {
       expect(res.body.error).toMatch(/reason is required/i);
     });
 
-    it('28. unauthenticated lifecycle request is rejected with 401', async () => {
+    it('28. lifecycle schema mismatch returns a safe actionable 503 instead of generic 500', async () => {
+      const cardId = await provisionAndActivate('NFC-001');
+      const res = await request(app)
+        .patch(`/api/admin/cards/${cardId}/lifecycle`)
+        .set('Cookie', createSessionCookie(adminUser))
+        .send({ status: 'LOST', reason: 'simulate lifecycle schema mismatch' });
+
+      expect(res.status).toBe(503);
+      expect(res.body.code).toBe('CARD_LIFECYCLE_SCHEMA_MISMATCH');
+      expect(res.body.error).toMatch(/database migrations/i);
+    });
+
+    it('29. unauthenticated lifecycle request is rejected with 401', async () => {
       const cardId = await provisionAndActivate('NFC-001');
       const res = await request(app)
         .patch(`/api/admin/cards/${cardId}/lifecycle`)
@@ -664,7 +683,7 @@ describe('TapTrack NFC v0.3.0 ALPHA — NFC Provisioning Test Suite', () => {
       expect(res.status).toBe(401);
     });
 
-    it('29. OPERATOR cannot change card lifecycle (403)', async () => {
+    it('30. OPERATOR cannot change card lifecycle (403)', async () => {
       const cardId = await provisionAndActivate('NFC-001');
       const res = await request(app)
         .patch(`/api/admin/cards/${cardId}/lifecycle`)
@@ -674,7 +693,7 @@ describe('TapTrack NFC v0.3.0 ALPHA — NFC Provisioning Test Suite', () => {
       expect(res.status).toBe(403);
     });
 
-    it('30. non-numeric card id is rejected with 400 (never a 500)', async () => {
+    it('31. non-numeric card id is rejected with 400 (never a 500)', async () => {
       const res = await request(app)
         .patch('/api/admin/cards/not-a-number/lifecycle')
         .set('Cookie', createSessionCookie(adminUser))
