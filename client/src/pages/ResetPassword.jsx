@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
-import Header from '../components/layout/Header';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function ResetPassword() {
@@ -48,7 +47,6 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Header />
       <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl backdrop-blur-sm">
           {success ? (
