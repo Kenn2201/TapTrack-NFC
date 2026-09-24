@@ -25,6 +25,7 @@ import Changelog from "./pages/Changelog";
 import Terminology from "./pages/Terminology";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
+import PublicFeedback from "./pages/PublicFeedback";
 
 // Authenticated User Pages
 import Dashboard from "./pages/Dashboard";
@@ -79,6 +80,7 @@ function App() {
           <Route path="/terminology" element={<Terminology />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/feedback/public" element={<PublicFeedback />} />
 
           {/* Authenticated / Staff Routes */}
           <Route element={<RequireAuth />}>
