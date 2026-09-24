@@ -55,10 +55,10 @@ test('no hardcoded v1.0 RC remains in client source', () => {
   assert.deepEqual(offenders, []);
 });
 
-test('version.js declares CURRENT_VERSION 1.1.0 and matching RC label', async () => {
+test('version.js declares CURRENT_VERSION 1.2.0 and matching RC label', async () => {
   const mod = await import('../src/constants/version.js');
-  assert.equal(mod.CURRENT_VERSION, '1.1.0');
-  assert.equal(mod.CURRENT_VERSION_LABEL, 'v1.1.0 RC');
+  assert.equal(mod.CURRENT_VERSION, '1.2.0');
+  assert.equal(mod.CURRENT_VERSION_LABEL, 'v1.2.0 RC');
   assert.equal(mod.CURRENT_VERSION_STAGE, 'RC');
 });
 
