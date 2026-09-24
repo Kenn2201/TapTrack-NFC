@@ -30,9 +30,9 @@ export function calculateActivityPulse(records, requiredStats = { eligibleEvents
     totalCheckIns: records.length,
     eventsAttended: new Set(records.map((r) => r.eventId)).size,
     attendanceRate,
-    attendanceRateLabel: eligibleEvents > 0 ? \`\${attendanceRate}%\` : 'No required events yet',
+    attendanceRateLabel: eligibleEvents > 0 ? `${attendanceRate}%` : 'No required events yet',
     attendanceRateReason: eligibleEvents > 0
-      ? \`\${attendedRequiredEvents} of \${eligibleEvents} closed invite-only events attended. Public events do not count against this rate.\`
+      ? `${attendedRequiredEvents} of ${eligibleEvents} closed invite-only events attended. Public events do not count against this rate.`
       : 'Attendance rate starts after you have at least one closed invite-only event where you were invited. Public events do not count as missed attendance.',
     requiredEvents: eligibleEvents,
     requiredEventsAttended: attendedRequiredEvents,
