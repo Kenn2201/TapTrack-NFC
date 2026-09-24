@@ -974,6 +974,4 @@ describe('TapTrack NFC v0.2.0 ALPHA — Comprehensive Test Suite', () => {
       expect(bodyStr).not.toContain('password_hash');
     });
   });
-
-
 });
