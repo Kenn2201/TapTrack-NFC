@@ -45,7 +45,7 @@ export default function Profile() {
   useDocumentTitle('Profile');
   const { user, refreshUser } = useAuth();
 
-  const [editModal, setEditModal] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [nickname, setNickname] = useState('');
@@ -63,14 +63,14 @@ export default function Profile() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState(null);
 
-  const openEditModal = () => {
+  const openEditProfile = () => {
     setFirstName(user?.firstName || '');
     setLastName(user?.lastName || '');
     setNickname(user?.nickname || '');
     setBirthday(user?.birthday ? user.birthday.split('T')[0] : '');
     setAvatarUrl(user?.avatarUrl || '');
     setEditError(null);
-    setEditModal(true);
+    setEditingProfile(true);
   };
 
   const handleSubmit = async (e) => {
@@ -87,7 +87,7 @@ export default function Profile() {
         avatarUrl: avatarUrl.trim() || null,
       });
       await refreshUser();
-      setEditModal(false);
+      setEditingProfile(false);
       setMessage('Profile updated successfully.');
     } catch (err) {
       setEditError(err.message || 'Failed to update profile.');
@@ -186,12 +186,61 @@ export default function Profile() {
                       <StatusBadge status={user?.status} />
                     </div>
                     <div className="mt-4">
-                      <Button onClick={openEditModal} className="w-full sm:w-auto">
-                        Edit Profile
+                      <Button onClick={openEditProfile} className="w-full sm:w-auto" disabled={editingProfile}>
+                        {editingProfile ? 'Editing Profile' : 'Edit Profile'}
                       </Button>
                     </div>
                   </div>
                 </div>
+                {editingProfile && (
+                  <form onSubmit={handleSubmit} className="mt-6 border-t border-slate-800 pt-5 space-y-4">
+                    {editError && (
+                      <Alert type="error" message={editError} onClose={() => setEditError(null)} />
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Input
+                        label="First Name"
+                        required
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                      />
+                      <Input
+                        label="Last Name"
+                        required
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                      />
+                    </div>
+                    <Input
+                      label="Nickname (optional)"
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      placeholder="Preferred short name"
+                    />
+                    <Input
+                      label="Birthday (optional)"
+                      type="date"
+                      value={birthday}
+                      onChange={(e) => setBirthday(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                    />
+                    <Input
+                      label="Avatar image URL (optional)"
+                      value={avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      placeholder="https://example.com/avatar.png"
+                      helperText="TapTrack does not currently have profile-image file storage. Use a direct HTTPS image URL, or leave this blank to use initials."
+                    />
+                    <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => setEditingProfile(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" loading={loading} disabled={loading || !firstName.trim() || !lastName.trim()}>
+                        Save Profile
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </Card>
             </Section>
 
@@ -307,66 +356,6 @@ export default function Profile() {
           </div>
         </PageContainer>
       </div>
-
-      {/* EDIT PROFILE MODAL */}
-      <Modal
-        isOpen={editModal}
-        onClose={() => setEditModal(false)}
-        title="Edit Profile"
-        maxWidth="max-w-md"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {editError && (
-            <Alert type="error" message={editError} onClose={() => setEditError(null)} />
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="First Name"
-              required
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-            />
-            <Input
-              label="Last Name"
-              required
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-            />
-          </div>
-          <Input
-            label="Nickname (optional)"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="Preferred short name"
-          />
-          <Input
-            label="Birthday (optional)"
-            type="date"
-            value={birthday}
-            onChange={(e) => setBirthday(e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
-          />
-          <Input
-            label="Avatar URL (optional)"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="https://example.com/avatar.png"
-            helperText="Paste an image URL, or clear the field to use your initials."
-          />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => setEditModal(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              loading={loading}
-              disabled={loading || !firstName.trim() || !lastName.trim()}
-            >
-              Save Changes
-            </Button>
-          </div>
-        </form>
-      </Modal>
 
       {/* CHANGE PASSWORD MODAL */}
       <Modal
