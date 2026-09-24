@@ -154,6 +154,7 @@ export const createEventSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),
   location: z.string().max(255).optional().nullable(),
+  visibility: z.enum(['PUBLIC', 'INVITE_ONLY']).optional().default('PUBLIC'),
   startAt: z.string().datetime(),
   endAt: z.string().datetime(),
   status: z.enum(['DRAFT', 'OPEN']).optional(),
