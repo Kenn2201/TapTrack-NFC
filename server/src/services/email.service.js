@@ -115,12 +115,15 @@ export const emailService = {
   /**
    * Low-level dispatch via Resend
    */
-  async sendEmail({ to, subject, html }) {
+  async sendEmail({ to, subject, html, text }) {
     const client = getResendClient();
 
     if (!client) {
       if (config.nodeEnv === 'production') {
-        throw new Error('Email service misconfigured: RESEND_API_KEY is missing in production environment.');
+        throw Object.assign(
+          new Error('Email service is not configured on this deployment.'),
+          { status: 503, code: 'EMAIL_NOT_CONFIGURED', expose: true }
+        );
       }
       // Safe local development fallback: Log clearly without crashing
       console.log(`[EmailService:DEV_LOCAL] Simulated send to: ${to} | Subject: "${subject}"`);
@@ -128,12 +131,15 @@ export const emailService = {
     }
 
     try {
-      const response = await client.emails.send({
+      const payload = {
         from: config.resendFromEmail,
         to: [to],
         subject,
-        html,
-      });
+      };
+      if (html?.trim()) payload.html = html;
+      if (text?.trim()) payload.text = text;
+
+      const response = await client.emails.send(payload);
 
       if (response.error) {
         console.error('[EmailService] Resend API error:', response.error);

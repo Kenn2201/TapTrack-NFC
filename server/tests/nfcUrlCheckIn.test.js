@@ -100,7 +100,7 @@ vi.mock('../src/repositories/db.js', () => {
           };
         }
 
-        if (q.includes('FROM events') && q.includes('WHERE id = $1')) {
+        if (q.includes('FROM events e') && q.includes('WHERE e.id = $1')) {
           const event = eventsTable.find((e) => e.id === params[0]);
           return { rows: event ? [{ ...event }] : [] };
         }

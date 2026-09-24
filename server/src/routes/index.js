@@ -45,6 +45,7 @@ replaceCardSchema,
 createFeedbackSchema,
 updateFeedbackStatusSchema,
 emailSendSchema,
+emailBroadcastSchema,
 inviteParticipantsSchema,
 rsvpSchema,
 reissueCardSchema,
@@ -116,7 +117,7 @@ router.patch('/admin/feedback/:id/status', authenticate, requireRole('ADMIN'), v
 
 // ─── EMAIL SUITE (v1.1.0) ─────────────────────────────────────────────────────
 router.post('/admin/emails/send', authenticate, requireRole('ADMIN'), validate(emailSendSchema), emailController.send);
-router.post('/admin/emails/broadcast', authenticate, requireRole('ADMIN'), validate(emailSendSchema), emailController.broadcast);
+router.post('/admin/emails/broadcast', authenticate, requireRole('ADMIN'), validate(emailBroadcastSchema), emailController.broadcast);
 router.get('/admin/emails/diagnostics', authenticate, requireRole('ADMIN'), emailController.diagnostics);
 
 // ─── EVENT PARTICIPANTS (v1.1.0) ──────────────────────────────────────────────
