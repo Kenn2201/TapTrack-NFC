@@ -17,6 +17,7 @@ TapTrack NFC follows Semantic Versioning. The canonical runtime version is `serv
 - Migration 007: already applied to production Neon. **Do not rerun it.**
 - Migration 008: adds PUBLIC / INVITE_ONLY event visibility. Must be applied before invite-only production QA.
 - Migration 009: adds NFC setup/replacement requests and the one-ACTIVE-card database guard. Must be applied before card-request and one-active-card production QA.
+- Migration 010: allows anonymous public feedback by making feedback ownership optional. Must be applied before public feedback QA.
 - Never auto-apply production migrations from tests or CI.
 
 ## History
