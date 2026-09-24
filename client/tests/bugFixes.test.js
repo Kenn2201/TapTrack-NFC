@@ -62,8 +62,8 @@ test('version consistency across all client source files', () => {
   for (const file of files) {
     const source = readFileSync(file, 'utf8');
     assert.ok(
-      source.includes('v1.1.0') || source.includes('CURRENT_VERSION_LABEL'),
-      `${file} should reference v1.1.0`
+      source.includes('v1.2.0') || source.includes('CURRENT_VERSION_LABEL'),
+      `${file} should reference v1.2.0`
     );
   }
 });
