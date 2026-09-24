@@ -12,15 +12,24 @@ const operator = { id: 2, role: 'OPERATOR' };
 describe('v0.7 centralized card lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    repo.findById.mockResolvedValue({ id: 10, cardLabel: 'NFC-001', userId: 30, status: 'ACTIVE' });
-    repo.updateLifecycle.mockImplementation(async (id, data) => ({ id, cardLabel: 'NFC-001', ...data }));
+    let currentCard = { id: 10, cardLabel: 'NFC-001', userId: 30, status: 'ACTIVE' };
+    repo.findById.mockImplementation(async () => ({ ...currentCard }));
+    repo.updateLifecycle.mockImplementation(async (id, data) => {
+      currentCard = { ...currentCard, id, ...data };
+      return { ...currentCard };
+    });
     repo.findByCardLabel.mockResolvedValue(null);
     repo.replaceCard.mockImplementation(async (data) => ({ oldCard: { id: data.oldCardId, status: 'REPLACED', replacedByCardId: 11 }, newCard: { id: 11, cardLabel: data.cardLabel, status: 'UNASSIGNED', userId: data.userId } }));
   });
   for (const targetStatus of CARD_TRANSITIONS.ACTIVE) {
     it(`allows ACTIVE → ${targetStatus}`, async () => expect(cardLifecycleService.transition({ cardId: 10, targetStatus, actor: admin, reason: 'Administrative reason' })).resolves.toMatchObject({ status: targetStatus }));
   }
-  it('allows the documented DISABLED → ACTIVE recovery', async () => { repo.findById.mockResolvedValue({ id: 10, status: 'DISABLED' }); await expect(cardLifecycleService.transition({ cardId: 10, targetStatus: 'ACTIVE', actor: admin })).resolves.toMatchObject({ status: 'ACTIVE' }); });
+  it('allows the documented DISABLED → ACTIVE recovery', async () => {
+    repo.findById
+      .mockResolvedValueOnce({ id: 10, cardLabel: 'NFC-001', userId: 30, status: 'DISABLED' })
+      .mockResolvedValueOnce({ id: 10, cardLabel: 'NFC-001', userId: 30, status: 'ACTIVE' });
+    await expect(cardLifecycleService.transition({ cardId: 10, targetStatus: 'ACTIVE', actor: admin })).resolves.toMatchObject({ status: 'ACTIVE' });
+  });
   it('rejects invalid transitions', async () => expect(cardLifecycleService.transition({ cardId: 10, targetStatus: 'REPLACED', actor: admin })).rejects.toMatchObject({ code: 'INVALID_CARD_TRANSITION' }));
   it('denies OPERATOR lifecycle administration', async () => expect(cardLifecycleService.transition({ cardId: 10, targetStatus: 'LOST', actor: operator, reason: 'Lost' })).rejects.toMatchObject({ code: 'FORBIDDEN' }));
   it('denies USER lifecycle administration', async () => expect(cardLifecycleService.transition({ cardId: 10, targetStatus: 'LOST', actor: { id: 3, role: 'USER' }, reason: 'Lost' })).rejects.toMatchObject({ code: 'FORBIDDEN' }));
