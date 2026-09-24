@@ -47,7 +47,6 @@ updateFeedbackStatusSchema,
 emailSendSchema,
 emailBroadcastSchema,
 inviteParticipantsSchema,
-rsvpSchema,
 reissueCardSchema,
 } from '../validators/schemas.js';
 
@@ -72,6 +71,7 @@ router.get('/users/me/activity-pulse', authenticate, activityPulseController.get
 router.get('/users/me/card', authenticate, cardController.getMine);
 
 // ─── ADMIN — USERS & ROLES (v0.2.0) ───────────────────────────────────────────
+router.get('/staff/users', authenticate, requireRole('ADMIN', 'OPERATOR'), adminUserController.searchStaffUsers);
 router.get('/admin/users', authenticate, requireRole('ADMIN'), adminUserController.getAllUsers);
 router.get('/admin/dashboard', authenticate, requireRole('ADMIN'), dashboardController.get);
 router.get('/admin/audits', authenticate, requireRole('ADMIN'), auditController.list);
@@ -122,8 +122,7 @@ router.get('/admin/emails/diagnostics', authenticate, requireRole('ADMIN'), emai
 
 // ─── EVENT PARTICIPANTS (v1.1.0) ──────────────────────────────────────────────
 router.post('/admin/events/:id/participants/invite', authenticate, requireRole('ADMIN'), validate(inviteParticipantsSchema), eventParticipantsController.invite);
-router.get('/admin/events/:id/participants', authenticate, requireRole('ADMIN'), eventParticipantsController.list);
-router.post('/events/:id/participants/rsvp', authenticate, validate(rsvpSchema), eventParticipantsController.rsvp);
+router.get('/admin/events/:id/participants', authenticate, requireRole('ADMIN', 'OPERATOR'), eventParticipantsController.list);
 
 // ─── CARD REISSUE (v1.1.0) ────────────────────────────────────────────────────
 router.post('/admin/cards/:id/reissue', authenticate, requireRole('ADMIN'), validate(reissueCardSchema), cardController.reissue);
