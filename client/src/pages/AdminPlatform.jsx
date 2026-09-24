@@ -45,10 +45,17 @@ export default function AdminPlatform() {
     try {
       const newState = !maintenance.maintenanceEnabled;
       const data = await adminPlatformService.setMaintenance({
-        maintenanceEnabled: newState,
-        maintenanceMessage: newState ? formMessage : '',
+        enabled: newState,
+        message: newState ? formMessage : '',
       });
-      setMaintenance(data);
+      setMaintenance({
+        maintenanceEnabled: Boolean(data.maintenanceEnabled),
+        maintenanceMessage: data.maintenanceMessage || '',
+        estimatedReturn: data.estimatedReturn || null,
+        releaseLabel: data.releaseLabel || null,
+        updatedBy: data.updatedBy || null,
+        updatedAt: data.updatedAt || null,
+      });
       setMessage(newState ? 'Maintenance mode enabled.' : 'Maintenance mode disabled.');
     } catch (err) {
       setError(err.message || 'Failed to toggle maintenance mode.');
