@@ -122,7 +122,7 @@ export const emailService = {
       if (config.nodeEnv === 'production') {
         throw Object.assign(
           new Error('Email service is not configured on this deployment.'),
-          { status: 503, code: 'EMAIL_NOT_CONFIGURED' }
+          { status: 503, code: 'EMAIL_NOT_CONFIGURED', expose: true }
         );
       }
       // Safe local development fallback: Log clearly without crashing
