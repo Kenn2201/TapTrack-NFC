@@ -63,11 +63,23 @@ export default function Events() {
                   <div>
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-bold text-white text-lg">{evt.name}</h3>
-                      <StatusBadge status={evt.status} />
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${
+                          evt.visibility === 'INVITE_ONLY'
+                            ? 'border-purple-500/30 bg-purple-500/10 text-purple-300'
+                            : 'border-blue-500/30 bg-blue-500/10 text-blue-300'
+                        }`}>
+                          {evt.visibility === 'INVITE_ONLY' ? 'Required' : 'Public'}
+                        </span>
+                        <StatusBadge status={evt.status} />
+                      </div>
                     </div>
                     <p className="mt-2 text-xs sm:text-sm text-slate-400 leading-relaxed">
                       {evt.description || 'No description provided.'}
                     </p>
+                    {evt.visibility === 'INVITE_ONLY' && (
+                      <p className="mt-2 text-[11px] text-purple-300">You are invited and expected to attend.</p>
+                    )}
                   </div>
 
                   <div className="mt-6 pt-4 border-t border-slate-800/80 space-y-1 text-xs text-slate-400">
