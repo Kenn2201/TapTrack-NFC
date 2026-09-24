@@ -13,6 +13,50 @@ import { useAuth } from '../hooks/useAuth';
 import { adminEmailService } from '../services/adminEmailService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
+const EMAIL_PRESETS = {
+  ACCOUNT_ACTIVATED: {
+    label: 'Account activated',
+    subject: 'Your TapTrack account is active',
+    text: 'Your TapTrack account has been activated. You can now sign in and use the features available to your role.',
+  },
+  ROLE_CHANGED: {
+    label: 'Role changed',
+    subject: 'Your TapTrack role was updated',
+    text: 'Your TapTrack account role has been updated. Sign in again if your available tools have changed.',
+  },
+  EVENT_INVITATION: {
+    label: 'Event invitation',
+    subject: 'You are invited to a TapTrack event',
+    text: 'You have been selected as a required participant for a TapTrack event. Sign in to review the event details and schedule.',
+  },
+  NFC_REQUEST: {
+    label: 'NFC setup / replacement',
+    subject: 'Update on your NFC card request',
+    text: 'There is an update to your TapTrack NFC setup or replacement request. Sign in and open My Card to review your request status.',
+  },
+  EVENT_REMINDER: {
+    label: 'Event reminder',
+    subject: 'TapTrack event reminder',
+    text: 'Reminder: you have an upcoming TapTrack event. Sign in to review the schedule and attendance details.',
+  },
+  GENERAL: {
+    label: 'General announcement',
+    subject: 'TapTrack announcement',
+    text: 'TapTrack has an update for you.',
+  },
+  MAINTENANCE: {
+    label: 'Maintenance notice',
+    subject: 'TapTrack maintenance notice',
+    text: 'TapTrack may be temporarily unavailable during scheduled maintenance. Please try again after the maintenance window.',
+  },
+};
+
+const applyPreset = (setForm, key) => {
+  const preset = EMAIL_PRESETS[key];
+  if (!preset) return;
+  setForm((current) => ({ ...current, subject: preset.subject, text: preset.text, html: '' }));
+};
+
 export default function AdminEmail() {
   useDocumentTitle('Admin - Email Suite');
   const { user } = useAuth();
@@ -23,6 +67,7 @@ export default function AdminEmail() {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
   const [broadcastModal, setBroadcastModal] = useState(false);
+  const [directPreviewModal, setDirectPreviewModal] = useState(false);
 
   const [directForm, setDirectForm] = useState({ to: '', subject: '', html: '', text: '' });
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', html: '', text: '', confirmBroadcast: false });
@@ -53,7 +98,7 @@ export default function AdminEmail() {
   };
 
   const sendDirect = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     if (!directForm.to || !directForm.subject || (!directForm.html && !directForm.text)) {
       setError('Recipient, subject, and at least one of HTML/text body are required.');
       return;
@@ -133,15 +178,33 @@ export default function AdminEmail() {
           </Card>
         </Section>
 
+        <Section title="Message Templates" subtitle="Start from editable plain-English content, then review before sending">
+          <Card className="p-6">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {Object.entries(EMAIL_PRESETS).map(([key, preset]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => applyPreset(setDirectForm, key)}
+                  className="min-h-[44px] rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-left text-sm font-medium text-slate-200 hover:border-blue-500/50 hover:bg-slate-800"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-slate-500">Templates only populate the editor. Nothing is sent until you review and confirm the message.</p>
+          </Card>
+        </Section>
+
         <Section title="Direct Email" subtitle="Send a single email to a specific recipient">
           <Card className="space-y-4 p-6">
-            <form onSubmit={sendDirect} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); setDirectPreviewModal(true); }} className="space-y-4">
               <Input label="To (Email)" required value={directForm.to} onChange={(e) => setDirectForm({ ...directForm, to: e.target.value })} type="email" placeholder="user@example.com" />
               <Input label="Subject" required value={directForm.subject} onChange={(e) => setDirectForm({ ...directForm, subject: e.target.value })} placeholder="Email subject" />
               <Textarea label="HTML Body" rows={6} value={directForm.html} onChange={(e) => setDirectForm({ ...directForm, html: e.target.value })} placeholder="<p>HTML content...</p>" helperText="Optional if plain-text body is provided" />
               <Textarea label="Plain-text Body" rows={4} value={directForm.text} onChange={(e) => setDirectForm({ ...directForm, text: e.target.value })} placeholder="Plain text content..." helperText="Optional if HTML body is provided" />
               <div className="flex justify-end">
-                <Button type="submit" loading={directLoading} disabled={directLoading}>Send Direct Email</Button>
+                <Button type="submit" loading={directLoading} disabled={directLoading}>Preview Direct Email</Button>
               </div>
             </form>
           </Card>
@@ -154,6 +217,17 @@ export default function AdminEmail() {
               <span>Broadcast emails are sent to ALL active users. This action cannot be undone.</span>
             </div>
             <form onSubmit={sendBroadcast} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Start from template (optional)</label>
+                <select
+                  defaultValue=""
+                  onChange={(e) => { applyPreset(setBroadcastForm, e.target.value); e.target.value = ''; }}
+                  className="w-full min-h-[44px] rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white"
+                >
+                  <option value="">Choose a template…</option>
+                  {Object.entries(EMAIL_PRESETS).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}
+                </select>
+              </div>
               <Input label="Subject" required value={broadcastForm.subject} onChange={(e) => setBroadcastForm({ ...broadcastForm, subject: e.target.value })} placeholder="Broadcast subject" />
               <Textarea label="HTML Body" rows={6} value={broadcastForm.html} onChange={(e) => setBroadcastForm({ ...broadcastForm, html: e.target.value })} placeholder="<p>HTML content for all users...</p>" helperText="Optional if plain-text body is provided" />
               <Textarea label="Plain-text Body" rows={4} value={broadcastForm.text} onChange={(e) => setBroadcastForm({ ...broadcastForm, text: e.target.value })} placeholder="Plain text content for all users..." helperText="Optional if HTML body is provided" />
@@ -172,6 +246,27 @@ export default function AdminEmail() {
             </form>
           </Card>
         </Section>
+
+        <Modal isOpen={directPreviewModal} onClose={() => setDirectPreviewModal(false)} title="Review Direct Email" maxWidth="max-w-lg">
+          <div className="space-y-4">
+            <div className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-sm">
+              <p><span className="text-slate-500">To:</span> <span className="text-slate-200">{directForm.to || '(missing recipient)'}</span></p>
+              <p className="mt-1"><span className="text-slate-500">Subject:</span> <span className="text-slate-200">{directForm.subject || '(missing subject)'}</span></p>
+            </div>
+            {directForm.text && <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-800 bg-slate-950 p-4 text-xs text-slate-300">{directForm.text}</pre>}
+            {directForm.html && <div className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-xs text-slate-400">HTML body supplied ({directForm.html.length} characters). It is not executed in this preview.</div>}
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <Button variant="outline" onClick={() => setDirectPreviewModal(false)} disabled={directLoading}>Back to Edit</Button>
+              <Button
+                onClick={async () => { await sendDirect(); setDirectPreviewModal(false); }}
+                loading={directLoading}
+                disabled={directLoading || !directForm.to || !directForm.subject || (!directForm.html && !directForm.text)}
+              >
+                Confirm & Send
+              </Button>
+            </div>
+          </div>
+        </Modal>
 
         <Modal isOpen={broadcastModal} onClose={() => setBroadcastModal(false)} title="Confirm Broadcast" maxWidth="max-w-md">
           <div className="space-y-4">
