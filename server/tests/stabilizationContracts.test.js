@@ -5,6 +5,8 @@ import {
   emailBroadcastSchema,
   emailSendSchema,
   maintenanceSchema,
+  createCardRequestSchema,
+  updateCardRequestStatusSchema,
 } from '../src/validators/schemas.js';
 
 describe('v1.2 stabilization request contracts', () => {
@@ -82,6 +84,16 @@ describe('v1.2 stabilization request contracts', () => {
     expect(createEventSchema.parse({ ...base, visibility: 'PUBLIC' }).visibility).toBe('PUBLIC');
     expect(createEventSchema.parse({ ...base, visibility: 'INVITE_ONLY' }).visibility).toBe('INVITE_ONLY');
     expect(createEventSchema.safeParse({ ...base, visibility: 'PRIVATE' }).success).toBe(false);
+  });
+
+  it('validates NFC setup/replacement request contracts', () => {
+    expect(createCardRequestSchema.parse({ requestType: 'SETUP' }).requestType).toBe('SETUP');
+    expect(createCardRequestSchema.parse({ requestType: 'REPLACEMENT', note: 'Lost card' }).requestType).toBe('REPLACEMENT');
+    expect(createCardRequestSchema.safeParse({ requestType: 'RECOVER_TOKEN' }).success).toBe(false);
+
+    expect(updateCardRequestStatusSchema.parse({ status: 'IN_REVIEW' }).status).toBe('IN_REVIEW');
+    expect(updateCardRequestStatusSchema.parse({ status: 'FULFILLED', adminNote: 'Card issued' }).status).toBe('FULFILLED');
+    expect(updateCardRequestStatusSchema.safeParse({ status: 'DELETED' }).success).toBe(false);
   });
 
   it('requires matching password confirmation', () => {

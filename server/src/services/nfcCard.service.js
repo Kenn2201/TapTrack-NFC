@@ -159,10 +159,7 @@ export const nfcCardService = {
       throw err;
     }
 
-    const updatedCard = await nfcCardRepository.updateStatus(id, {
-      status: 'ACTIVE',
-      activatedAt: new Date(),
-    });
+    const updatedCard = await nfcCardRepository.activateExclusive(id);
 
     await auditService.log({ actorId, action: 'CARD_ACTIVATED', entityType: 'NFC_CARD', entityId: id, metadata: { cardLabel: card.cardLabel } });
 
@@ -199,7 +196,14 @@ export const nfcCardService = {
       throw err;
     }
 
-    const updatedCard = await nfcCardRepository.assignUser(id, userId);
+    const updatedCard = await nfcCardRepository.assignUserExclusive(id, userId);
+    await auditService.log({
+      actorId,
+      action: 'CARD_ASSIGNED',
+      entityType: 'NFC_CARD',
+      entityId: id,
+      metadata: { userId },
+    });
     return nfcCredentialService.formatSafeCard(updatedCard);
   },
 

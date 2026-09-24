@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
+import AdminWorkspaceNav from '../components/layout/AdminWorkspaceNav';
 import PageContainer from '../components/ui/PageContainer';
 import PageHeader from '../components/ui/PageHeader';
 import Section from '../components/ui/Section';
@@ -31,6 +32,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
       <Header />
+      <AdminWorkspaceNav />
 
       <PageContainer maxWidth="max-w-7xl">
         <PageHeader
@@ -38,10 +40,10 @@ export default function AdminDashboard() {
           description="Live operational metrics, card registry status, and attendance sessions from the TapTrack database."
           actions={
             <Link
-              to="/operator/benchmark"
-              className="px-4 py-2 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-900 text-xs font-semibold text-slate-300 hover:text-white transition-colors min-h-[44px] flex items-center"
+              to="/admin/events"
+              className="px-4 py-2 rounded-lg border border-slate-700 hover:border-blue-500/50 bg-slate-900 text-xs font-semibold text-slate-300 hover:text-white transition-colors min-h-[44px] flex items-center"
             >
-              Run Benchmark
+              Manage Events
             </Link>
           }
         />
