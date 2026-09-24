@@ -8,13 +8,14 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [website, setWebsite] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await authService.forgotPassword(email);
+      await authService.forgotPassword(email, website);
     } catch {
       // Regardless of error, show generic completion to prevent account enumeration
     } finally {
@@ -62,6 +63,18 @@ export default function ForgotPassword() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                  <label htmlFor="forgot-website">Website</label>
+                  <input
+                    id="forgot-website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                  />
+                </div>
                 <div>
                   <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                     Email Address
