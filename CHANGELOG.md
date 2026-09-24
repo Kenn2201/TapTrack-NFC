@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - Release Candidate (manual QA pending)
+**Release Name:** Event & Product Workflow Pass — Release Candidate
+
+### Added
+- Public and invite-only event types with clear attendance expectations.
+- Searchable participant selection for required invite-only events.
+- Dedicated NFC setup and replacement request queue for card holders and administrators.
+- One-current-active-card safety checks for activation, assignment, and reactivation.
+- Light, dark, and system theme preference.
+- Clickable version badge with What's New, public release notes, terminology, privacy, and terms pages.
+- Shared administration workspace navigation.
+- Editable email message presets with preview before direct send.
+- Maintenance-message presets with explicit confirmation before enabling maintenance mode.
+
+### Changed
+- RSVP Accept/Decline was removed. Invite-only selection now defines who is expected to attend.
+- Attendance Rate now uses only closed invite-only events where the user was invited. Public events never count as missed attendance.
+- Profile editing now happens inline. TapTrack continues to use initials or a direct HTTPS avatar URL because profile-image file storage is not currently configured.
+- The NFC/QR benchmark is now labeled **Manual NFC / QR Timing Tool** and explicitly represents operator workflow timing, not physical hardware latency.
+- Device compatibility now distinguishes physically validated iPhone NFC URL behavior from Android Web NFC, whose physical NDEFReader validation remains pending.
+- Admin card management now includes setup/replacement requests and clearer one-time provisioning workflows.
+
+### Database
+- Migration 007 was already applied to production and must not be rerun.
+- Migration 008 adds event visibility (`PUBLIC` / `INVITE_ONLY`).
+- Migration 009 adds card requests and a database-level one-ACTIVE-card-per-user guard. It stops safely if legacy duplicate ACTIVE cards exist instead of modifying them automatically.
+- Migrations 008 and 009 must be applied before full production QA of their dependent features.
+
+### Validation status
+- Automated CI validation is required before this RC is merged into `kenn/develop`.
+- Physical iPhone public verification, authenticated NFC URL attendance, and duplicate-tap handling were previously validated.
+- Physical Android NDEFReader/Web NFC validation remains pending.
+- No `v1.2.0` tag or GitHub Release should be created before human QA passes.
+
 ## [1.1.0] - Release Candidate (pending human acceptance)
 **Release Name:** SaaS Pass — Release Candidate
 
