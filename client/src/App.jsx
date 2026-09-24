@@ -19,6 +19,10 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import TapLanding from "./pages/TapLanding";
 import Compatibility from "./pages/Compatibility";
+import Changelog from "./pages/Changelog";
+import Terminology from "./pages/Terminology";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 
 // Authenticated User Pages
 import Dashboard from "./pages/Dashboard";
@@ -67,6 +71,10 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/t" element={<TapLanding />} />
           <Route path="/compatibility" element={<Compatibility />} />
+          <Route path="/changelog" element={<Changelog />} />
+          <Route path="/terminology" element={<Terminology />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
 
           {/* Authenticated User Routes */}
           <Route element={<RequireAuth />}>
