@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import Header from '../components/layout/Header';
 import PageContainer from '../components/ui/PageContainer';
 import Card from '../components/ui/Card';
 import StatusBadge from '../components/ui/StatusBadge';
@@ -58,7 +57,6 @@ export default function NfcReaderPage() {
   if (!session) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-        <Header />
         <PageContainer maxWidth="max-w-2xl">
           <div className="py-12 sm:py-20 text-center">
             <EmptyState
