@@ -1,6 +1,14 @@
 ﻿import { feedbackService } from '../services/feedback.service.js';
 
 export const feedbackController = {
+  async submitPublic(req, res, next) {
+    try {
+      res.status(201).json({
+        feedback: await feedbackService.submit({ ...req.validated, actor: null, allowAnonymous: true }),
+      });
+    } catch (e) { next(e); }
+  },
+
   async submit(req, res, next) {
     try {
       res.status(201).json({ feedback: await feedbackService.submit({ ...req.validated, actor: req.user }) });
