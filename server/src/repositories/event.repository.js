@@ -33,7 +33,9 @@ const mapEvent = (row) => row && ({
 });
 
 async function supportsVisibility(client = pool) {
-  if (visibilitySupportCache !== null && client === pool) return visibilitySupportCache;
+  // Cache only a confirmed supported schema. A false result is rechecked so
+  // migration 008 can be applied after deployment without requiring a restart.
+  if (visibilitySupportCache === true && client === pool) return true;
   const result = await client.query(`
     SELECT EXISTS (
       SELECT 1
@@ -44,7 +46,7 @@ async function supportsVisibility(client = pool) {
     ) AS supported;
   `);
   const supported = Boolean(result.rows[0]?.supported);
-  if (client === pool) visibilitySupportCache = supported;
+  if (client === pool && supported) visibilitySupportCache = true;
   return supported;
 }
 
