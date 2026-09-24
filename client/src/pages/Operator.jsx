@@ -205,7 +205,7 @@ export default function Operator() {
               to="/operator/benchmark"
               className="px-4 py-2 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 hover:text-white text-xs font-semibold min-h-[44px] flex items-center transition-colors"
             >
-              Open Benchmark
+              Open Timing Tool
             </Link>
           }
         />
