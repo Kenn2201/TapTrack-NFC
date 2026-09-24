@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { authService } from '../services/authService';
 import Header from '../components/layout/Header';
+import AdminWorkspaceNav from '../components/layout/AdminWorkspaceNav';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import CardStatusBadge from '../components/cards/CardStatusBadge';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -360,6 +361,7 @@ export default function AdminCards() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Header />
+      <AdminWorkspaceNav />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Title & Provision Action */}
