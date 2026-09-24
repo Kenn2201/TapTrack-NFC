@@ -107,36 +107,27 @@ export default function AdminEmail() {
         {message && <Alert type="success" message={message} onClose={() => setMessage(null)} className="mb-6" />}
         {error && <Alert type="error" message={error} onClose={() => setError(null)} className="mb-6" />}
 
-        <Section title="Diagnostics" subtitle="Verify Resend configuration and API connectivity">
+        <Section title="Diagnostics" subtitle="Check whether the email provider is configured on this deployment">
           <Card className="p-6 space-y-4">
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <Button onClick={runDiagnostics} loading={diagLoading} disabled={diagLoading}>
                 Run Diagnostics
               </Button>
-              <span className="flex items-center text-sm text-slate-400">Tests Resend API key validity and connectivity</span>
+              <span className="text-sm text-slate-400">
+                This check reports configuration availability only. A real send is what verifies provider delivery.
+              </span>
             </div>
             {diagnostics && (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className={`p-4 rounded-lg ${diagnostics.resendConfigured ? 'bg-emerald-400/10 border border-emerald-400/30' : 'bg-red-400/10 border border-red-400/30'}`}>
-                    <div className="text-xs text-slate-400 mb-1">Resend Configured</div>
-                    <div className="text-2xl font-bold">{diagnostics.resendConfigured ? '✓ Yes' : '✗ No'}</div>
-                  </div>
-                  <div className={`p-4 rounded-lg ${diagnostics.apiKeyValid ? 'bg-emerald-400/10 border border-emerald-400/30' : 'bg-red-400/10 border border-red-400/30'}`}>
-                    <div className="text-xs text-slate-400 mb-1">API Key Valid</div>
-                    <div className="text-2xl font-bold">{diagnostics.apiKeyValid ? '✓ Valid' : '✗ Invalid'}</div>
-                  </div>
-                  <div className="p-4 rounded-lg border border-slate-700 bg-slate-800/50">
-                    <div className="text-xs text-slate-400 mb-1">Domain Verified</div>
-                    <div className="text-2xl font-bold">{diagnostics.domainVerified ? '✓ Verified' : '✗ Not Verified'}</div>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className={`p-4 rounded-lg ${diagnostics.configured ? 'bg-emerald-400/10 border border-emerald-400/30' : 'bg-amber-400/10 border border-amber-400/30'}`}>
+                  <div className="text-xs text-slate-400 mb-1">Email Provider</div>
+                  <div className="text-xl font-bold">{diagnostics.provider || 'RESEND'}</div>
                 </div>
-                {diagnostics.error && (
-                  <div className="p-3 bg-red-400/10 border border-red-400/30 rounded text-sm text-red-300 mt-4">
-                    <strong>Error:</strong> {diagnostics.error}
-                  </div>
-                )}
-              </>
+                <div className={`p-4 rounded-lg ${diagnostics.configured ? 'bg-emerald-400/10 border border-emerald-400/30' : 'bg-amber-400/10 border border-amber-400/30'}`}>
+                  <div className="text-xs text-slate-400 mb-1">Configuration</div>
+                  <div className="text-xl font-bold">{diagnostics.configured ? '✓ Configured' : 'Not configured'}</div>
+                </div>
+              </div>
             )}
           </Card>
         </Section>
