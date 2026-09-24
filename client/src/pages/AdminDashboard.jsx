@@ -38,10 +38,10 @@ export default function AdminDashboard() {
           description="Live operational metrics, card registry status, and attendance sessions from the TapTrack database."
           actions={
             <Link
-              to="/operator/benchmark"
-              className="px-4 py-2 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-900 text-xs font-semibold text-slate-300 hover:text-white transition-colors min-h-[44px] flex items-center"
+              to="/admin/events"
+              className="px-4 py-2 rounded-lg border border-slate-700 hover:border-blue-500/50 bg-slate-900 text-xs font-semibold text-slate-300 hover:text-white transition-colors min-h-[44px] flex items-center"
             >
-              Run Benchmark
+              Manage Events
             </Link>
           }
         />
