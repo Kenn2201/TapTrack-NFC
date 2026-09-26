@@ -12,8 +12,22 @@ permissions:
 
 jobs:
   server:
-    name: Server tests and audit
+    name: Server tests, migrations, and audit
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: taptrack
+          POSTGRES_PASSWORD: taptrack
+          POSTGRES_DB: taptrack_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U taptrack -d taptrack_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     defaults:
       run:
         working-directory: server
@@ -30,6 +44,14 @@ jobs:
 
       - name: Install server dependencies
         run: npm ci
+
+      - name: Validate Drizzle migrations against PostgreSQL
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://taptrack:taptrack@127.0.0.1:5432/taptrack_ci
+          AUTO_MIGRATE: "true"
+          MIGRATION_QA_RESET: "true"
+        run: npm run test:migrations
 
       - name: Run server tests
         run: npm test

@@ -412,9 +412,9 @@ Migrations are stored in `database/migrations/` and are production-controlled.
 - **009 — card requests / one-active-card guard:** adds the dedicated setup/replacement queue and a unique database guard for one ACTIVE NFC card per user.
 - **010 — public feedback:** permits anonymous feedback rows while authenticated feedback remains associated with the submitting account.
 
-Migrations 008, 009, and 010 must be applied before full production QA of their dependent v1.2 features. Migration 009 deliberately stops if legacy duplicate ACTIVE cards exist; resolve those lifecycle states manually rather than auto-modifying card history.
+Migrations 008, 009, and 010 are now mirrored into `server/drizzle/` and are automatically applied by the backend before the API starts. Migration 007 is intentionally excluded from the Drizzle ledger because it is already applied to production Neon.
 
-No test, CI job, or client flow should auto-apply production migrations.
+Migration 009 deliberately stops if legacy duplicate ACTIVE cards exist; resolve those lifecycle states manually rather than auto-modifying card history. CI validates this migration chain only against an isolated PostgreSQL service and never applies migrations to production Neon.
 
 ---
 
@@ -430,7 +430,7 @@ Release `v1.2.0 RC` is synchronized across:
 | `CHANGELOG.md` | `[1.2.0]` entry |
 | `VERSIONING.md` | `v1.2.0 RC` |
 
-**Release State:** Release Candidate — manual QA pending.
+**Release State:** Release Candidate — production QA ready, human QA pending.
 
 Current v1.2 work includes the public/invite-only event model, required-event Attendance Rate, NFC setup/replacement request queue, one-active-card safety guard, shared authenticated/admin/auth shells, theme/What's New/legal surfaces, profile account archiving, public feedback, compatibility improvements, and expanded administration workflows.
 
@@ -443,10 +443,10 @@ Current v1.2 work includes the public/invite-only event model, required-event At
 - [x] Client production build → passed
 - [x] Client lint → 0 errors (24 warnings remain for later cleanup)
 - [x] npm audit (server/client) → 0 vulnerabilities
-- [ ] Apply migration 008 to production Neon before invite-only QA
-- [ ] Apply migration 009 to production Neon before card-request/one-active-card QA
-- [ ] Apply migration 010 to production Neon before anonymous public-feedback QA
-- [ ] Human QA for v1.2.0 RC
+- [ ] Deploy main/master and confirm the backend Drizzle startup migration completes successfully
+- [ ] Confirm `/health` returns `1.2.0`
+- [ ] Human production QA for events, cards, iPhone/Android, auth, feedback, and responsive UI
+- [ ] Fix any human-QA findings and rerun CI
 - [ ] Android physical NDEFReader acceptance
 - [ ] Merge `kenn/develop` → `master` only after QA approval
 - [ ] **Do not tag, do not create GitHub Release, do not mark LIVE before acceptance**
@@ -504,3 +504,8 @@ MIT — see [LICENSE](LICENSE) for details.
 ---
 
 **TapTrack NFC** — Demonstration project. Not a production system. Use at your own risk.
+
+## Deployment & Production QA
+
+- Deployment/environment guide: `docs/deployment.md`
+- v1.2 production QA roadmap: `docs/v1.2-production-qa.md`
