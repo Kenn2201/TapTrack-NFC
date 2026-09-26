@@ -1,4 +1,4 @@
--- TapTrack NFC v0.8.0 BETA: immutable application audit log.
+-- TapTrack NFC v0.8.0 BETA: append-only application audit history.
 CREATE TABLE IF NOT EXISTS audit_logs (
   id SERIAL PRIMARY KEY,
   actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,

@@ -162,9 +162,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Broadcast email requires explicit confirmation checkbox
 
 ### Physical Test Status
-- **NFC-001** (Android NFC_WEB): PASSED
 - **NFC-001** (iPhone NFC_URL): PASSED (public `/t`, authenticated NFC_URL check-in, duplicate detection)
-- **NFC-001** (Android NDEFReader): PENDING
+- **Android Web NFC / NDEFReader**: PENDING physical acceptance
 - Manual attendance: VERIFIED
 
 ---
