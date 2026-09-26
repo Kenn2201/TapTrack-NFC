@@ -4,8 +4,8 @@
 
 | Platform | Browser | Direct Web NFC | NFC URL | Physical QA |
 |----------|---------|----------------|---------|-------------|
-| Android | Compatible Chromium | Engineering support | Yes | **Direct NDEFReader pending** |
-| Android | Other browsers | No | Yes | URL fallback not yet part of the final Android physical QA pass |
+| Android | Compatible Chromium | **Physically validated** | Yes | **Passed**: direct NDEFReader/Web NFC, attendance engine, duplicate protection |
+| Android | Other browsers | No | Yes | URL fallback remains available when direct Web NFC is unavailable |
 | iPhone | Safari | No | **Yes** | **Passed**: public verification, authenticated NFC URL attendance, duplicate handling |
 | Desktop | Modern browser | No | Management/manual workflows | Not applicable for direct NFC scanning |
 
@@ -43,7 +43,7 @@ The attendance context is per browser/device and is cleared on stop, expiry, inv
 
 TapTrack implements direct NDEFReader scanning for compatible Chromium browsers over HTTPS. The browser must expose `NDEFReader`, NFC must be enabled, and the scan must begin from a user gesture.
 
-**Acceptance note:** physical Android NDEFReader/Web NFC validation remains pending. Do not describe it as physically passed until that QA is completed.
+**Acceptance note:** physical Android NDEFReader/Web NFC validation has passed human QA on a compatible Chromium device.
 
 ## Desktop experience
 
