@@ -127,7 +127,7 @@ After a successful deploy:
 3. Perform event/public-vs-invite-only QA.
 4. Perform NFC request/one-active-card QA with disposable cards only.
 5. Regression-test the already validated iPhone NFC URL flow.
-6. Perform Android physical NDEFReader/Web NFC acceptance separately.
+6. Android physical NDEFReader/Web NFC acceptance is already passed; regression-test it only if the Android NFC path changes.
 7. Test auth/account archive and public/authenticated feedback.
 8. Test desktop/iPhone/small-Android responsive UI.
 9. Keep the release labeled `v1.2.0 RC` until human QA is accepted.

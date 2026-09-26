@@ -49,12 +49,12 @@ test('profile editing is inline and does not fake file-upload storage', () => {
   assert.doesNotMatch(source, /editModal/);
 });
 
-test('compatibility separates passed iPhone flow from pending Android physical QA', () => {
+test('compatibility reports passed iPhone and Android physical NFC QA', () => {
   const source = read('pages', 'Compatibility.jsx');
   assert.match(source, /Physically validated Safari NFC URL workflow/);
   assert.match(source, /No attendance is recorded/);
   assert.match(source, /Already Recorded/);
-  assert.match(source, /physical NDEFReader acceptance remains pending/i);
+  assert.match(source, /Android physical NDEFReader\/Web NFC acceptance has passed/i);
 });
 
 test('timing tool explicitly avoids hardware-latency claims', () => {
@@ -147,8 +147,8 @@ test('landing links terminology instead of embedding the old large glossary and 
   assert.match(source, /to="\/terminology"/);
   assert.doesNotMatch(source, /TerminologyCard/);
   assert.doesNotMatch(source, /immutable audit/i);
-  assert.match(source, /Android Web NFC is implemented/);
-  assert.match(source, /physical NDEFReader acceptance still pending/);
+  assert.match(source, /Android Web NFC is also physically validated/);
+  assert.match(source, /NDEFReader support/);
 });
 
 test('admin feedback supports category/search triage and anonymous public submissions', () => {

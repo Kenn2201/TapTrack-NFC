@@ -49,7 +49,7 @@ Traditional attendance workflows rely on:
 └──────────────────┴────────────────────┴────────────────────────┘
 ```
 
-*Android Web NFC is implemented for compatible Chromium browsers; physical NDEFReader acceptance remains pending.*
+*Android Web NFC is implemented for compatible Chromium browsers and physical NDEFReader/Web NFC acceptance has passed.*
 
 All three methods converge on the **same shared attendance engine** (`AttendanceService.record`):
 - Resolves user/card identity
@@ -146,11 +146,11 @@ Event (OPEN/CLOSED/CANCELLED)
 ### Tested Cards
 | Card | Standard | Memory | Test Status |
 |------|----------|--------|-------------|
-| **NTAG215** | NFC Forum Type 2, ISO 14443-3A | 504 bytes | iPhone NFC URL PASSED; Android Web NFC physical validation PENDING |
+| **NTAG215** | NFC Forum Type 2, ISO 14443-3A | 504 bytes | iPhone NFC URL PASSED; Android Web NFC physical validation PASSED |
 | NTAG213 | NFC Forum Type 2 | 144 bytes | Compatible |
 | NTAG216 | NFC Forum Type 2 | 888 bytes | Compatible |
 
-**NFC-001** — Primary physical validation card. iPhone public verification, authenticated NFC URL attendance, and duplicate-tap handling have passed. Physical Android NDEFReader/Web NFC validation remains pending. NFC-001 must not be automatically rotated, reissued, replaced, rewritten, or lifecycle-modified.
+**NFC-001** — Primary protected validation card. iPhone public verification, authenticated NFC URL attendance, and duplicate-tap handling have passed. Android NDEFReader/Web NFC physical acceptance has also passed using the validated Android flow. NFC-001 must not be automatically rotated, reissued, replaced, rewritten, or lifecycle-modified.
 
 ### Infrastructure
 - **Server**: Node.js 20+, Express 5, PostgreSQL (pg)
@@ -451,11 +451,11 @@ Current v1.2 work includes the public/invite-only event model, required-event At
 - [x] Client production build → passed
 - [x] Client lint → 0 errors (24 warnings remain for later cleanup)
 - [x] npm audit (server/client) → 0 vulnerabilities
-- [ ] Deploy main/master and confirm the backend Drizzle startup migration completes successfully
-- [ ] Confirm `/health` returns `1.2.0`
+- [x] Deploy main/master and confirm the backend Drizzle startup migration completes successfully
+- [x] Confirm `/health` returns `1.2.0`
 - [ ] Human production QA for events, cards, iPhone/Android, auth, feedback, and responsive UI
 - [ ] Fix any human-QA findings and rerun CI
-- [ ] Android physical NDEFReader acceptance
+- [x] Android physical NDEFReader acceptance
 - [ ] Merge `kenn/develop` → `master` only after QA approval
 - [ ] **Do not tag, do not create GitHub Release, do not mark LIVE before acceptance**
 
@@ -488,7 +488,7 @@ Current v1.2 work includes the public/invite-only event model, required-event At
 | NFC-001 public tap | iPhone Safari NFC URL verification | **PASSED** — safe resolve only, no attendance |
 | NFC-001 authenticated tap | iPhone Safari NFC URL attendance | **PASSED** |
 | NFC-001 duplicate tap | Same session duplicate protection | **PASSED** — Already Recorded, no duplicate row |
-| Android physical scan | Web NFC / NDEFReader | **PENDING** |
+| Android physical scan | Web NFC / NDEFReader | **PASSED** |
 | Manual attendance | Operator console | Verified by automated workflow tests; human v1.2 QA still pending |
 
 Do not claim physical Android NDEFReader/Web NFC as passed until that acceptance test is completed.

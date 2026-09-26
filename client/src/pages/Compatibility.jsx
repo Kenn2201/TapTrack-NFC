@@ -21,9 +21,9 @@ const COMPATIBILITY_CARDS = [
   },
   {
     title: 'Android Web NFC',
-    status: 'PENDING',
-    statusLabel: 'Pending test',
-    body: 'Requires HTTPS and a compatible Chromium browser with NDEFReader support. Physical Android validation remains pending.',
+    status: 'PASSED',
+    statusLabel: 'Android validated',
+    body: 'Requires HTTPS and a compatible Chromium browser with NDEFReader support. Physical Android NDEFReader/Web NFC acceptance has passed.',
   },
   {
     title: 'Desktop',
@@ -103,11 +103,11 @@ export default function Compatibility() {
 
         <Section
           title="Android direct Web NFC"
-          subtitle="Supported by the code path; physical NDEFReader acceptance remains pending"
+          subtitle="Physically validated NDEFReader/Web NFC workflow"
         >
           <Card className="p-5 space-y-3 text-sm text-slate-300">
             <p>On a compatible Android Chromium browser, TapTrack feature-detects <code className="font-mono text-xs text-blue-300">NDEFReader</code>. When available, an authenticated ADMIN or OPERATOR can use the NFC Reader during an open attendance session.</p>
-            <p className="text-amber-300"><strong>QA status:</strong> Android physical NDEFReader validation has not been confirmed yet. The Universal NFC URL fallback remains available when direct Web NFC is unavailable.</p>
+            <p className="text-green-300"><strong>QA status:</strong> Android physical NDEFReader/Web NFC acceptance has passed. The Universal NFC URL fallback remains available when direct Web NFC is unavailable.</p>
           </Card>
         </Section>
 

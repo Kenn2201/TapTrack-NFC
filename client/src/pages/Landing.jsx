@@ -283,7 +283,7 @@ export default function Landing() {
               Works Across Mobile & Desktop
             </h2>
             <p className="mt-3 text-slate-400 text-sm sm:text-base">
-              The iPhone NFC URL flow is physically validated. Android Web NFC is implemented for compatible Chromium browsers, with physical NDEFReader acceptance still pending.
+              The iPhone NFC URL flow is physically validated. Android Web NFC is also physically validated on a compatible Chromium browser with NDEFReader support.
             </p>
           </div>
 

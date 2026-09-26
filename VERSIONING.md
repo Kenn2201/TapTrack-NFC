@@ -28,7 +28,7 @@ TapTrack NFC follows Semantic Versioning. The canonical runtime version is `serv
 | v0.1.0 | ALPHA | Foundation architecture and initial UI | Released |
 | v0.2.0 | ALPHA | Authentication, roles, users, email integration | Released |
 | v0.3.0 | ALPHA | NFC provisioning and assignment | Released |
-| v0.4.0 | ALPHA | Android Web NFC reader | Engineering complete; physical Android validation pending |
+| v0.4.0 | ALPHA | Android Web NFC reader | Complete; physical Android NDEFReader/Web NFC validation passed |
 | v0.5.0 | ALPHA | Universal NFC URL fallback | Complete; iPhone physical validation passed |
 | v0.6.0 | BETA | Events, sessions, shared attendance engine | Complete |
 | v0.7.0 | BETA | Admin metrics and card lifecycle | Complete |
