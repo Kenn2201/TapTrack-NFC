@@ -1,0 +1,44 @@
+name: Sync server package lock
+
+on:
+  push:
+    branches:
+      - chatgpt/v1.2-drizzle-production-qa
+    paths:
+      - server/package.json
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: chatgpt/v1.2-drizzle-production-qa
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Refresh package lock
+        working-directory: server
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Commit lockfile if changed
+        run: |
+          if git diff --quiet -- server/package-lock.json; then
+            echo "server/package-lock.json is already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/package-lock.json
+          git commit -m "chore: sync server lockfile"
+          git push origin HEAD:chatgpt/v1.2-drizzle-production-qa
