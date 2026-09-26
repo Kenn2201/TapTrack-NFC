@@ -271,32 +271,40 @@ cd server && npm run dev
 cd client && npm run dev
 ```
 
-### Environment Variables (server/.env)
+### Environment Variables
+
+Use the root `.env.example` as the canonical variable reference. Production placement is documented in `docs/deployment.md`.
+
+#### Backend / Render
 
 ```env
-# Database
-DATABASE_URL=postgresql://user:pass@host:5432/taptrack
-
-# Auth
-JWT_SECRET=your-256-bit-secret
-JWT_ISSUER=taptrack-nfc
-JWT_AUDIENCE=taptrack-nfc-client
-SESSION_COOKIE_NAME=taptrack_session
-NODE_ENV=development
-
-# Email (Resend)
-RESEND_API_KEY=re_xxxxx
-EMAIL_FROM=noreply@yourdomain.com
-
-# App
-APP_URL=http://localhost:5173
-API_URL=http://localhost:3000
+NODE_ENV=production
+DATABASE_URL=<Neon PostgreSQL connection string>
+CLIENT_URL=https://nfc.kenncode.me
+NFC_DOMAIN=https://nfc.kenncode.me
+JWT_SECRET=<long random secret>
+JWT_EXPIRES_IN=7d
+CARD_TOKEN_PEPPER=<different long random secret>
+AUTO_MIGRATE=true
+RESEND_API_KEY=<Resend API key>
+RESEND_FROM_EMAIL=TapTrack NFC <no-reply@mail.nfc.kenncode.me>
+LOG_LEVEL=info
 ```
+
+Render supplies `PORT`. Do not expose backend secrets to the frontend. Keep the existing `CARD_TOKEN_PEPPER`; rotating it invalidates existing physical NFC credentials.
+
+#### Frontend / Vercel
+
+```env
+VITE_API_URL=https://api.nfc.kenncode.me/api
+```
+
+`VITE_API_URL` is the only TapTrack application environment variable currently read by the browser bundle. Never put `DATABASE_URL`, `JWT_SECRET`, `CARD_TOKEN_PEPPER`, or `RESEND_API_KEY` in a `VITE_*` variable.
 
 ### Running Tests
 
 ```bash
-# Server tests (128 tests)
+# Server tests
 cd server && npm test
 
 # Client tests
