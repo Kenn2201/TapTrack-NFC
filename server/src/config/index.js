@@ -13,6 +13,7 @@ export const config = {
   get clientUrl() { return process.env.CLIENT_URL || 'http://localhost:5173'; },
   get nfcDomain() { return process.env.NFC_DOMAIN || 'https://nfc.kenncode.me'; },
   get logLevel() { return process.env.LOG_LEVEL || 'info'; },
+  get autoMigrate() { return process.env.AUTO_MIGRATE !== 'false'; },
 
   // Authentication
   get jwtSecret() { return process.env.JWT_SECRET; },

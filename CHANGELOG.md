@@ -38,10 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migration 008 adds event visibility (`PUBLIC` / `INVITE_ONLY`).
 - Migration 009 adds card requests and a database-level one-ACTIVE-card-per-user guard. It stops safely if legacy duplicate ACTIVE cards exist instead of modifying them automatically.
 - Migration 010 allows anonymous public feedback by making feedback ownership optional.
-- Migrations 008, 009, and 010 must be applied before full production QA of their dependent features.
+- Migrations 008–010 are mirrored into the Drizzle runtime ledger under `server/drizzle/`.
+- API startup now automatically runs pending Drizzle migrations before listening, guarded by a PostgreSQL advisory lock.
+- The Drizzle chain is validated in CI against isolated PostgreSQL and is safe to rerun on restart.
 
 ### Validation status
-- GitHub Actions passed: server 14/14 test files and 181/181 tests; client 82/82 tests; production build; lint with 0 errors; server/client audits with 0 vulnerabilities.
+- Previous v1.2 validation passed; the final Drizzle/production-QA pass adds PostgreSQL migration-chain validation and reruns the full server/client CI suite before main/master deployment.
 - Physical iPhone public verification, authenticated NFC URL attendance, and duplicate-tap handling were previously validated.
 - Physical Android NDEFReader/Web NFC validation remains pending.
 - No `v1.2.0` tag or GitHub Release should be created before human QA passes.

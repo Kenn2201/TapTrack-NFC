@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790371200000,
+      "tag": "0000_v1_2_event_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790371201000,
+      "tag": "0001_v1_2_card_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790371202000,
+      "tag": "0002_v1_2_public_feedback",
+      "breakpoints": true
+    }
+  ]
+}
