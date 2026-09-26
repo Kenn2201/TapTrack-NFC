@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Attendance Rate now uses only closed invite-only events where the user was invited. Public events never count as missed attendance.
 - Profile editing now happens inline. TapTrack continues to use initials or a direct HTTPS avatar URL because profile-image file storage is not currently configured.
 - The NFC/QR benchmark is now labeled **Manual NFC / QR Timing Tool** and explicitly represents operator workflow timing, not physical hardware latency.
-- Device compatibility now distinguishes physically validated iPhone NFC URL behavior from Android Web NFC, whose physical NDEFReader validation remains pending.
+- Device compatibility now records both the physically validated iPhone NFC URL flow and the physically validated Android NDEFReader/Web NFC flow.
 - Admin card management now includes setup/replacement requests and clearer one-time provisioning workflows.
 
 ### Database
@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Validation status
 - Previous v1.2 validation passed; the final Drizzle/production-QA pass adds PostgreSQL migration-chain validation and reruns the full server/client CI suite before main/master deployment.
 - Physical iPhone public verification, authenticated NFC URL attendance, and duplicate-tap handling were previously validated.
-- Physical Android NDEFReader/Web NFC validation remains pending.
+- Physical Android NDEFReader/Web NFC validation has passed human QA.
 - No `v1.2.0` tag or GitHub Release should be created before human QA passes.
 
 ## [1.1.0] - Release Candidate (pending human acceptance)
@@ -163,7 +163,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Physical Test Status
 - **NFC-001** (iPhone NFC_URL): PASSED (public `/t`, authenticated NFC_URL check-in, duplicate detection)
-- **Android Web NFC / NDEFReader**: PENDING physical acceptance
+- **Android Web NFC / NDEFReader**: PASSED physical acceptance
 - Manual attendance: VERIFIED
 
 ---
