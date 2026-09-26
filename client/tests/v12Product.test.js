@@ -158,3 +158,12 @@ test('admin feedback supports category/search triage and anonymous public submis
   assert.match(source, /Anonymous public feedback/);
   assert.match(source, /Anonymous public visitor/);
 });
+
+
+test('public metadata and profile copy avoid unsupported immutable-audit wording', () => {
+  const index = readFileSync(join(import.meta.dirname, '..', 'index.html'), 'utf8');
+  const profile = read('pages', 'Profile.jsx');
+  assert.doesNotMatch(index, /immutable audit/i);
+  assert.match(index, /sanitized audit history/i);
+  assert.doesNotMatch(profile, />Immutable</);
+});

@@ -277,7 +277,7 @@ export default function Profile() {
                     <span className="text-xs text-slate-400 font-medium">Email Address</span>
                     <p className="text-sm font-semibold text-white mt-0.5 break-all">{user?.email}</p>
                   </div>
-                  <span className="text-xs text-slate-500 font-mono">Immutable</span>
+                  <span className="text-xs text-slate-500">Not editable here</span>
                 </div>
                 <div className="py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <div>
