@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pool from '../repositories/db.js';
 import { config } from '../config/index.js';
+import { assertNoDuplicateActiveCards } from './duplicateCardPreflight.js';
 
 const migrationsFolder = fileURLToPath(new URL('../../drizzle', import.meta.url));
 const MIGRATION_LOCK_ID = 7481270126;
@@ -24,6 +25,9 @@ export async function runMigrations() {
     // This session-level lock stays on the same pg client used by Drizzle.
     await client.query('SELECT pg_advisory_lock($1::bigint);', [MIGRATION_LOCK_ID]);
     lockAcquired = true;
+
+    // Fail with a clear, read-only explanation rather than mutating legacy cards.
+    await assertNoDuplicateActiveCards(client);
 
     const db = drizzle(client);
     await migrate(db, { migrationsFolder });
