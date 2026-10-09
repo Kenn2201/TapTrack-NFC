@@ -7,7 +7,7 @@ TapTrack NFC follows Semantic Versioning. The canonical runtime version is `serv
 - Version: `1.2.0`
 - Label: `v1.2.0 RC`
 - Release name: `Event & Product Workflow Pass — Release Candidate`
-- Acceptance: `Production QA Ready — Human QA Pending`
+- Acceptance: `Production Deploy Blocked (duplicate test-card data) — Human QA Pending`
 - Development branch: `kenn/develop`
 - Production branch: `master`
 - No `v1.2.0` tag or GitHub Release is permitted until human QA/acceptance passes.
@@ -17,7 +17,7 @@ TapTrack NFC follows Semantic Versioning. The canonical runtime version is `serv
 - Migration 007: already applied to production Neon. **Do not rerun it.**
 - Migrations 008, 009, and 010 are now adopted by the Drizzle runtime ledger in `server/drizzle/`.
 - Render/API startup automatically runs pending Drizzle migrations before listening when `AUTO_MIGRATE` is not `false`.
-- Migration 009 still refuses to continue if duplicate legacy ACTIVE cards exist; it never auto-modifies lifecycle history.
+- Migration 009 still refuses to continue if duplicate legacy ACTIVE cards exist; it never auto-modifies lifecycle history. Production user 1 currently has NFC-002 and NFC-004 ACTIVE; [guarded manual recovery](docs/taptrack-render-recovery.md) must finish before retrying Render.
 - CI validates the Drizzle chain against an isolated PostgreSQL service. CI never points at production Neon.
 - Human production QA begins only after the main/master deployment starts successfully with the migrated schema.
 

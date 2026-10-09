@@ -69,6 +69,10 @@ No additional TapTrack application environment variables are stored in Neon. Neo
 
 Use the same production database currently used by TapTrack. Do not create a replacement database for this release.
 
+## Recovery of the v1.2 production startup failure
+
+Render builds for v1.2 may succeed but fail at API startup while legacy duplicate ACTIVE cards remain. The specific production data conflict is recorded in [the guarded recovery runbook](taptrack-render-recovery.md). Never auto-disable cards during deployment; resolve the authorized test-card conflict separately before retrying Render.
+
 ## Automatic Drizzle migrations
 
 TapTrack now runs Drizzle migrations **before the API begins listening**.
